@@ -1,0 +1,24 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// 修改 build 目录到 ../../build
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.set(newBuildDir)
+
+subprojects {
+    def newSubprojectBuildDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.set(newSubprojectBuildDir)
+}
+
+subprojects {
+    evaluationDependsOn(":app")
+}
+
+// clean 任务
+tasks.register("clean", Delete) {
+    delete rootProject.layout.buildDirectory
+}

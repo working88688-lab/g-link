@@ -1,0 +1,25 @@
+class MyImagePaths {
+  static const appTabDspS = './assets/images/app_tab_dsp_s.png';
+  static const appTabMineN = './assets/images/app_tab_mine_n.png';
+  static const appTabHomeS = './assets/images/app_tab_home_s.png';
+  static const logoGradient = './assets/images/logo_gradient.png';
+  static const appTabMsgN = './assets/images/app_tab_msg_n.png';
+  static const img = './assets/images/img.png';
+  static const appLivesNoticeIcon = './assets/images/app_lives_notice_icon.png';
+  static const appTabPublish = './assets/images/app_tab_publish.png';
+  static const appUpdateUpBg = './assets/images/app_update_up_bg.png';
+  static const glinkWhite = './assets/images/glink_white.png';
+  static const splash = './assets/images/splash.png';
+  static const appAnnouncement = './assets/images/app_announcement.png';
+  static const appDialogClose = './assets/images/app_dialog_close.png';
+  static const appLoading = './assets/images/app_loading.gif';
+  static const appTabMineS = './assets/images/app_tab_mine_s.png';
+  static const appTabHomeN = './assets/images/app_tab_home_n.png';
+  static const appZfYtN = './assets/images/app_zf_yt_n.png';
+  static const appTabDspN = './assets/images/app_tab_dsp_n.png';
+  static const appFxxbbT = './assets/images/app_fxxbb_t.png';
+  static const appFigureN = './assets/images/app_figure_n.png';
+  static const appTabMsgS = './assets/images/app_tab_msg_s.png';
+  static const appCancelWithCircle = './assets/images/app_cancel_with_circle.png';
+  static const appAnnouncementUpBg = './assets/images/app_announcement_up_bg.png';
+}
