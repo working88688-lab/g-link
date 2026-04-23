@@ -62,6 +62,98 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> {
   final _searchCtrl = TextEditingController();
+  final _openIdNotifier = ValueNotifier<String?>(null);
+  final _addBtnKey = GlobalKey();
+
+  static const _menuItems = [
+    (value: 'search', icon: "icon_search2", label: '搜索用户'),
+  ];
+
+  OverlayEntry? _menuOverlay;
+
+  void _showAddMenu() {
+    final btn = _addBtnKey.currentContext!.findRenderObject() as RenderBox;
+    final overlayState = Navigator.of(context).overlay!;
+    final overlayBox = overlayState.context.findRenderObject() as RenderBox;
+    final btnPos = btn.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final double top = btnPos.dy + btn.size.height + 8;
+    final double right = 14.w;
+    final double menuWidth = 140.w;
+    final int count = _menuItems.length;
+
+    _menuOverlay = OverlayEntry(
+      builder: (ctx) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: _closeMenu,
+        onPanDown: (_) => _closeMenu(),
+        child: SizedBox.expand(
+          child: Stack(
+            children: [
+              Positioned(
+                top: top,
+                right: right,
+                width: menuWidth,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(10.r),
+                  color: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10.r),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(count, (i) {
+                        final e = _menuItems[i];
+                        final isFirst = i == 0;
+                        final isLast = i == count - 1;
+                        final radius = BorderRadius.vertical(
+                          top: isFirst ? Radius.circular(10.r) : Radius.zero,
+                          bottom: isLast ? Radius.circular(10.r) : Radius.zero,
+                        );
+                        return InkWell(
+                          borderRadius: radius,
+                          onTap: () => _closeMenu(),
+                          child: SizedBox(
+                            height: 49.w,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 12.w),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    "./assets/images/${e.icon}.png",
+                                    width: 20.w,
+                                    height: 20.w,
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Text(
+                                    e.label,
+                                    style: TextStyle(
+                                      fontSize: 14.sp,
+                                      color: const Color(0xFF0F172B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    overlayState.insert(_menuOverlay!);
+  }
+
+  void _closeMenu() {
+    _menuOverlay?.remove();
+    _menuOverlay = null;
+  }
 
   final List<_MsgItem> _items = [
     const _MsgItem(
@@ -82,7 +174,7 @@ class _MessagePageState extends State<MessagePage> {
       unreadCount: 9,
       isOnline: true,
       isMuted: true,
-      readStatus: ReadStatus.delivered,
+      readStatus: ReadStatus.sent,
     ),
     const _MsgItem(
       id: '3',
@@ -143,8 +235,16 @@ class _MessagePageState extends State<MessagePage> {
 
   @override
   void dispose() {
+    _closeMenu();
     _searchCtrl.dispose();
+    _openIdNotifier.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    _closeMenu();
+    super.deactivate();
   }
 
   @override
@@ -166,21 +266,21 @@ class _MessagePageState extends State<MessagePage> {
   // ── 顶部标题栏 ──────────────────────────
   Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.w),
       decoration: BoxDecoration(
         color: Colors.white,
-      //     box-shadow: 0px 1px 2px -1px #E2E8F080;
-      //
-      // box-shadow: 0px 1px 3px 0px #E2E8F080;
+        //     box-shadow: 0px 1px 2px -1px #E2E8F080;
+        //
+        // box-shadow: 0px 1px 3px 0px #E2E8F080;
 
         boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
-              offset: const Offset(0, 1),
-              blurRadius: 3,
-              spreadRadius: -1,
-            ),
-          ],
+          BoxShadow(
+            color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+            offset: const Offset(0, 1),
+            blurRadius: 3,
+            spreadRadius: -1,
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -194,7 +294,8 @@ class _MessagePageState extends State<MessagePage> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: () {},
+            key: _addBtnKey,
+            onTap: _showAddMenu,
             child: Container(
               width: 24.w,
               height: 24.w,
@@ -213,28 +314,27 @@ class _MessagePageState extends State<MessagePage> {
   // ── 搜索栏 ──────────────────────────────
   Widget _buildSearchBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+      padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
       child: Container(
-        height: 40.h,
+        height: 46.w,
         decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F7),
-          borderRadius: BorderRadius.circular(12.r),
+          color: const Color(0xFFF8F9FE),
+          borderRadius: BorderRadius.circular(46.r),
         ),
         child: TextField(
           controller: _searchCtrl,
-          style: TextStyle(fontSize: 15.sp, color: const Color(0xFF1A1A1A)),
+          style: TextStyle(fontSize: 15.sp, color: Colors.black),
           decoration: InputDecoration(
             border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 10.h),
-            prefixIcon: Icon(
-              Icons.search,
-              color: const Color(0xFF8E8E93),
-              size: 20.sp,
+            contentPadding: EdgeInsets.symmetric(vertical: 11.w),
+            prefixIcon: Stack(
+              alignment: Alignment.center,
+              children: [Image.asset("./assets/images/icon_search.png", width: 24.w, height: 24.w)],
             ),
             hintText: '搜索联系人或聊天记录',
             hintStyle: TextStyle(
               fontSize: 15.sp,
-              color: const Color(0xFF8E8E93),
+              color: const Color(0xFF90A1B9),
             ),
           ),
         ),
@@ -242,14 +342,114 @@ class _MessagePageState extends State<MessagePage> {
     );
   }
 
+  Widget _buildEmpty() {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 32.w,
+          ),
+          Image.asset("./assets/images/empty_message.png", height: 95.w),
+          SizedBox(
+            height: 1.w,
+          ),
+          Text(
+            "暂无消息",
+            style: TextStyle(fontSize: 14.sp, color: Colors.black),
+          ),
+          SizedBox(
+            height: 32.w,
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "为你推荐",
+                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500, color: Color(0xFF1A1F2C)),
+              ),
+              Spacer(),
+              Text(
+                "关闭",
+                style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400, color: Color(0xFF62748E)),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 15.w,
+          ),
+          for (int i = 0; i < 10; i++)
+            Container(
+              margin: EdgeInsets.only(bottom: 20.w),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40.w,
+                    height: 40.w,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(40.r),
+                      color: const Color(0xFFD1D1D6),
+                    ),
+                    child: Icon(Icons.person, size: 28.sp, color: Colors.white),
+                  ),
+                  SizedBox(
+                    width: 12.w,
+                  ),
+                  Expanded(
+                      child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Sarah Jenks",
+                        style: TextStyle(color: Color(0xFF0F172B), fontSize: 15.sp, fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        "5.4w粉丝",
+                        style: TextStyle(color: Color(0xFF62748E), fontSize: 12.sp, fontWeight: FontWeight.w400),
+                      )
+                    ],
+                  )),
+                  GestureDetector(
+                    child: Container(
+                      height: 33.5.w,
+                      width: 60.w,
+                      decoration: BoxDecoration(
+                        color: i % 2 == 0 ? const Color(0xFF1A1F2C) : null,
+                        border: i % 2 == 0 ? null : Border.all(color: const Color(0xFFCCCCCC), width: 1.w),
+                        borderRadius: BorderRadius.circular(100.r),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        i % 2 == 0 ? "已关注" : "关注",
+                        style: TextStyle(
+                          color: i % 2 == 0 ? const Color(0xFFF8F9FE) : const Color(0xFF1A1F2C),
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+        ],
+      ),
+    );
+  }
+
   // ── 列表 ────────────────────────────────
   Widget _buildList() {
+    // return _buildEmpty();
     return ListView.builder(
-      padding: EdgeInsets.only(top: 8.h),
+      padding: EdgeInsets.only(top: 8.w),
       itemCount: _items.length,
       itemBuilder: (ctx, i) => _SwipeableTile(
         key: ValueKey(_items[i].id),
         item: _items[i],
+        openIdNotifier: _openIdNotifier,
+        onInteract: _closeMenu,
         onPin: () => _pin(_items[i].id),
         onMute: () => _mute(_items[i].id),
         onDelete: () => _delete(_items[i].id),
@@ -263,6 +463,8 @@ class _MessagePageState extends State<MessagePage> {
 // ──────────────────────────────────────────
 class _SwipeableTile extends StatefulWidget {
   final _MsgItem item;
+  final ValueNotifier<String?> openIdNotifier;
+  final VoidCallback onInteract;
   final VoidCallback onPin;
   final VoidCallback onMute;
   final VoidCallback onDelete;
@@ -270,6 +472,8 @@ class _SwipeableTile extends StatefulWidget {
   const _SwipeableTile({
     super.key,
     required this.item,
+    required this.openIdNotifier,
+    required this.onInteract,
     required this.onPin,
     required this.onMute,
     required this.onDelete,
@@ -279,12 +483,12 @@ class _SwipeableTile extends StatefulWidget {
   State<_SwipeableTile> createState() => _SwipeableTileState();
 }
 
-class _SwipeableTileState extends State<_SwipeableTile>
-    with SingleTickerProviderStateMixin {
-  static const double _actionWidth = 240.0; // 三个按钮总宽（逻辑像素）
+class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-  double _dragStart = 0;
+  double _dragOffset = 0;
+
+  // 运行时根据 ScreenUtil 计算三个按钮的实际总宽
+  double get _actionWidth => 60.w * 3;
 
   @override
   void initState() {
@@ -293,24 +497,32 @@ class _SwipeableTileState extends State<_SwipeableTile>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _anim = Tween<double>(begin: 0, end: -_actionWidth)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    widget.openIdNotifier.addListener(_onOpenIdChanged);
+  }
+
+  void _onOpenIdChanged() {
+    if (widget.openIdNotifier.value != widget.item.id) {
+      _ctrl.animateTo(0.0);
+    }
   }
 
   @override
   void dispose() {
+    widget.openIdNotifier.removeListener(_onOpenIdChanged);
     _ctrl.dispose();
     super.dispose();
   }
 
   void _onHorizontalDragStart(DragStartDetails d) {
-    _dragStart = _ctrl.value * _actionWidth;
+    _dragOffset = _ctrl.value * _actionWidth;
+    widget.onInteract();
+    // 通知其他 tile 收起
+    widget.openIdNotifier.value = widget.item.id;
   }
 
   void _onHorizontalDragUpdate(DragUpdateDetails d) {
-    final newVal =
-        ((_dragStart - d.primaryDelta!) / _actionWidth).clamp(0.0, 1.0);
-    _ctrl.value = newVal;
+    _dragOffset = (_dragOffset - d.primaryDelta!).clamp(0.0, _actionWidth);
+    _ctrl.value = _dragOffset / _actionWidth;
   }
 
   void _onHorizontalDragEnd(DragEndDetails d) {
@@ -338,6 +550,7 @@ class _SwipeableTileState extends State<_SwipeableTile>
               children: [
                 _ActionBtn(
                   label: '置顶',
+                  textColor: const Color(0xFFFFFFFF),
                   color: const Color(0xFFF5A623),
                   onTap: () {
                     _close();
@@ -346,6 +559,7 @@ class _SwipeableTileState extends State<_SwipeableTile>
                 ),
                 _ActionBtn(
                   label: '静音',
+                  textColor: const Color(0xFF1A1F2C),
                   color: const Color(0xFFD1D1D6),
                   onTap: () {
                     _close();
@@ -354,6 +568,7 @@ class _SwipeableTileState extends State<_SwipeableTile>
                 ),
                 _ActionBtn(
                   label: '删除',
+                  textColor: const Color(0xFFFFFFFF),
                   color: const Color(0xFFFF2D55),
                   onTap: () {
                     _close();
@@ -365,9 +580,9 @@ class _SwipeableTileState extends State<_SwipeableTile>
           ),
           // ── 前景内容 ──
           AnimatedBuilder(
-            animation: _anim,
+            animation: _ctrl,
             builder: (_, child) => Transform.translate(
-              offset: Offset(_anim.value, 0),
+              offset: Offset(-_ctrl.value * _actionWidth, 0),
               child: child,
             ),
             child: GestureDetector(
@@ -388,26 +603,23 @@ class _ActionBtn extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final Color textColor;
 
-  const _ActionBtn({
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
+  const _ActionBtn({required this.label, required this.color, required this.onTap, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80.w,
+        width: 60.w,
         color: color,
         alignment: Alignment.center,
         child: Text(
           label,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 15.sp,
+            color: textColor,
+            fontSize: 10.sp,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -428,15 +640,32 @@ class _MsgTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.only(left: 8.w),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildAvatar(),
-          SizedBox(width: 12.w),
-          Expanded(child: _buildContent()),
-          SizedBox(width: 8.w),
-          _buildTrailing(),
+          SizedBox(width: 17.w),
+          Expanded(
+              child: Container(
+            padding: EdgeInsets.only(
+              top: 16.w,
+              bottom: 16.w,
+            ),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _buildContent()),
+                SizedBox(width: 9.w),
+                _buildTrailing(),
+                SizedBox(
+                  width: 16.w,
+                )
+              ],
+            ),
+          )),
         ],
       ),
     );
@@ -447,26 +676,26 @@ class _MsgTile extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        CircleAvatar(
-          radius: 26.r,
-          backgroundColor: const Color(0xFFD1D1D6),
-          backgroundImage:
-              item.avatarUrl.isNotEmpty ? NetworkImage(item.avatarUrl) : null,
-          child: item.avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 28.sp, color: Colors.white)
-              : null,
+        Container(
+          width: 40.w,
+          height: 40.w,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16.r),
+            color: const Color(0xFFD1D1D6),
+          ),
+          child: item.avatarUrl.isEmpty ? Icon(Icons.person, size: 28.sp, color: Colors.white) : null,
         ),
         if (item.isOnline)
           Positioned(
-            bottom: 1.h,
-            right: 1.w,
+            bottom: 0.w,
+            right: 0.w,
             child: Container(
-              width: 12.w,
-              height: 12.w,
+              width: 9.w,
+              height: 9.w,
               decoration: BoxDecoration(
-                color: const Color(0xFF34C759),
+                color: const Color(0xFF00C67E),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: Colors.white, width: 1.w),
               ),
             ),
           ),
@@ -484,27 +713,23 @@ class _MsgTile extends StatelessWidget {
             Text(
               item.name,
               style: TextStyle(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1A1A1A),
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1F2024),
               ),
             ),
             if (item.isMuted) ...[
               SizedBox(width: 4.w),
-              Icon(
-                Icons.volume_off,
-                size: 14.sp,
-                color: const Color(0xFF8E8E93),
-              ),
+              Image.asset("./assets/images/icon_volume_off.png", width: 16.w, height: 16.w),
             ],
           ],
         ),
-        SizedBox(height: 4.h),
+        SizedBox(height: 4.w),
         Text(
           item.lastMsg,
           style: TextStyle(
-            fontSize: 13.sp,
-            color: const Color(0xFF8E8E93),
+            fontSize: 12.sp,
+            color: const Color(0xFF71727A),
             height: 1.4,
           ),
           maxLines: 2,
@@ -523,44 +748,54 @@ class _MsgTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (item.readStatus == ReadStatus.sent)
-              Icon(Icons.check, size: 14.sp, color: const Color(0xFF34C759)),
-            if (item.readStatus == ReadStatus.delivered)
-              Icon(Icons.done_all, size: 14.sp,
-                  color: const Color(0xFF34C759)),
+            if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
+              Image.asset(
+                  "./assets/images/${(item.readStatus == ReadStatus.sent ? "icon_check" : "icon_done_all")}.png",
+                  width: 14.w,
+                  height: 14.w),
             SizedBox(width: 2.w),
-            Text(
-              item.time,
-              style: TextStyle(
-                fontSize: 12.sp,
-                color: const Color(0xFF8E8E93),
+            Container(
+              width: 40.w,
+              alignment: Alignment.center,
+              child: Text(
+                item.time,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF8E8E93),
+                ),
               ),
             ),
           ],
         ),
-        SizedBox(height: 6.h),
+        SizedBox(height: 6.w),
         // 未读徽章
         if (item.unreadCount > 0)
           Container(
-            constraints: BoxConstraints(minWidth: 20.w),
-            height: 20.h,
-            padding: EdgeInsets.symmetric(horizontal: 5.w),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF2D55),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              item.unreadCount > 99 ? '99+' : '${item.unreadCount}',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+              width: 40.w,
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(minWidth: 18.w),
+                    height: 18.w,
+                    decoration: BoxDecoration(
+                      color: item.isMuted ? const Color(0xFF90A1B9) : const Color(0xFFFF2056),
+                      borderRadius: BorderRadius.circular(15.r),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      item.unreadCount > 99 ? '99+' : '${item.unreadCount}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              )),
       ],
     );
   }
 }
-
