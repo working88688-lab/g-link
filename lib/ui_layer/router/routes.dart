@@ -4,7 +4,7 @@ import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/auth_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
-import 'package:g_link/ui_layer/page/message_page_v2.dart';
+import 'package:g_link/ui_layer/page/chat/message_page.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video_page.dart';
@@ -131,7 +131,7 @@ class MessageRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      const MessagePageV2();
+      const MessagePage();
 }
 
 class MineRoute extends GoRouteData {
