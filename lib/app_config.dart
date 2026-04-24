@@ -45,6 +45,8 @@ class BuildConfig {
 
   static const affCodeKey = 'hjsq_aff';
 
+  static const v1ApiBase = 'https://api.zywsbgha.cc';
+
   static const webBundleId = 'com.pwa.hjsq';
 
   static const cacheKeys = (

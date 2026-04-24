@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/model/chat_model.dart';
 import 'chat_page.dart';
+import 'search/search_page.dart';
+import 'widgets/recommend_users_widget.dart';
 import '../../widgets/overlay_menu_button.dart';
 
 // ──────────────────────────────────────────
@@ -50,6 +55,39 @@ class _MsgItem {
         readStatus: readStatus,
         isPinned: isPinned ?? this.isPinned,
       );
+
+  factory _MsgItem.fromChatItem(ChatItem c) {
+    return _MsgItem(
+      id: c.id.toString(),
+      name: c.name,
+      avatarUrl: c.avatarUrl,
+      lastMsg: c.lastMsgContent,
+      time: _formatMsgTime(c.lastMsgTime),
+      unreadCount: c.unreadCount,
+      isPinned: c.isPinned,
+      isMuted: c.isMuted,
+    );
+  }
+}
+
+String _formatMsgTime(String iso) {
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final msgDay = DateTime(dt.year, dt.month, dt.day);
+    final diff = today.difference(msgDay).inDays;
+    if (diff == 0) {
+      return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } else if (diff < 7) {
+      const weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      return weekdays[dt.weekday];
+    } else {
+      return '${dt.month}/${dt.day}';
+    }
+  } catch (_) {
+    return '';
+  }
 }
 
 // ──────────────────────────────────────────
@@ -66,12 +104,11 @@ class _MessagePageState extends State<MessagePage> {
   final _searchCtrl = TextEditingController();
   final _openIdNotifier = ValueNotifier<String?>(null);
 
-  static const _menuItems = [
-    OverlayMenuItem(value: 'search', icon: 'icon_search2', label: '搜索用户'),
-  ];
+  List<_MsgItem> _items = [];
+  bool _isLoading = true;
 
-  final List<_MsgItem> _items = [
-    const _MsgItem(
+  static const _mockItems = [
+    _MsgItem(
       id: '1',
       name: 'Haley James',
       avatarUrl: '',
@@ -80,7 +117,7 @@ class _MessagePageState extends State<MessagePage> {
       unreadCount: 9,
       isOnline: true,
     ),
-    const _MsgItem(
+    _MsgItem(
       id: '2',
       name: 'Haley James',
       avatarUrl: '',
@@ -91,7 +128,7 @@ class _MessagePageState extends State<MessagePage> {
       isMuted: true,
       readStatus: ReadStatus.sent,
     ),
-    const _MsgItem(
+    _MsgItem(
       id: '3',
       name: 'Haley James',
       avatarUrl: '',
@@ -100,7 +137,7 @@ class _MessagePageState extends State<MessagePage> {
       isOnline: true,
       readStatus: ReadStatus.delivered,
     ),
-    const _MsgItem(
+    _MsgItem(
       id: '4',
       name: 'Haley James',
       avatarUrl: '',
@@ -108,7 +145,7 @@ class _MessagePageState extends State<MessagePage> {
       time: '周日',
       isOnline: true,
     ),
-    const _MsgItem(
+    _MsgItem(
       id: '5',
       name: 'Haley James',
       avatarUrl: '',
@@ -116,7 +153,7 @@ class _MessagePageState extends State<MessagePage> {
       time: '10:23',
       isOnline: true,
     ),
-    const _MsgItem(
+    _MsgItem(
       id: '6',
       name: 'Haley James',
       avatarUrl: '',
@@ -125,6 +162,42 @@ class _MessagePageState extends State<MessagePage> {
       isOnline: true,
     ),
   ];
+
+  late final _menuItems = [
+    OverlayMenuItem(
+      value: 'search',
+      icon: 'icon_search2',
+      label: '搜索用户',
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => const ChatSearchPage(mode: SearchMode.users),
+        ),
+      ),
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChats();
+  }
+
+  Future<void> _loadChats() async {
+    try {
+      final result = await context.read<AppDomain>().fetchChats();
+      if (!mounted) return;
+      setState(() {
+        _items = result.items.map(_MsgItem.fromChatItem).toList();
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _items = List.of(_mockItems);
+        _isLoading = false;
+      });
+    }
+  }
 
   void _pin(String id) {
     setState(() {
@@ -209,31 +282,41 @@ class _MessagePageState extends State<MessagePage> {
 
   // ── 搜索栏 ──────────────────────────────
   Widget _buildSearchBar() {
-    return Padding(
-      padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
-      child: Container(
-        height: 46.w,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FE),
-          borderRadius: BorderRadius.circular(46.r),
-        ),
-        child: TextField(
-          controller: _searchCtrl,
-          style: TextStyle(fontSize: 15.sp, color: Colors.black),
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(vertical: 11.w),
-            prefixIcon: Stack(
-              alignment: Alignment.center,
-              children: [
-                Image.asset("./assets/images/icon_search.png",
-                    width: 24.w, height: 24.w)
-              ],
-            ),
-            hintText: '搜索联系人或聊天记录',
-            hintStyle: TextStyle(
-              fontSize: 15.sp,
-              color: const Color(0xFF90A1B9),
+    return GestureDetector(
+      onTap: () => Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+            builder: (_) =>
+                const ChatSearchPage(mode: SearchMode.contactsAndRecords)),
+      ),
+      child: Padding(
+        padding:
+            EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
+        child: Container(
+          height: 46.w,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FE),
+            borderRadius: BorderRadius.circular(46.r),
+          ),
+          child: AbsorbPointer(
+            child: TextField(
+              controller: _searchCtrl,
+              style: TextStyle(fontSize: 15.sp, color: Colors.black),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 11.w),
+                prefixIcon: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Image.asset("./assets/images/icon_search.png",
+                        width: 24.w, height: 24.w)
+                  ],
+                ),
+                hintText: '搜索联系人或聊天记录',
+                hintStyle: TextStyle(
+                  fontSize: 15.sp,
+                  color: const Color(0xFF90A1B9),
+                ),
+              ),
             ),
           ),
         ),
@@ -247,109 +330,15 @@ class _MessagePageState extends State<MessagePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            height: 32.w,
-          ),
+          SizedBox(height: 32.w),
           Image.asset("./assets/images/empty_message.png", height: 95.w),
-          SizedBox(
-            height: 1.w,
-          ),
+          SizedBox(height: 1.w),
           Text(
             "暂无消息",
             style: TextStyle(fontSize: 14.sp, color: Colors.black),
           ),
-          SizedBox(
-            height: 32.w,
-          ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                "为你推荐",
-                style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF1A1F2C)),
-              ),
-              Spacer(),
-              Text(
-                "关闭",
-                style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF62748E)),
-              ),
-            ],
-          ),
-          SizedBox(
-            height: 15.w,
-          ),
-          for (int i = 0; i < 10; i++)
-            Container(
-              margin: EdgeInsets.only(bottom: 20.w),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40.w,
-                    height: 40.w,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(40.r),
-                      color: const Color(0xFFD1D1D6),
-                    ),
-                    child: Icon(Icons.person, size: 28.sp, color: Colors.white),
-                  ),
-                  SizedBox(
-                    width: 12.w,
-                  ),
-                  Expanded(
-                      child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Sarah Jenks",
-                        style: TextStyle(
-                            color: Color(0xFF0F172B),
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        "5.4w粉丝",
-                        style: TextStyle(
-                            color: Color(0xFF62748E),
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w400),
-                      )
-                    ],
-                  )),
-                  GestureDetector(
-                    child: Container(
-                      height: 33.5.w,
-                      width: 60.w,
-                      decoration: BoxDecoration(
-                        color: i % 2 == 0 ? const Color(0xFF1A1F2C) : null,
-                        border: i % 2 == 0
-                            ? null
-                            : Border.all(
-                                color: const Color(0xFFCCCCCC), width: 1.w),
-                        borderRadius: BorderRadius.circular(100.r),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        i % 2 == 0 ? "已关注" : "关注",
-                        style: TextStyle(
-                          color: i % 2 == 0
-                              ? const Color(0xFFF8F9FE)
-                              : const Color(0xFF1A1F2C),
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            )
+          SizedBox(height: 32.w),
+          const RecommendUsersWidget(),
         ],
       ),
     );
@@ -357,6 +346,10 @@ class _MessagePageState extends State<MessagePage> {
 
   // ── 列表 ────────────────────────────────
   Widget _buildList() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_items.isEmpty) return _buildEmpty();
     // return _buildEmpty();
     return ListView.builder(
       padding: EdgeInsets.only(top: 8.w),

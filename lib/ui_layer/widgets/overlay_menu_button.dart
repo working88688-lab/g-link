@@ -51,7 +51,6 @@ class _OverlayMenuButtonState extends State<OverlayMenuButton> {
       builder: (ctx) => GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: _close,
-        onPanDown: (_) => _close(),
         child: SizedBox.expand(
           child: Stack(
             children: [

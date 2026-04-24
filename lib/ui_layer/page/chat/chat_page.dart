@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../widgets/overlay_menu_button.dart';
+import 'search/search_page.dart';
 
 // ──────────────────────────────────────────
 // 数据模型
@@ -220,18 +221,26 @@ class _ChatPageState extends State<ChatPage> {
           ),
           // Icon(Icons.more_horiz, size: 24.sp, color: const Color(0xFF0F172B)),
           OverlayMenuButton(
-            items: const [
+            items: [
               OverlayMenuItem(
-                  value: 'search', icon: 'icon_chat_search', label: '搜索'),
-              OverlayMenuItem(
+                  value: 'search',
+                  icon: 'icon_chat_search',
+                  label: '搜索',
+                  onTap: () => Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (_) => const ChatSearchPage(
+                              mode: SearchMode.chatRecords),
+                        ),
+                      )),
+              const OverlayMenuItem(
                   value: 'unpin', icon: 'icon_chat_unpin', label: '取消置顶'),
-              OverlayMenuItem(
+              const OverlayMenuItem(
                   value: 'unmute', icon: 'icon_chat_unmute', label: '取消静音'),
-              OverlayMenuItem(
+              const OverlayMenuItem(
                   value: 'clear',
                   icon: 'icon_chat_clear_record',
                   label: '清空聊天'),
-              OverlayMenuItem(
+              const OverlayMenuItem(
                   value: 'report',
                   icon: 'icon_chat_report',
                   label: '投诉',

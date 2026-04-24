@@ -5,7 +5,10 @@ import 'dart:io';
 import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:g_link/data_layer/data_source/chat_service.dart';
 import 'package:g_link/data_layer/repo/http_interceptor.dart';
+import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/model/chat_model.dart';
 import 'package:g_link/data_layer/repo/utils.dart';
 import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/result.dart';
@@ -36,16 +39,16 @@ import 'package:g_link/domain/domains/home.dart';
 
 part 'cache.dart';
 
+part 'mixins/chat_mixin.dart';
 part 'mixins/home_mixin.dart';
 part 'mixins/report_mixin.dart';
 
-class AppRepo extends _BaseAppRepo with _Home, _Report {
-
-}
+class AppRepo extends _BaseAppRepo with _Home, _Report, _Chat {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _reportService = ReportService(_apiDio);
+  late final _chatService = ChatService(_v1Dio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
@@ -63,6 +66,25 @@ abstract class _BaseAppRepo implements AppDomain {
   );
 
   Dio get apiDio => _apiDio;
+
+  /// v1 REST API（Bearer 认证，非加密）
+  late final _v1Dio = Dio(
+    BaseOptions(
+      baseUrl: BuildConfig.v1ApiBase,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    ),
+  )..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final token = _appInfo.token;
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
 
   /// 未加密网路服务/上传资源
   late final _dio = Dio(
@@ -122,16 +144,16 @@ abstract class _BaseAppRepo implements AppDomain {
 
     final info = kIsWeb
         ? {
-      'bundleId': BuildConfig.webBundleId,
-      'version': packageInfo.version,
-      'language': 'zh',
-      'via': 'pwa',
-    }
+            'bundleId': BuildConfig.webBundleId,
+            'version': packageInfo.version,
+            'language': 'zh',
+            'via': 'pwa',
+          }
         : {
-      'bundleId': packageInfo.packageName,
-      'version': packageInfo.version,
-      // "build_affcode": "cweZ2",
-    };
+            'bundleId': packageInfo.packageName,
+            'version': packageInfo.version,
+            // "build_affcode": "cweZ2",
+          };
 
     info.addAll({
       'oauth_id': await _getOAuthId(),
@@ -168,7 +190,7 @@ abstract class _BaseAppRepo implements AppDomain {
 
     if (deviceId == null) {
       deviceId =
-      '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
+          '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
       await _cacheManager.upsertOauthId(deviceId);
     }
     return RepoUtils.gvMD5(deviceId);
