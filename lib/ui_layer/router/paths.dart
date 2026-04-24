@@ -21,6 +21,9 @@ class AppRouterPaths {
   /// 我的
   static const mine = '/mine';
 
+  /// 引导页
+  static const guide = '/guide';
+
 
 
 

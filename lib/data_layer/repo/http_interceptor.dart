@@ -23,6 +23,10 @@ class AutoEncryptAndDecryptInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
+    final skipEncrypt = options.extra['skipEncrypt'] == true;
+    if (skipEncrypt) {
+      return super.onRequest(options, handler);
+    }
     final Map data = {..._appInfo};
     int _req_time = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -45,6 +49,11 @@ class AutoEncryptAndDecryptInterceptor extends Interceptor {
 
   @override
   onResponse(Response response, ResponseInterceptorHandler handler) async {
+    final skipEncrypt = response.requestOptions.extra['skipEncrypt'] == true;
+    if (skipEncrypt) {
+      CommonUtils.log('Result: ${jsonEncode(response.data)}');
+      return super.onResponse(response, handler);
+    }
     if (response.data case final Map data when data['data'] != null) {
       Map<dynamic, dynamic> result = Map.from(response.data);
       response.data =

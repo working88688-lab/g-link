@@ -5,9 +5,9 @@ typedef AsyncJson = Future<Json>;
 typedef AsyncResult<T> = Future<Result<T>>;
 
 extension Helper on Json {
-  int get status => this['status'];
+  int get status => this['status'] ?? this['code'] ?? -1;
   dynamic get data => this['data'];
-  String? get msg => this['msg'];
+  String? get msg => this['msg'] ?? this['message'];
   bool? get crypt => this['crypt'];
   bool? get isVip => this['isVip'];
 }

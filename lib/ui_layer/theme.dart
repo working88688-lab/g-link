@@ -287,6 +287,7 @@ class MyTheme {
 
 
   static const Color primaryColor = Color.fromRGBO(26, 31, 44, 1);
+  static const Color unSelectorColor = Color.fromRGBO(227, 231, 237, 1);
   static const Color darkPrimaryColor = Color.fromRGBO(10, 10, 10, 1);
 
   static const bloodOrange2501046 = Color.fromRGBO(250, 104, 6, 1);
@@ -302,7 +303,6 @@ class MyTheme {
 
   static const blueColor81_151_241 = Color.fromRGBO(55, 110, 246, 1);
 
-  static const blueColor63 = Color.fromRGBO(63, 91, 245, 1);
   static const blueColor64 = Color.fromRGBO(64, 165, 254, 1);
 
   static const cyanColor00edfd = Color.fromRGBO(55, 110, 246, 1);

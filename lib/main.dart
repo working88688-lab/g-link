@@ -6,9 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/data_layer/repo/repo.dart';
+import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/home.dart';
+import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/report.dart';
+import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/report/analytics/analytics_report.dart';
+import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
+import 'package:g_link/ui_layer/notifier/app_feed_notifier.dart';
+import 'package:g_link/ui_layer/notifier/guide_page_notifier.dart';
 import 'package:g_link/ui_layer/notifier/home_config_notifier.dart';
 import 'package:g_link/ui_layer/notifier/user_notifier.dart';
 import 'package:g_link/ui_layer/router/router.dart';
@@ -47,13 +53,19 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<AppDomain>(lazy: false, create: (_) => appRepo),
         Provider<HomeDomain>(lazy: false, create: (_) => appRepo),
+        Provider<ProfileDomain>(lazy: false, create: (_) => appRepo),
         Provider<ReportDomain>(lazy: false, create: (_) => appRepo),
+        Provider<AuthDomain>(lazy: false, create: (_) => appRepo),
         ChangeNotifierProvider(create: (_) => HomeConfigNotifier(appRepo)),
         ChangeNotifierProvider(create: (_) => UserNotifier(appRepo)),
+        ChangeNotifierProvider(create: (_) => GuidePageNotifier()),
+        ChangeNotifierProvider(create: (_) => AppFeedNotifier()),
+        ChangeNotifierProvider(create: (_) => AppChatNotifier()),
       ],
       child: EasyLocalization(
-        supportedLocales: const [Locale('zh', 'CN')],
+        supportedLocales: const [Locale('zh', 'CN'), Locale('en', 'US')],
         fallbackLocale: const Locale('zh', 'CN'),
         path: 'assets/translations',
         child: Container(

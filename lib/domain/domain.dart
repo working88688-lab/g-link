@@ -43,6 +43,28 @@ abstract class CacheDomain
 
   /// 清除搜索记录
   Future<void> clearSearchHistory();
+
+  /// 是否已完成引导页
+  Future<bool> readGuideCompleted();
+
+  /// 更新引导页完成状态
+  Future<void> upsertGuideCompleted(bool completed);
+
+  /// 引导偏好：消息通知
+  Future<bool> readGuidePushNoticeEnabled();
+  Future<void> upsertGuidePushNoticeEnabled(bool enabled);
+
+  /// 引导偏好：短视频自动播放
+  Future<bool> readGuideAutoPlayEnabled();
+  Future<void> upsertGuideAutoPlayEnabled(bool enabled);
+
+  /// 引导偏好：省流模式
+  Future<bool> readGuideDataSaverEnabled();
+  Future<void> upsertGuideDataSaverEnabled(bool enabled);
+
+  /// 引导语言类型: 0=zh-CN, 1=en-US
+  Future<int> readGuideLanguageType();
+  Future<void> upsertGuideLanguageType(int type);
 }
 
 abstract class VideoDownloadCacheDomain {

@@ -25,6 +25,11 @@ class _CacheManager implements CacheDomain {
   final _searchHistoryKey = 'search_history';
   final _downloadVideoTasksKey = 'download_video_tasks';
   final _chatsKey = 'imchats';
+  final _guideCompletedKey = 'guide_completed';
+  final _guidePushNoticeKey = 'guide_push_notice';
+  final _guideAutoPlayKey = 'guide_auto_play';
+  final _guideDataSaverKey = 'guide_data_saver';
+  final _guideLanguageTypeKey = 'guide_language_type';
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -97,7 +102,8 @@ class _CacheManager implements CacheDomain {
   }
 
   Future<List<String>?> readLinesUrl() async {
-    if (await appBox.read(BuildConfig.linesUrlKey) case final data? when data.isNotEmpty) {
+    if (await appBox.read(BuildConfig.linesUrlKey) case final data?
+        when data.isNotEmpty) {
       return List<String>.from(data);
     }
     return null;
@@ -198,6 +204,51 @@ class _CacheManager implements CacheDomain {
 
   @override
   Future<void> clearSearchHistory() => appBox.delete(_searchHistoryKey);
+
+  @override
+  Future<bool> readGuideCompleted() async {
+    return await appBox.read(_guideCompletedKey) ?? false;
+  }
+
+  @override
+  Future<void> upsertGuideCompleted(bool completed) =>
+      appBox.upsert(_guideCompletedKey, completed);
+
+  @override
+  Future<bool> readGuidePushNoticeEnabled() async {
+    return await appBox.read(_guidePushNoticeKey) ?? true;
+  }
+
+  @override
+  Future<void> upsertGuidePushNoticeEnabled(bool enabled) =>
+      appBox.upsert(_guidePushNoticeKey, enabled);
+
+  @override
+  Future<bool> readGuideAutoPlayEnabled() async {
+    return await appBox.read(_guideAutoPlayKey) ?? true;
+  }
+
+  @override
+  Future<void> upsertGuideAutoPlayEnabled(bool enabled) =>
+      appBox.upsert(_guideAutoPlayKey, enabled);
+
+  @override
+  Future<bool> readGuideDataSaverEnabled() async {
+    return await appBox.read(_guideDataSaverKey) ?? false;
+  }
+
+  @override
+  Future<void> upsertGuideDataSaverEnabled(bool enabled) =>
+      appBox.upsert(_guideDataSaverKey, enabled);
+
+  @override
+  Future<int> readGuideLanguageType() async {
+    return await appBox.read(_guideLanguageTypeKey) ?? 0;
+  }
+
+  @override
+  Future<void> upsertGuideLanguageType(int type) =>
+      appBox.upsert(_guideLanguageTypeKey, type);
 
   @override
   Future<List> readDownloadVideoTasks() async {

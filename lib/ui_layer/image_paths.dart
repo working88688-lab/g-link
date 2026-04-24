@@ -1,7 +1,14 @@
 class MyImagePaths {
+  static const cn = './assets/images/cn.png';
   static const appTabDspS = './assets/images/app_tab_dsp_s.png';
+  static const check = './assets/images/check.png';
+  static const iconVolumeOff = './assets/images/icon_volume_off.png';
   static const appTabMineN = './assets/images/app_tab_mine_n.png';
   static const appTabHomeS = './assets/images/app_tab_home_s.png';
+  static const appBackIcon = './assets/images/app_back_icon.png';
+  static const iconSearch = './assets/images/icon_search.png';
+  static const emptyMessage = './assets/images/empty_message.png';
+  static const us = './assets/images/us.png';
   static const logoGradient = './assets/images/logo_gradient.png';
   static const appTabMsgN = './assets/images/app_tab_msg_n.png';
   static const img = './assets/images/img.png';
@@ -10,7 +17,9 @@ class MyImagePaths {
   static const appUpdateUpBg = './assets/images/app_update_up_bg.png';
   static const glinkWhite = './assets/images/glink_white.png';
   static const splash = './assets/images/splash.png';
+  static const iconSearch2 = './assets/images/icon_search2.png';
   static const appAnnouncement = './assets/images/app_announcement.png';
+  static const iconDoneAll = './assets/images/icon_done_all.png';
   static const appDialogClose = './assets/images/app_dialog_close.png';
   static const appLoading = './assets/images/app_loading.gif';
   static const appTabMineS = './assets/images/app_tab_mine_s.png';
@@ -18,6 +27,7 @@ class MyImagePaths {
   static const appZfYtN = './assets/images/app_zf_yt_n.png';
   static const appTabDspN = './assets/images/app_tab_dsp_n.png';
   static const appFxxbbT = './assets/images/app_fxxbb_t.png';
+  static const iconCheck = './assets/images/icon_check.png';
   static const appFigureN = './assets/images/app_figure_n.png';
   static const appTabMsgS = './assets/images/app_tab_msg_s.png';
   static const appCancelWithCircle = './assets/images/app_cancel_with_circle.png';

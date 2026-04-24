@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:provider/provider.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -43,6 +45,9 @@ class CustomBottomNavBar extends StatelessWidget {
                   3,
                   MyImagePaths.appTabMsgN,
                   MyImagePaths.appTabMsgS,
+                  badgeCount: context.select<AppChatNotifier, int>(
+                    (n) => n.totalUnread,
+                  ),
                 ),
                 _buildTabItem(
                   4,
@@ -87,17 +92,50 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTabItem(int index, String icon, String activeIcon) {
+  Widget _buildTabItem(
+    int index,
+    String icon,
+    String activeIcon, {
+    int badgeCount = 0,
+  }) {
     final isActive = index == currentIndex;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTap(index),
       child: Padding(
         padding: EdgeInsets.all(4.w),
-        child: Image.asset(
-          isActive ? activeIcon : icon,
-          width: 30.w,
-          height: 30.w,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Image.asset(
+              isActive ? activeIcon : icon,
+              width: 30.w,
+              height: 30.w,
+            ),
+            if (badgeCount > 0)
+              Positioned(
+                right: -6.w,
+                top: -4.w,
+                child: Container(
+                  constraints: BoxConstraints(minWidth: 16.w),
+                  height: 16.w,
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF2056),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? '99+' : '$badgeCount',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

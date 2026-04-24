@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 class BuildConfig {
+  /// 业务 API 默认域名
+  static const apiBaseUrl = 'https://api.zywsbgha.cc';
+
   //android
   static const key = kIsWeb ? 'b78ce48964cffd68' : '2f2c6c47efd3db9e';
   static const iv = kIsWeb ? 'd82e851b5811f3a7' : 'f875148e9d362d00';

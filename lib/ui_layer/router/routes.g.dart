@@ -8,7 +8,9 @@ part of 'routes.dart';
 
 List<RouteBase> get $appRoutes => [
       $welcomeRoute,
+      $loginRoute,
       $statefulShellRoute,
+      $guideRoute,
     ];
 
 RouteBase get $welcomeRoute => GoRouteData.$route(
@@ -21,6 +23,28 @@ extension $WelcomeRouteExtension on WelcomeRoute {
 
   String get location => GoRouteData.$location(
         '/',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $loginRoute => GoRouteData.$route(
+      path: '/login',
+      factory: $LoginRouteExtension._fromState,
+    );
+
+extension $LoginRouteExtension on LoginRoute {
+  static LoginRoute _fromState(GoRouterState state) => const LoginRoute();
+
+  String get location => GoRouteData.$location(
+        '/login',
       );
 
   void go(BuildContext context) => context.go(location);
@@ -158,6 +182,28 @@ extension $MineRouteExtension on MineRoute {
 
   String get location => GoRouteData.$location(
         '/mine',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $guideRoute => GoRouteData.$route(
+      path: '/guide',
+      factory: $GuideRouteExtension._fromState,
+    );
+
+extension $GuideRouteExtension on GuideRoute {
+  static GuideRoute _fromState(GoRouterState state) => const GuideRoute();
+
+  String get location => GoRouteData.$location(
+        '/guide',
       );
 
   void go(BuildContext context) => context.go(location);

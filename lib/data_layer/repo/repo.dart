@@ -8,6 +8,8 @@ import 'package:dio/dio.dart';
 import 'package:g_link/data_layer/repo/http_interceptor.dart';
 import 'package:g_link/data_layer/repo/utils.dart';
 import 'package:g_link/domain/domains/report.dart';
+import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/result.dart';
 import 'package:g_link/report/ui_layer/report_timing_interceptor.dart';
 import 'package:g_link/utils/common_utils.dart';
@@ -23,10 +25,14 @@ import 'package:http_parser/http_parser.dart';
 import 'package:g_link/app_config.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/domain/model/ad_model.dart';
+import 'package:g_link/domain/model/profile_models.dart';
+import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
 import 'package:g_link/data_layer/data_source/home_service.dart';
+import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
+import 'package:g_link/data_layer/data_source/auth_service.dart';
 
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/enum.dart';
@@ -38,14 +44,16 @@ part 'cache.dart';
 
 part 'mixins/home_mixin.dart';
 part 'mixins/report_mixin.dart';
+part 'mixins/profile_mixin.dart';
+part 'mixins/auth_mixin.dart';
 
-class AppRepo extends _BaseAppRepo with _Home, _Report {
-
-}
+class AppRepo extends _BaseAppRepo with _Home, _Report, _Profile, _Auth {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _reportService = ReportService(_apiDio);
+  late final _profileService = ProfileService(_apiDio);
+  late final _authService = AuthService(_apiDio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
@@ -56,6 +64,7 @@ abstract class _BaseAppRepo implements AppDomain {
 
   late final _apiDio = Dio(
     BaseOptions(
+      baseUrl: BuildConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 5),
       contentType: Headers.formUrlEncodedContentType,
@@ -122,16 +131,16 @@ abstract class _BaseAppRepo implements AppDomain {
 
     final info = kIsWeb
         ? {
-      'bundleId': BuildConfig.webBundleId,
-      'version': packageInfo.version,
-      'language': 'zh',
-      'via': 'pwa',
-    }
+            'bundleId': BuildConfig.webBundleId,
+            'version': packageInfo.version,
+            'language': 'zh',
+            'via': 'pwa',
+          }
         : {
-      'bundleId': packageInfo.packageName,
-      'version': packageInfo.version,
-      // "build_affcode": "cweZ2",
-    };
+            'bundleId': packageInfo.packageName,
+            'version': packageInfo.version,
+            // "build_affcode": "cweZ2",
+          };
 
     info.addAll({
       'oauth_id': await _getOAuthId(),
@@ -168,7 +177,7 @@ abstract class _BaseAppRepo implements AppDomain {
 
     if (deviceId == null) {
       deviceId =
-      '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
+          '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
       await _cacheManager.upsertOauthId(deviceId);
     }
     return RepoUtils.gvMD5(deviceId);
@@ -182,7 +191,12 @@ abstract class _BaseAppRepo implements AppDomain {
   }) async {}
 
   @override
-  void setBaseURL(String url) async {}
+  void setBaseURL(String url) async {
+    if (url.isEmpty) {
+      return;
+    }
+    _apiDio.options.baseUrl = url;
+  }
 
   @override
   void setInstallFlag(String flag) {}

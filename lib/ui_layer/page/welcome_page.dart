@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
-import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/theme/theme_manager.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -32,7 +33,20 @@ class _WelcomePageState extends State<WelcomePage> {
 
   void _routeOnboardingPage() async {
     _timer?.cancel();
-    const HomeRoute().go(context);
+    final appDomain = context.read<AppDomain>();
+    final hasToken = (appDomain.info['token'] ?? '').toString().isNotEmpty;
+    if (!hasToken) {
+      if (!mounted) return;
+      const LoginRoute().go(context);
+      return;
+    }
+    final guided = await appDomain.cache.readGuideCompleted();
+    if (!mounted) return;
+    if (guided) {
+      const HomeRoute().go(context);
+      return;
+    }
+    const GuideRoute().go(context);
   }
 
   @override

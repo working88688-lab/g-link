@@ -5,6 +5,7 @@ import 'package:analytics_sdk/analytics_sdk.dart';
 import 'package:analytics_sdk/manager/page_name_manager.dart';
 import 'package:analytics_sdk/observer/page_lifecycle_observer.dart';
 import 'package:bot_toast/bot_toast.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,7 @@ import 'package:g_link/ui_layer/notifier/home_config_notifier.dart';
 import 'package:g_link/ui_layer/notifier/user_notifier.dart';
 import 'package:g_link/ui_layer/widgets/custom_bottom_nav_bar.dart';
 import 'package:g_link/ui_layer/theme.dart';
+import 'package:g_link/ui_layer/theme/app_design.dart';
 import 'package:g_link/ui_layer/theme/theme_manager.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:g_link/ui_layer/widgets/pop_scope_wrapper.dart';
@@ -132,14 +134,14 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => RegularDialog(
-        title: '温馨提示',
+        title: 'updateDialogTitle'.tr(),
         content: Text(
-          '为避免失联，请定期更新app至最新版～',
+          'updateDialogContent'.tr(),
           style: MyTheme.white255_14,
           textAlign: TextAlign.center,
         ),
-        cancelText: '取消',
-        buttonText: '前往更新',
+        cancelText: 'commonCancel'.tr(),
+        buttonText: 'updateDialogGoUpdate'.tr(),
         cancelOnTap: () {
           Navigator.of(ctx).pop();
           // 更新本地key（不再重复提醒），继续展示广告/公告
@@ -278,7 +280,7 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
         child: Stack(
           children: [
             Scaffold(
-              backgroundColor: Colors.white,
+              backgroundColor: AppDesign.bg,
               body: widget.navigationShell,
               bottomNavigationBar: DecoratedBox(
                 decoration: const BoxDecoration(
