@@ -54,7 +54,8 @@ class AutoEncryptAndDecryptInterceptor extends Interceptor {
       CommonUtils.log('Result: ${jsonEncode(response.data)}');
       return super.onResponse(response, handler);
     }
-    if (response.data case final Map data when data['data'] != null) {
+    if (response.data case final Map data
+        when data['data'] != null && data['data'] is String) {
       Map<dynamic, dynamic> result = Map.from(response.data);
       response.data =
           await fd.compute(PlatformAwareCrypto.decryptResData, response.data);

@@ -8,7 +8,8 @@ class _CacheManager implements CacheDomain {
   late final ICache videoBox;
 
   final _oauthIdKey = 'oauth_id';
-  final _authTokenKey = 'wwsj_token';
+  final _authTokenKey = 'app_token';
+  final _refreshTokenKey = 'refresh_token';
   final _fdsKey = 'fds_key';
   final _githubKey = 'github_url';
   final _reportKey = 'report_url';
@@ -66,6 +67,13 @@ class _CacheManager implements CacheDomain {
       ? appBox.delete(_authTokenKey)
       : appBox.upsert(_authTokenKey, token);
   Future<void> deleteAuthToken() => appBox.delete(_authTokenKey);
+
+  Future<String?> readRefreshToken() async =>
+      (await appBox.read(_refreshTokenKey))?.toString();
+  Future<void> upsertRefreshToken(String? token) => token == null
+      ? appBox.delete(_refreshTokenKey)
+      : appBox.upsert(_refreshTokenKey, token);
+  Future<void> deleteRefreshToken() => appBox.delete(_refreshTokenKey);
 
   Future<String?> readOauthId() async =>
       (await appBox.read(_oauthIdKey))?.toString();

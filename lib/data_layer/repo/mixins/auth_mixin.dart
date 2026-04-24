@@ -18,7 +18,7 @@ mixin _Auth on _BaseAppRepo implements AuthDomain {
         .deserializeJsonBy(AuthResultData.fromJson)
         .guard;
     if (parsed.data case final data?) {
-      _updateToken(data.tokens.accessToken);
+      _updateToken(data.tokens.accessToken, data.tokens.refreshToken);
     }
     return parsed;
   }
@@ -50,7 +50,7 @@ mixin _Auth on _BaseAppRepo implements AuthDomain {
         .deserializeJsonBy(AuthResultData.fromJson)
         .guard;
     if (parsed.data case final data?) {
-      _updateToken(data.tokens.accessToken);
+      _updateToken(data.tokens.accessToken, data.tokens.refreshToken);
     }
     return parsed;
   }

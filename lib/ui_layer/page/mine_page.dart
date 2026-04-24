@@ -1,12 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/profile_models.dart';
-import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/notifier/profile_notifier.dart';
-import 'package:g_link/ui_layer/theme/app_design.dart';
-import 'package:g_link/ui_layer/widgets/app_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 class MinePage extends StatefulWidget {
@@ -17,6 +13,8 @@ class MinePage extends StatefulWidget {
 }
 
 class _MinePageState extends State<MinePage> {
+  int _tabIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -28,369 +26,337 @@ class _MinePageState extends State<MinePage> {
         ),
       ],
       child: Scaffold(
-        backgroundColor: AppDesign.bg,
-        appBar: AppBar(
-          title: Text('mineTitle'.tr(), style: AppDesign.appBarTitle),
-          actions: [
-            IconButton(
-              onPressed: () => _openSettingsSheet(context),
-              icon: const Icon(Icons.settings_outlined),
-            ),
-          ],
-        ),
-        body: Consumer<MineNotifier>(
-          builder: (context, notifier, _) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              children: [
-                _buildProfileLoadStatus(context),
-                _buildProfileCard(context, notifier),
-                AppDesign.sectionGap,
-                _buildMetrics(context, notifier),
-                AppDesign.sectionGap,
-                _buildUserVideoSection(context),
-                AppDesign.sectionGap,
-                ..._buildMenus(context, notifier),
-              ],
-            );
-          },
-        ),
+        backgroundColor: const Color(0xFFF0F1F5),
+        body: Consumer<MineNotifier>(builder: (context, notifier, _) {
+          final profile =
+              context.select<ProfileNotifier, UserProfile?>((n) => n.profile);
+          final videos = context
+              .select<ProfileNotifier, List<UserVideoItem>>((n) => n.videos);
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildTopHero(
+                  context: context,
+                  notifier: notifier,
+                  profile: profile,
+                  videos: videos,
+                ),
+              ),
+              SliverToBoxAdapter(child: _buildProfileLoadStatus(context)),
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(18)),
+                  ),
+                  child: _buildTabs(),
+                ),
+              ),
+              _buildMediaContent(context),
+            ],
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildProfileCard(BuildContext context, MineNotifier notifier) {
-    final profile =
-        context.select<ProfileNotifier, UserProfile?>((n) => n.profile);
+  Widget _buildTopHero({
+    required BuildContext context,
+    required MineNotifier notifier,
+    required UserProfile? profile,
+    required List<UserVideoItem> videos,
+  }) {
+    final cover = videos.isNotEmpty ? videos.first.coverUrl : '';
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1F2C), Color(0xFF364153)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Row(
+      color: Colors.white,
+      child: Stack(
         children: [
-          const CircleAvatar(
-            radius: 28,
-            backgroundImage: AssetImage('assets/images/logo_gradient.png'),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(
+            height: 252,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                Text(
-                  profile?.nickname.isNotEmpty == true
-                      ? profile!.nickname
-                      : 'mineUserTitle',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                if (cover.isNotEmpty)
+                  Image.network(
+                    cover,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        Container(color: const Color(0xFF30333A)),
+                  )
+                else
+                  Container(color: const Color(0xFF30333A)),
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x55000000), Color(0xCC1B1E24)],
+                    ),
                   ),
-                ).tr(),
-                const SizedBox(height: 4),
-                Text(
-                  (profile?.bio.isNotEmpty == true)
-                      ? profile!.bio
-                      : notifier.signature(context),
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
             ),
           ),
-          OutlinedButton(
-            onPressed: notifier.switchSignature,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white70),
-              foregroundColor: Colors.white,
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 2,
+            left: 8,
+            right: 8,
+            child: Row(
+              children: [
+                const SizedBox(width: 44, height: 44),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => context
+                      .read<ProfileNotifier>()
+                      .fetchProfileAndVideos(uid: 5001),
+                  icon:
+                      const Icon(Icons.settings_outlined, color: Colors.white),
+                ),
+              ],
             ),
-            child: Text('mineSwitchSignature'.tr()),
+          ),
+          Padding(
+            padding:
+                EdgeInsets.only(top: MediaQuery.of(context).padding.top + 54),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 37,
+                  backgroundColor: Colors.white24,
+                  backgroundImage: (profile?.avatarUrl.isNotEmpty == true)
+                      ? NetworkImage(profile!.avatarUrl)
+                      : const AssetImage('assets/images/logo_gradient.png')
+                          as ImageProvider,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  profile?.nickname.isNotEmpty == true
+                      ? profile!.nickname
+                      : 'mineUserTitle'.tr(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profile?.bio.isNotEmpty == true
+                      ? profile!.bio
+                      : notifier.signature(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      const TextStyle(color: Color(0xFFD3D7DF), fontSize: 12),
+                ),
+                const SizedBox(height: 14),
+                _buildMetrics(context, notifier, profile),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMetrics(BuildContext context, MineNotifier notifier) {
-    final profile =
-        context.select<ProfileNotifier, UserProfile?>((n) => n.profile);
-    Widget item(String title, String value) {
+  Widget _buildMetrics(
+    BuildContext context,
+    MineNotifier notifier,
+    UserProfile? profile,
+  ) {
+    Widget item(String value, String title) {
       return Expanded(
         child: Column(
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                height: 1.1,
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(title,
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              style: const TextStyle(color: Color(0xFFC8CDD8), fontSize: 12),
+            ),
           ],
         ),
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(AppDesign.cardRadius),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
+          item('${profile?.videoCount ?? notifier.following}',
+              'mineFollowCount'.tr()),
+          item('${profile?.followerCount ?? notifier.followers}',
+              'mineFansCount'.tr()),
           item(
-            'mineFollowCount'.tr(),
-            '${profile?.followingCount ?? notifier.following}',
+              '${profile?.likeCount ?? notifier.likes}', 'mineLikesCount'.tr()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabs() {
+    return Container(
+      height: 38,
+      child: Row(
+        children: [
+          _buildTabItem(0, '帖子'),
+          const SizedBox(width: 18),
+          _buildTabItem(1, 'shortVideoTitle'.tr()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem(int index, String title) {
+    final active = _tabIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _tabIndex = index),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: active ? const Color(0xFF22252D) : const Color(0xFF9AA2B1),
+              fontSize: 15,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            ),
           ),
-          item(
-            'mineFansCount'.tr(),
-            '${profile?.followerCount ?? notifier.followers}',
-          ),
-          item(
-            'mineLikesCount'.tr(),
-            '${profile?.likeCount ?? notifier.likes}',
+          const SizedBox(height: 6),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 2,
+            width: 24,
+            decoration: BoxDecoration(
+              color: active ? const Color(0xFF242933) : Colors.transparent,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildUserVideoSection(BuildContext context) {
+  Widget _buildMediaContent(BuildContext context) {
     return Consumer<ProfileNotifier>(
       builder: (_, notifier, __) {
         if (notifier.loadingVideos) {
-          return const Center(child: CircularProgressIndicator());
+          return const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
         }
         if (notifier.errorMessage != null && notifier.videos.isEmpty) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                notifier.errorMessage!,
-                style: TextStyle(color: Colors.red.shade400),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => context
-                    .read<ProfileNotifier>()
-                    .fetchProfileAndVideos(uid: 5001),
-                child: Text('commonRetry'.tr()),
-              ),
-            ],
-          );
-        }
-        if (notifier.videos.isEmpty) {
-          return Text(
-            'messageEmpty'.tr(),
-            style: TextStyle(color: Colors.grey.shade600),
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'shortVideoTitle'.tr(),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: notifier.videos.length.clamp(0, 6),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 9 / 14,
-              ),
-              itemBuilder: (_, i) {
-                final video = notifier.videos[i];
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(color: Colors.grey.shade300),
-                      if (video.coverUrl.isNotEmpty)
-                        Image.network(video.coverUrl, fit: BoxFit.cover),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 4,
-                          ),
-                          child: Text(
-                            video.title.isEmpty
-                                ? 'Video #${video.id}'
-                                : video.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  List<Widget> _buildMenus(BuildContext context, MineNotifier notifier) {
-    final menu = <({IconData icon, String title, String? action})>[
-      (
-        icon: Icons.settings_outlined,
-        title: 'mineMenuSettings'.tr(),
-        action: 'settings'
-      ),
-      (
-        icon: Icons.bookmark_outline_rounded,
-        title: 'mineMenuCollections'.tr(),
-        action: null
-      ),
-      (
-        icon: Icons.history_rounded,
-        title: 'mineMenuHistory'.tr(),
-        action: null
-      ),
-      (
-        icon: Icons.verified_user_outlined,
-        title: 'mineMenuSecurity'.tr(),
-        action: null
-      ),
-      (
-        icon: Icons.help_outline_rounded,
-        title: 'mineMenuHelp'.tr(),
-        action: null
-      ),
-      (
-        icon: Icons.restart_alt_rounded,
-        title: 'mineMenuResetGuide'.tr(),
-        action: 'resetGuide'
-      ),
-      (
-        icon: Icons.auto_awesome_rounded,
-        title: 'mineMenuReenterGuide'.tr(),
-        action: 'goGuide'
-      ),
-    ];
-
-    return menu
-        .map(
-          (item) => Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            child: ListTile(
-              leading: Icon(item.icon),
-              title: Text(item.title),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () =>
-                  _onMenuTap(context, notifier, item.title, item.action),
-            ),
-          ),
-        )
-        .toList();
-  }
-
-  Future<void> _onMenuTap(
-    BuildContext context,
-    MineNotifier notifier,
-    String title,
-    String? action,
-  ) async {
-    switch (action) {
-      case 'settings':
-        _openSettingsSheet(context);
-        return;
-      case 'resetGuide':
-        await context.read<AppDomain>().cache.upsertGuideCompleted(false);
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('mineGuideResetDone'.tr())),
-        );
-        return;
-      case 'goGuide':
-        await context.read<AppDomain>().cache.upsertGuideCompleted(false);
-        if (!context.mounted) return;
-        const GuideRoute().go(context);
-        return;
-      default:
-        notifier.increaseTapCount();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$title 点击 ${notifier.tapCount} 次')),
-        );
-    }
-  }
-
-  Future<void> _openSettingsSheet(BuildContext context) async {
-    final appDomain = context.read<AppDomain>();
-    bool pushNotice = await appDomain.cache.readGuidePushNoticeEnabled();
-    bool darkMode = await appDomain.cache.readGuideDataSaverEnabled();
-    if (!context.mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (_, setSheetState) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+          return SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SwitchListTile(
-                    title: Text('mineSettingPush'.tr()),
-                    value: pushNotice,
-                    onChanged: (value) async {
-                      setSheetState(() => pushNotice = value);
-                      await appDomain.cache.upsertGuidePushNoticeEnabled(value);
-                    },
+                  Text(
+                    notifier.errorMessage!,
+                    style: TextStyle(color: Colors.red.shade400),
                   ),
-                  SwitchListTile(
-                    title: Text('mineSettingDark'.tr()),
-                    value: darkMode,
-                    onChanged: (value) async {
-                      setSheetState(() => darkMode = value);
-                      await appDomain.cache.upsertGuideDataSaverEnabled(value);
-                    },
-                  ),
-                  ListTile(
-                    title: Text('mineSettingClearCache'.tr()),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () async {
-                      Navigator.of(ctx).pop();
-                      await AppBottomSheet.showSimpleList(
-                        context: context,
-                        title: 'mineSettingClearCache'.tr(),
-                        items: [
-                          'mineCacheCleared1'.tr(),
-                          'mineCacheCleared2'.tr(),
-                          'mineCacheCleared3'.tr(),
-                        ],
-                        leadingIcon: Icons.cleaning_services_outlined,
-                      );
-                    },
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => context
+                        .read<ProfileNotifier>()
+                        .fetchProfileAndVideos(uid: 5001),
+                    child: Text('commonRetry'.tr()),
                   ),
                 ],
               ),
-            );
-          },
+            ),
+          );
+        }
+
+        if (_tabIndex == 0) {
+          return SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+              child: Text(
+                'messageEmpty'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF8C95A4), fontSize: 13),
+              ),
+            ),
+          );
+        }
+
+        if (notifier.videos.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+              child: Text(
+                'messageEmpty'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF8C95A4), fontSize: 13),
+              ),
+            ),
+          );
+        }
+
+        return SliverPadding(
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 24),
+          sliver: SliverGrid.builder(
+            itemCount: notifier.videos.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+              childAspectRatio: 0.74,
+            ),
+            itemBuilder: (_, i) {
+              final video = notifier.videos[i];
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(color: const Color(0xFFE5E7ED)),
+                    if (video.coverUrl.isNotEmpty)
+                      Image.network(video.coverUrl, fit: BoxFit.cover),
+                    Positioned(
+                      right: 4,
+                      bottom: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${video.playCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -401,11 +367,11 @@ class _MinePageState extends State<MinePage> {
       builder: (_, notifier, __) {
         if (!notifier.authExpired) return const SizedBox.shrink();
         return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(10),
+          margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+          padding: const EdgeInsets.all(10.5),
           decoration: BoxDecoration(
             color: const Color(0xFFFFF4ED),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             children: [
@@ -430,7 +396,6 @@ class MineNotifier extends ChangeNotifier {
   int following = 248;
   int followers = 1632;
   int likes = 8912;
-  int tapCount = 0;
   bool _useAltSignature = false;
 
   String signature(BuildContext context) =>
@@ -438,11 +403,6 @@ class MineNotifier extends ChangeNotifier {
 
   void switchSignature() {
     _useAltSignature = !_useAltSignature;
-    notifyListeners();
-  }
-
-  void increaseTapCount() {
-    tapCount++;
     notifyListeners();
   }
 }

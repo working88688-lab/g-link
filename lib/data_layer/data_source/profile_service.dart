@@ -8,7 +8,8 @@ class ProfileService extends BaseService {
   @override
   final service = 'v1';
 
-  AsyncJson getUserProfile({required int uid}) => get('/users/$uid');
+  AsyncJson getUserProfile({required int uid}) =>
+      get('/users/$uid', encrypted: false);
 
   AsyncJson getUserVideos({
     required int uid,
@@ -21,7 +22,8 @@ class ProfileService extends BaseService {
           if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
           if (limit != null) 'limit': limit,
         },
+        encrypted: false,
       );
 
-  AsyncJson getInterests() => get('/interests');
+  AsyncJson getInterests() => get('/interests', encrypted: false);
 }

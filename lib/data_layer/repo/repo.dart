@@ -120,9 +120,11 @@ abstract class _BaseAppRepo implements AppDomain {
     } catch (_) {}
   }
 
-  void _updateToken(String token) {
+  void _updateToken(String token, String refreshToken) {
     _appInfo.token = token;
+    _appInfo.refreshToken = refreshToken;
     _cacheManager.upsertAuthToken(token);
+    _cacheManager.upsertRefreshToken(refreshToken);
     _tokenValidStreamController.sink.add(MyTokenStatus.valid);
   }
 
@@ -338,6 +340,19 @@ extension _MapHelper on Map {
       remove(_tokenKey);
     } else {
       this[_tokenKey] = value;
+    }
+  }
+
+  String get _refreshTokenKey => 'refresh_token';
+
+  void removeRefreshToken() => remove(_refreshTokenKey);
+
+  String? get refreshToken => this[_refreshTokenKey];
+  set refreshToken(String? value) {
+    if (value == null) {
+      remove(_refreshTokenKey);
+    } else {
+      this[_refreshTokenKey] = value;
     }
   }
 }
