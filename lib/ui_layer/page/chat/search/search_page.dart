@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 import './search_subviews.dart';
 
 // ─────────────────────────────────────────
@@ -47,7 +49,9 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
   void initState() {
     super.initState();
     // 只有 消息/联系人 模式才有初始（历史记录）页
-    _sub = widget.mode == SearchMode.contactsAndRecords ? _Sub.initial : _Sub.results;
+    _sub = widget.mode == SearchMode.contactsAndRecords
+        ? _Sub.initial
+        : _Sub.results;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -104,7 +108,10 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
           ? AppBar(
               backgroundColor: Colors.white,
               title: Text("搜索用户",
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: const Color(0xFF1D293D))),
+                  style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1D293D))),
               centerTitle: true,
               elevation: 0,
             )
@@ -166,7 +173,9 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
           contentPadding: EdgeInsets.symmetric(vertical: 9.w, horizontal: 8.w),
           prefixIcon: Stack(
             alignment: Alignment.center,
-            children: [Image.asset("./assets/images/icon_search.png", width: 22.w, height: 22.w)],
+            children: [
+              MyImage.asset(MyImagePaths.iconSearch, width: 22.w, height: 22.w)
+            ],
           ),
           prefixIconConstraints: BoxConstraints(minWidth: 40.w),
           hintText: '搜索',
@@ -179,7 +188,8 @@ class _ChatSearchPageState extends State<ChatSearchPage> {
                   onTap: _clearQuery,
                   child: Padding(
                     padding: EdgeInsets.only(right: 12.w),
-                    child: Image.asset("./assets/images/icon_input_clear.png", width: 24.w, height: 24.w),
+                    child: MyImage.asset(MyImagePaths.iconInputClear,
+                        width: 24.w, height: 24.w),
                   ),
                 )
               : null,

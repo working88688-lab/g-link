@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/model/chat_model.dart';
+import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'chat_page.dart';
 import 'search/search_page.dart';
 import 'widgets/recommend_users_widget.dart';
@@ -307,7 +309,7 @@ class _MessagePageState extends State<MessagePage> {
                 prefixIcon: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Image.asset("./assets/images/icon_search.png",
+                    MyImage.asset(MyImagePaths.iconSearch,
                         width: 24.w, height: 24.w)
                   ],
                 ),
@@ -331,7 +333,7 @@ class _MessagePageState extends State<MessagePage> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(height: 32.w),
-          Image.asset("./assets/images/empty_message.png", height: 95.w),
+          MyImage.asset(MyImagePaths.emptyMessage, height: 95.w),
           SizedBox(height: 1.w),
           Text(
             "暂无消息",
@@ -655,7 +657,7 @@ class _MsgTile extends StatelessWidget {
             ),
             if (item.isMuted) ...[
               SizedBox(width: 4.w),
-              Image.asset("./assets/images/icon_volume_off.png",
+              MyImage.asset(MyImagePaths.iconVolumeOff,
                   width: 16.w, height: 16.w),
             ],
           ],
@@ -686,8 +688,10 @@ class _MsgTile extends StatelessWidget {
           children: [
             if (item.readStatus == ReadStatus.sent ||
                 item.readStatus == ReadStatus.delivered)
-              Image.asset(
-                  "./assets/images/${(item.readStatus == ReadStatus.sent ? "icon_check" : "icon_done_all")}.png",
+              MyImage.asset(
+                  item.readStatus == ReadStatus.sent
+                      ? MyImagePaths.iconCheck
+                      : MyImagePaths.iconDoneAll,
                   width: 14.w,
                   height: 14.w),
             SizedBox(width: 2.w),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../image_paths.dart';
+import 'my_image.dart';
 
 // ──────────────────────────────────────────
 // 下拉菜单数据模型
@@ -93,8 +95,8 @@ class _OverlayMenuButtonState extends State<OverlayMenuButton> {
                                         e.color ?? const Color(0xFF0F172B),
                                         BlendMode.srcIn,
                                       ),
-                                      child: Image.asset(
-                                        './assets/images/${e.icon}.png',
+                                      child: MyImage.asset(
+                                        e.icon,
                                         width: 20.w,
                                         height: 20.w,
                                       ),

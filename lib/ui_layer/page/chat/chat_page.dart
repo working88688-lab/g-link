@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../image_paths.dart';
+import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
 import 'search/search_page.dart';
 
@@ -224,7 +226,7 @@ class _ChatPageState extends State<ChatPage> {
             items: [
               OverlayMenuItem(
                   value: 'search',
-                  icon: 'icon_chat_search',
+                  icon: MyImagePaths.iconChatSearch,
                   label: '搜索',
                   onTap: () => Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
@@ -233,21 +235,25 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                       )),
               const OverlayMenuItem(
-                  value: 'unpin', icon: 'icon_chat_unpin', label: '取消置顶'),
+                  value: 'unpin',
+                  icon: MyImagePaths.iconChatUnpin,
+                  label: '取消置顶'),
               const OverlayMenuItem(
-                  value: 'unmute', icon: 'icon_chat_unmute', label: '取消静音'),
+                  value: 'unmute',
+                  icon: MyImagePaths.iconChatUnmute,
+                  label: '取消静音'),
               const OverlayMenuItem(
                   value: 'clear',
-                  icon: 'icon_chat_clear_record',
+                  icon: MyImagePaths.iconChatClearRecord,
                   label: '清空聊天'),
               const OverlayMenuItem(
                   value: 'report',
-                  icon: 'icon_chat_report',
+                  icon: MyImagePaths.iconChatReport,
                   label: '投诉',
                   color: Color(0xFFFF2056)),
             ],
-            child: Image.asset(
-              './assets/images/icon_chat_more.png',
+            child: MyImage.asset(
+              MyImagePaths.iconChatMore,
               width: 24.w,
               height: 24.w,
             ),
@@ -395,8 +401,8 @@ class _ChatPageState extends State<ChatPage> {
           // 麦克风
           GestureDetector(
             onTap: () {},
-            child: Image.asset("./assets/images/icon_mic.png",
-                width: 24.w, height: 24.w),
+            child:
+                MyImage.asset(MyImagePaths.iconMic, width: 24.w, height: 24.w),
           ),
           SizedBox(width: 12.w),
           // 输入框
@@ -432,8 +438,8 @@ class _ChatPageState extends State<ChatPage> {
                     onTap: () {},
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.w),
-                      child: Image.asset(
-                        "./assets/images/icon_emoji.png",
+                      child: MyImage.asset(
+                        MyImagePaths.iconEmoji,
                         width: 24.w,
                         height: 24.w,
                       ),
@@ -482,7 +488,7 @@ class _ChatPageState extends State<ChatPage> {
                           color: const Color(0xFFD1D1D6), width: 1.5.w),
                       shape: BoxShape.circle,
                     ),
-                    child: Image.asset("./assets/images/icon_chat_plus.png",
+                    child: MyImage.asset(MyImagePaths.iconChatPlus,
                         width: 22.w, height: 22.w)),
           ),
         ],
@@ -510,8 +516,8 @@ class _ChatPageState extends State<ChatPage> {
               mainAxisSpacing: 25.w,
               childAspectRatio: 46 / 67,
               children: [
-                _PanelItem(icon: "icon_chat_album", label: '相册'),
-                _PanelItem(icon: "icon_chat_camera", label: '拍摄'),
+                _PanelItem(icon: MyImagePaths.iconChatAlbum, label: '相册'),
+                _PanelItem(icon: MyImagePaths.iconChatCamera, label: '拍摄'),
               ],
             ),
           ),
@@ -543,8 +549,7 @@ class _PanelItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(10.r),
           ),
           child: Align(
-            child: Image.asset("./assets/images/$icon.png",
-                width: 24.w, height: 24.w),
+            child: MyImage.asset(icon, width: 24.w, height: 24.w),
           ),
         ),
         Spacer(),
@@ -600,8 +605,8 @@ class _TextBubble extends StatelessWidget {
             Positioned(
               right: 0,
               bottom: 0,
-              child: Image.asset(
-                "./assets/images/icon_done_all.png",
+              child: MyImage.asset(
+                MyImagePaths.iconDoneAll,
                 width: 14.w,
                 height: 14.w,
               ),
