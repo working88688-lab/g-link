@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
-import 'package:g_link/ui_layer/page/message_page.dart';
+import 'package:g_link/ui_layer/page/chat/message_page.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video_page.dart';
@@ -86,21 +86,24 @@ class ShortVideoRoute extends GoRouteData {
   const ShortVideoRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const ShortVideoPage();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const ShortVideoPage();
 }
 
 class PublishRoute extends GoRouteData {
   const PublishRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const PublishPage();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const PublishPage();
 }
 
 class MessageRoute extends GoRouteData {
   const MessageRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const MessagePage();
+  Widget build(BuildContext context, GoRouterState state) =>
+      const MessagePage();
 }
 
 class MineRoute extends GoRouteData {
