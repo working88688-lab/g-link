@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'chat_page.dart';
+import '../widgets/overlay_menu_button.dart';
 
 // ──────────────────────────────────────────
 // 数据模型
@@ -64,97 +65,10 @@ class MessagePage extends StatefulWidget {
 class _MessagePageState extends State<MessagePage> {
   final _searchCtrl = TextEditingController();
   final _openIdNotifier = ValueNotifier<String?>(null);
-  final _addBtnKey = GlobalKey();
 
   static const _menuItems = [
-    (value: 'search', icon: "icon_search2", label: '搜索用户'),
+    OverlayMenuItem(value: 'search', icon: 'icon_search2', label: '搜索用户'),
   ];
-
-  OverlayEntry? _menuOverlay;
-
-  void _showAddMenu() {
-    final btn = _addBtnKey.currentContext!.findRenderObject() as RenderBox;
-    final overlayState = Navigator.of(context).overlay!;
-    final overlayBox = overlayState.context.findRenderObject() as RenderBox;
-    final btnPos = btn.localToGlobal(Offset.zero, ancestor: overlayBox);
-    final double top = btnPos.dy + btn.size.height + 8;
-    final double right = 14.w;
-    final double menuWidth = 140.w;
-    final int count = _menuItems.length;
-
-    _menuOverlay = OverlayEntry(
-      builder: (ctx) => GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: _closeMenu,
-        onPanDown: (_) => _closeMenu(),
-        child: SizedBox.expand(
-          child: Stack(
-            children: [
-              Positioned(
-                top: top,
-                right: right,
-                width: menuWidth,
-                child: Material(
-                  elevation: 8,
-                  borderRadius: BorderRadius.circular(10.r),
-                  color: Colors.white,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10.r),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: List.generate(count, (i) {
-                        final e = _menuItems[i];
-                        final isFirst = i == 0;
-                        final isLast = i == count - 1;
-                        final radius = BorderRadius.vertical(
-                          top: isFirst ? Radius.circular(10.r) : Radius.zero,
-                          bottom: isLast ? Radius.circular(10.r) : Radius.zero,
-                        );
-                        return InkWell(
-                          borderRadius: radius,
-                          onTap: () => _closeMenu(),
-                          child: SizedBox(
-                            height: 49.w,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12.w),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    "./assets/images/${e.icon}.png",
-                                    width: 20.w,
-                                    height: 20.w,
-                                  ),
-                                  SizedBox(width: 8.w),
-                                  Text(
-                                    e.label,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: const Color(0xFF0F172B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    overlayState.insert(_menuOverlay!);
-  }
-
-  void _closeMenu() {
-    _menuOverlay?.remove();
-    _menuOverlay = null;
-  }
 
   final List<_MsgItem> _items = [
     const _MsgItem(
@@ -236,16 +150,9 @@ class _MessagePageState extends State<MessagePage> {
 
   @override
   void dispose() {
-    _closeMenu();
     _searchCtrl.dispose();
     _openIdNotifier.dispose();
     super.dispose();
-  }
-
-  @override
-  void deactivate() {
-    _closeMenu();
-    super.deactivate();
   }
 
   @override
@@ -294,19 +201,7 @@ class _MessagePageState extends State<MessagePage> {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            key: _addBtnKey,
-            onTap: _showAddMenu,
-            child: Container(
-              width: 24.w,
-              height: 24.w,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172B),
-                borderRadius: BorderRadius.circular(6.r),
-              ),
-              child: Icon(Icons.add, color: Colors.white, size: 22.sp),
-            ),
-          ),
+          OverlayMenuButton(items: _menuItems),
         ],
       ),
     );
@@ -470,7 +365,7 @@ class _MessagePageState extends State<MessagePage> {
         key: ValueKey(_items[i].id),
         item: _items[i],
         openIdNotifier: _openIdNotifier,
-        onInteract: _closeMenu,
+        onInteract: () {},
         onTap: () => Navigator.of(context, rootNavigator: true).push(
           MaterialPageRoute(
             builder: (_) => ChatPage(

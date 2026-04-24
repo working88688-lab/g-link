@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../widgets/overlay_menu_button.dart';
 
 // ──────────────────────────────────────────
 // 数据模型
@@ -50,7 +51,9 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
+  final _focusNode = FocusNode();
   bool _hasText = false;
+  bool _showPanel = false;
 
   final List<_ChatMsg> _msgs = [
     const _ChatMsg(
@@ -106,9 +109,25 @@ class _ChatPageState extends State<ChatPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+      }
+    });
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus && _showPanel) {
+        setState(() => _showPanel = false);
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -150,6 +169,7 @@ class _ChatPageState extends State<ChatPage> {
             _buildTopBar(),
             Expanded(child: _buildMsgList()),
             _buildInputBar(),
+            _buildMorePanel(),
           ],
         ),
       ),
@@ -198,7 +218,31 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
           ),
-          Icon(Icons.more_horiz, size: 24.sp, color: const Color(0xFF0F172B)),
+          // Icon(Icons.more_horiz, size: 24.sp, color: const Color(0xFF0F172B)),
+          OverlayMenuButton(
+            items: const [
+              OverlayMenuItem(
+                  value: 'search', icon: 'icon_chat_search', label: '搜索'),
+              OverlayMenuItem(
+                  value: 'unpin', icon: 'icon_chat_unpin', label: '取消置顶'),
+              OverlayMenuItem(
+                  value: 'unmute', icon: 'icon_chat_unmute', label: '取消静音'),
+              OverlayMenuItem(
+                  value: 'clear',
+                  icon: 'icon_chat_clear_record',
+                  label: '清空聊天'),
+              OverlayMenuItem(
+                  value: 'report',
+                  icon: 'icon_chat_report',
+                  label: '投诉',
+                  color: Color(0xFFFF2056)),
+            ],
+            child: Image.asset(
+              './assets/images/icon_chat_more.png',
+              width: 24.w,
+              height: 24.w,
+            ),
+          ),
         ],
       ),
     );
@@ -228,18 +272,32 @@ class _ChatPageState extends State<ChatPage> {
 
   // ── 消息列表 ─────────────────────────────
   Widget _buildMsgList() {
-    return ListView.builder(
-      controller: _scrollCtrl,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-      itemCount: _msgs.length,
-      itemBuilder: (ctx, i) {
-        final msg = _msgs[i];
-        // 时间分割线（isMine=false && time 为空，用 content 当作时间标签）
-        if (!msg.isMine && msg.time.isEmpty) {
-          return _buildDateDivider(msg.content);
-        }
-        return _buildBubble(msg);
+    return NotificationListener<ScrollStartNotification>(
+      onNotification: (n) {
+        if (n.dragDetails == null) return false; // 代码触发的滚动不处理
+        FocusScope.of(context).unfocus();
+        if (_showPanel) setState(() => _showPanel = false);
+        return false;
       },
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          if (_showPanel) setState(() => _showPanel = false);
+        },
+        child: ListView.builder(
+          controller: _scrollCtrl,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+          itemCount: _msgs.length,
+          itemBuilder: (ctx, i) {
+            final msg = _msgs[i];
+            // 时间分割线（isMine=false && time 为空，用 content 当作时间标签）
+            if (!msg.isMine && msg.time.isEmpty) {
+              return _buildDateDivider(msg.content);
+            }
+            return _buildBubble(msg);
+          },
+        ),
+      ),
     );
   }
 
@@ -328,49 +386,76 @@ class _ChatPageState extends State<ChatPage> {
           // 麦克风
           GestureDetector(
             onTap: () {},
-            child: Icon(Icons.mic_none_outlined,
-                size: 28.sp, color: const Color(0xFF62748E)),
+            child: Image.asset("./assets/images/icon_mic.png",
+                width: 24.w, height: 24.w),
           ),
-          SizedBox(width: 8.w),
+          SizedBox(width: 12.w),
           // 输入框
           Expanded(
             child: Container(
-              height: 40.w,
+              height: 46.w,
               decoration: BoxDecoration(
                 color: const Color(0xFFF8F9FE),
-                borderRadius: BorderRadius.circular(40.r),
+                borderRadius: BorderRadius.circular(46.r),
+                border:
+                    Border.all(color: const Color(0xFFE3E7ED), width: 0.84.w),
               ),
               child: TextField(
                 controller: _inputCtrl,
+                focusNode: _focusNode,
                 style:
-                    TextStyle(fontSize: 15.sp, color: const Color(0xFF0F172B)),
+                    TextStyle(fontSize: 12.sp, color: const Color(0xFF0F172B)),
                 onChanged: (v) =>
                     setState(() => _hasText = v.trim().isNotEmpty),
-                onSubmitted: (_) => _sendMessage(),
+                onSubmitted: (_) {
+                  _sendMessage();
+                  _focusNode.requestFocus();
+                },
                 textInputAction: TextInputAction.send,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.w),
+                      EdgeInsets.symmetric(horizontal: 15.w, vertical: 13.w),
                   hintText: '发消息',
                   hintStyle: TextStyle(
-                      fontSize: 15.sp, color: const Color(0xFF90A1B9)),
+                      fontSize: 12.sp, color: const Color(0xFF90A1B9)),
+                  suffixIcon: GestureDetector(
+                    onTap: () {},
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w),
+                      child: Image.asset(
+                        "./assets/images/icon_emoji.png",
+                        width: 24.w,
+                        height: 24.w,
+                      ),
+                    ),
+                  ),
+                  suffixIconConstraints:
+                      BoxConstraints(minWidth: 0, minHeight: 0),
                 ),
               ),
             ),
           ),
-          SizedBox(width: 8.w),
-          // Emoji
-          if (!_hasText)
-            GestureDetector(
-              onTap: () {},
-              child: Icon(Icons.sentiment_satisfied_alt_outlined,
-                  size: 26.sp, color: const Color(0xFF62748E)),
-            ),
-          if (!_hasText) SizedBox(width: 8.w),
+          SizedBox(width: 12.w),
           // 加号 / 发送
           GestureDetector(
-            onTap: _hasText ? _sendMessage : () {},
+            onTap: _hasText
+                ? _sendMessage
+                : () {
+                    FocusScope.of(context).unfocus();
+                    setState(() => _showPanel = !_showPanel);
+                    if (!_showPanel) return;
+                    // 等面板展开动画完成后再滚到底（maxScrollExtent 已更新）
+                    Future.delayed(const Duration(milliseconds: 260), () {
+                      if (_scrollCtrl.hasClients) {
+                        _scrollCtrl.animateTo(
+                          _scrollCtrl.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOut,
+                        );
+                      }
+                    });
+                  },
             child: _hasText
                 ? Container(
                     width: 36.w,
@@ -383,19 +468,84 @@ class _ChatPageState extends State<ChatPage> {
                         size: 18.sp, color: Colors.white),
                   )
                 : Container(
-                    width: 36.w,
-                    height: 36.w,
                     decoration: BoxDecoration(
                       border: Border.all(
                           color: const Color(0xFFD1D1D6), width: 1.5.w),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.add,
-                        size: 22.sp, color: const Color(0xFF62748E)),
-                  ),
+                    child: Image.asset("./assets/images/icon_chat_plus.png",
+                        width: 22.w, height: 22.w)),
           ),
         ],
       ),
+    );
+  }
+
+  // ── 更多面板 ─────────────────────────────
+  Widget _buildMorePanel() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      height: _showPanel ? 103.w : 0,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          height: 103.w,
+          child: Container(
+            color: const Color(0xFFF8F9FE),
+            padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 15.w),
+            child: GridView.count(
+              crossAxisCount: 5,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 25.w,
+              mainAxisSpacing: 25.w,
+              childAspectRatio: 46 / 67,
+              children: [
+                _PanelItem(icon: "icon_chat_album", label: '相册'),
+                _PanelItem(icon: "icon_chat_camera", label: '拍摄'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────
+// 更多面板 item
+// ──────────────────────────────────────────
+class _PanelItem extends StatelessWidget {
+  final String icon;
+  final String label;
+
+  const _PanelItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 46.w,
+          height: 46.w,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Align(
+            child: Image.asset("./assets/images/$icon.png",
+                width: 24.w, height: 24.w),
+          ),
+        ),
+        Spacer(),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12.sp, color: const Color(0xFF000000)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }
