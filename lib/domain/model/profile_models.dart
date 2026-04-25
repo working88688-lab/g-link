@@ -87,3 +87,38 @@ class InterestTag {
     );
   }
 }
+
+class RecommendedUser {
+  const RecommendedUser({
+    required this.uid,
+    required this.username,
+    required this.nickname,
+    required this.avatarUrl,
+    required this.bio,
+    required this.isVerified,
+    required this.followerCount,
+    required this.isFollowing,
+  });
+
+  final int uid;
+  final String username;
+  final String nickname;
+  final String avatarUrl;
+  final String bio;
+  final bool isVerified;
+  final int followerCount;
+  final bool isFollowing;
+
+  factory RecommendedUser.fromJson(Json json) {
+    return RecommendedUser(
+      uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,
+      username: '${json['username'] ?? ''}',
+      nickname: '${json['nickname'] ?? ''}',
+      avatarUrl: '${json['avatar_url'] ?? ''}',
+      bio: '${json['bio'] ?? ''}',
+      isVerified: json['is_verified'] == true,
+      followerCount: int.tryParse('${json['follower_count'] ?? 0}') ?? 0,
+      isFollowing: json['is_following'] == true,
+    );
+  }
+}

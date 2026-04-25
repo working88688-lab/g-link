@@ -11,4 +11,6 @@ abstract class ProfileDomain {
   });
 
   AsyncResult<List<InterestTag>> getInterestTags();
+
+  AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});
 }

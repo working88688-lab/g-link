@@ -26,4 +26,10 @@ class ProfileService extends BaseService {
       );
 
   AsyncJson getInterests() => get('/interests', encrypted: false);
+
+  AsyncJson getRecommendedUsers({int limit = 20}) => get(
+        '/users/recommendations',
+        queryParameters: {'limit': limit},
+        encrypted: false,
+      );
 }

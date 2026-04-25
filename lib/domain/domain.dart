@@ -1,9 +1,11 @@
 import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/model/ad_model.dart';
 import 'package:g_link/domain/remote_domain.dart';
 import 'package:g_link/domain/type_def.dart';
 
-abstract class AppDomain implements LocaleDomain, RemoteDomain, ChatDomain {}
+abstract class AppDomain
+    implements LocaleDomain, RemoteDomain, ChatDomain, SearchDomain {}
 
 abstract class LocaleDomain {
   CacheDomain get cache;

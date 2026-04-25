@@ -21,4 +21,22 @@ class ChatService {
       hasMore: (data['has_more'] as bool?) ?? false,
     );
   }
+
+  Future<MessageSearchResult> searchMessages({
+    required String q,
+    int limit = 10,
+  }) async {
+    final res = await _dio.get(
+      '/api/v1/messages/search',
+      queryParameters: {'q': q, 'limit': limit},
+    );
+    final data = res.data['data'] as Map<String, dynamic>;
+    final contacts = (data['contacts'] as List<dynamic>? ?? [])
+        .map((e) => MessageSearchContact.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final messages = (data['messages'] as List<dynamic>? ?? [])
+        .map((e) => MessageSearchMsg.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (contacts: contacts, messages: messages);
+  }
 }

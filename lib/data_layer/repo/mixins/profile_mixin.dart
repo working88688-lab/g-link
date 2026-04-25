@@ -26,4 +26,13 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
         final list = List<Json>.from((json['list'] ?? []) as List);
         return list.map(InterestTag.fromJson).toList();
       }).guard;
+
+  @override
+  AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20}) =>
+      _profileService
+          .getRecommendedUsers(limit: limit)
+          .deserializeJsonBy((json) {
+        final list = List<Json>.from((json['lists'] ?? []) as List);
+        return list.map(RecommendedUser.fromJson).toList();
+      }).guard;
 }

@@ -60,3 +60,52 @@ typedef ChatsResult = ({
   String? nextCursor,
   bool hasMore,
 });
+
+class MessageSearchContact {
+  const MessageSearchContact({
+    required this.uid,
+    required this.nickname,
+    required this.avatarUrl,
+  });
+
+  final int uid;
+  final String nickname;
+  final String avatarUrl;
+
+  factory MessageSearchContact.fromJson(Map<String, dynamic> json) =>
+      MessageSearchContact(
+        uid: (json['uid'] as int?) ?? 0,
+        nickname: (json['nickname'] as String?) ?? '',
+        avatarUrl: (json['avatar_url'] as String?) ?? '',
+      );
+}
+
+class MessageSearchMsg {
+  const MessageSearchMsg({
+    required this.msgId,
+    required this.chatId,
+    required this.senderUid,
+    required this.content,
+    required this.createdAt,
+  });
+
+  final int msgId;
+  final int chatId;
+  final int senderUid;
+  final String content;
+  final String createdAt;
+
+  factory MessageSearchMsg.fromJson(Map<String, dynamic> json) =>
+      MessageSearchMsg(
+        msgId: (json['msg_id'] as int?) ?? 0,
+        chatId: (json['chat_id'] as int?) ?? 0,
+        senderUid: (json['sender_uid'] as int?) ?? 0,
+        content: (json['content'] as String?) ?? '',
+        createdAt: (json['created_at'] as String?) ?? '',
+      );
+}
+
+typedef MessageSearchResult = ({
+  List<MessageSearchContact> contacts,
+  List<MessageSearchMsg> messages,
+});

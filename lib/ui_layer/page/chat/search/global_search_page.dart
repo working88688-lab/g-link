@@ -66,7 +66,8 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
 
   void _addHistory(String kw) {
     if (kw.isEmpty) return;
-    final list = [kw, ..._history.where((e) => e != kw)].take(_maxHistory).toList();
+    final list =
+        [kw, ..._history.where((e) => e != kw)].take(_maxHistory).toList();
     setState(() {
       _history
         ..clear()
@@ -77,7 +78,10 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
 
   void _removeHistory(String tag) {
     setState(() => _history.remove(tag));
-    context.read<AppDomain>().cache.upsertSearchHistory(searchHistory: List.of(_history));
+    context
+        .read<AppDomain>()
+        .cache
+        .upsertSearchHistory(searchHistory: List.of(_history));
   }
 
   void _clearHistory() {
@@ -86,40 +90,56 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
   }
 
   // ── 查询 ──────────────────────────────
-  // TODO: 替换为真实 API 调用
   Future<void> _search(String keyword) async {
     if (keyword.isEmpty || !mounted) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted || _query != keyword) return;
-    setState(() {
-      _isLoading = false;
-      _contacts = [
-        const ContactItem('优秀大帅哥'),
-        const ContactItem('优秀大帅哥'),
-        const ContactItem('优秀大帅哥'),
-      ];
-      _chatRecords = [
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧', extraCount: 5),
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧'),
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧'),
-      ];
-    });
+    try {
+      final result =
+          await context.read<AppDomain>().searchMessages(q: keyword, limit: 10);
+      if (!mounted || _query != keyword) return;
+      setState(() {
+        _isLoading = false;
+        _contacts = result.contacts
+            .map((c) =>
+                ContactItem(c.nickname, uid: c.uid, avatarUrl: c.avatarUrl))
+            .toList();
+        _chatRecords = result.messages
+            .map((m) => ChatRecordItem(
+                  msgId: m.msgId,
+                  chatId: m.chatId,
+                  name: '',
+                  preview: m.content,
+                  createdAt: m.createdAt,
+                ))
+            .toList();
+      });
+    } catch (_) {
+      if (!mounted || _query != keyword) return;
+      setState(() => _isLoading = false);
+    }
   }
 
   void _onChanged(String val) {
     final kw = val.trim();
     setState(() {
       _query = kw;
-      _sub = kw.isEmpty ? _Sub.initial : _Sub.results;
+      _sub = kw.isEmpty ? _Sub.initial : _sub;
       _drillContact = null;
       if (kw.isEmpty) {
         _contacts = [];
         _chatRecords = [];
         _isLoading = false;
+        _sub = _Sub.initial;
       }
     });
-    if (kw.isNotEmpty) _search(kw);
+  }
+
+  void _onSubmitted(String val) {
+    final kw = val.trim();
+    if (kw.isEmpty) return;
+    _addHistory(kw);
+    setState(() => _sub = _Sub.results);
+    _search(kw);
   }
 
   void _clearQuery() {
@@ -154,7 +174,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
               focusNode: _focusNode,
               query: _query,
               onChanged: _onChanged,
-              onSubmitted: (val) => _addHistory(val.trim()),
+              onSubmitted: _onSubmitted,
               onClear: _clearQuery,
               showCancel: true,
             ),
@@ -191,7 +211,10 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           children: [
             _ContactsSection(query: _query, items: _contacts),
-            _ChatRecordsSection(query: _query, items: _chatRecords, onEnterContact: _enterChatDetail),
+            _ChatRecordsSection(
+                query: _query,
+                items: _chatRecords,
+                onEnterContact: _enterChatDetail),
             SizedBox(height: 24.w),
           ],
         );
@@ -234,12 +257,18 @@ class _HistoryView extends StatelessWidget {
           Row(
             children: [
               Text('历史记录',
-                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500, color: const Color(0xFF0F172B))),
+                  style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF0F172B))),
               const Spacer(),
               GestureDetector(
                 onTap: onClear,
                 child: Text('清空',
-                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: const Color(0xFF62748E))),
+                    style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF62748E))),
               ),
             ],
           ),
@@ -266,7 +295,8 @@ class _HistoryChip extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
-  const _HistoryChip({required this.label, required this.onTap, required this.onRemove});
+  const _HistoryChip(
+      {required this.label, required this.onTap, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +315,10 @@ class _HistoryChip extends StatelessWidget {
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 200.w),
               child: Text(label,
-                  style: TextStyle(height: 0, fontSize: 12.sp, color: const Color(0xFF1A1F2C)),
+                  style: TextStyle(
+                      height: 0,
+                      fontSize: 12.sp,
+                      color: const Color(0xFF1A1F2C)),
                   overflow: TextOverflow.ellipsis),
             ),
             SizedBox(width: 4.w),
@@ -333,14 +366,23 @@ class _ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 10.w),
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: const Color(0xFF1A1F2C).withOpacity(0.05)))),
+      decoration: BoxDecoration(
+          border: Border(
+              bottom: BorderSide(
+                  color: const Color(0xFF1A1F2C).withOpacity(0.05)))),
       child: Row(
         children: [
           searchAvatar(),
           SizedBox(width: 8.w),
           highlight(name, keyword,
-              base: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1A1F2C)),
-              hl: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF00C67E))),
+              base: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF1A1F2C)),
+              hl: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF00C67E))),
         ],
       ),
     );
@@ -356,7 +398,8 @@ class _ChatRecordsSection extends StatelessWidget {
   final List<ChatRecordItem> items;
   final ValueChanged<String>? onEnterContact;
 
-  const _ChatRecordsSection({required this.query, required this.items, this.onEnterContact});
+  const _ChatRecordsSection(
+      {required this.query, required this.items, this.onEnterContact});
 
   @override
   Widget build(BuildContext context) {
@@ -368,7 +411,9 @@ class _ChatRecordsSection extends StatelessWidget {
         ...items.map((r) => ChatRecordTile(
               item: r,
               keyword: query,
-              onTap: r.extraCount != null ? () => onEnterContact?.call(r.name) : null,
+              onTap: r.extraCount != null
+                  ? () => onEnterContact?.call(r.name)
+                  : null,
             )),
       ],
     );
@@ -384,7 +429,8 @@ class _ChatDetailSection extends StatefulWidget {
   final String query;
   final VoidCallback? onBack;
 
-  const _ChatDetailSection({required this.contactName, required this.query, this.onBack});
+  const _ChatDetailSection(
+      {required this.contactName, required this.query, this.onBack});
 
   @override
   State<_ChatDetailSection> createState() => _ChatDetailSectionState();
@@ -428,7 +474,8 @@ class _ChatDetailSectionState extends State<_ChatDetailSection> {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       children: [
         SizedBox(height: 8.w),
-        ..._records.map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
+        ..._records
+            .map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
         SizedBox(height: 24.w),
       ],
     );

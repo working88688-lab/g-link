@@ -19,28 +19,49 @@ enum SearchMode {
 // ─────────────────────────────────────────
 
 class ContactItem {
+  final int uid;
   final String name;
+  final String avatarUrl;
 
-  const ContactItem(this.name);
+  const ContactItem(this.name, {this.uid = 0, this.avatarUrl = ''});
 }
 
 class ChatRecordItem {
+  final int msgId;
+  final int chatId;
   final String name;
   final String preview;
+  final String createdAt;
   final int? extraCount;
 
   const ChatRecordItem({
+    this.msgId = 0,
+    this.chatId = 0,
     required this.name,
     required this.preview,
+    this.createdAt = '',
     this.extraCount,
   });
 }
 
 class UserItem {
-  final String name;
-  final String followers;
+  final int uid;
+  final String username;
+  final String nickname;
+  final String avatarUrl;
+  final int followerCount;
+  bool isFollowing;
 
-  const UserItem({required this.name, required this.followers});
+  UserItem({
+    required this.uid,
+    required this.username,
+    required this.nickname,
+    required this.avatarUrl,
+    required this.followerCount,
+    this.isFollowing = false,
+  });
+
+  String get displayName => nickname.isNotEmpty ? nickname : username;
 }
 
 // ─────────────────────────────────────────
@@ -160,11 +181,13 @@ class SearchInputBar extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 9.w, horizontal: 8.w),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 9.w, horizontal: 8.w),
                   prefixIcon: Stack(
                     alignment: Alignment.center,
                     children: [
-                      MyImage.asset(MyImagePaths.iconSearch, width: 22.w, height: 22.w),
+                      MyImage.asset(MyImagePaths.iconSearch,
+                          width: 22.w, height: 22.w),
                     ],
                   ),
                   prefixIconConstraints: BoxConstraints(minWidth: 40.w),
@@ -178,7 +201,8 @@ class SearchInputBar extends StatelessWidget {
                           onTap: onClear,
                           child: Padding(
                             padding: EdgeInsets.only(right: 12.w),
-                            child: MyImage.asset(MyImagePaths.iconInputClear, width: 24.w, height: 24.w),
+                            child: MyImage.asset(MyImagePaths.iconInputClear,
+                                width: 24.w, height: 24.w),
                           ),
                         )
                       : null,

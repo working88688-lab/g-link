@@ -5,9 +5,12 @@ import 'dart:io';
 import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:g_link/data_layer/data_source/search_service.dart';
 import 'package:g_link/data_layer/data_source/chat_service.dart';
 import 'package:g_link/data_layer/repo/http_interceptor.dart';
+import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/domain/model/chat_model.dart';
 import 'package:g_link/data_layer/repo/utils.dart';
 import 'package:g_link/domain/domains/report.dart';
@@ -45,6 +48,7 @@ import 'package:g_link/domain/domains/home.dart';
 
 part 'cache.dart';
 
+part 'mixins/search_mixin.dart';
 part 'mixins/chat_mixin.dart';
 part 'mixins/home_mixin.dart';
 part 'mixins/report_mixin.dart';
@@ -52,13 +56,14 @@ part 'mixins/profile_mixin.dart';
 part 'mixins/auth_mixin.dart';
 
 class AppRepo extends _BaseAppRepo
-    with _Home, _Report, _Profile, _Auth, _Chat {}
+    with _Home, _Report, _Profile, _Auth, _Chat, _Search {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _reportService = ReportService(_apiDio);
   late final _profileService = ProfileService(_apiDio);
   late final _authService = AuthService(_apiDio);
+  late final _searchService = SearchService(_v1Dio);
   late final _chatService = ChatService(_v1Dio);
 
   final _cacheManager = _CacheManager();
