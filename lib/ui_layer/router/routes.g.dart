@@ -11,6 +11,7 @@ List<RouteBase> get $appRoutes => [
       $loginRoute,
       $statefulShellRoute,
       $guideRoute,
+      $complaintRoute,
       $chatConversationRoute,
       $userSearchRoute,
       $globalSearchRoute,
@@ -208,6 +209,34 @@ extension $GuideRouteExtension on GuideRoute {
 
   String get location => GoRouteData.$location(
         '/guide',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $complaintRoute => GoRouteData.$route(
+      path: '/complaint',
+      parentNavigatorKey: ComplaintRoute.$parentNavigatorKey,
+      factory: $ComplaintRouteExtension._fromState,
+    );
+
+extension $ComplaintRouteExtension on ComplaintRoute {
+  static ComplaintRoute _fromState(GoRouterState state) => ComplaintRoute(
+        targetUserId: state.uri.queryParameters['target-user-id'],
+      );
+
+  String get location => GoRouteData.$location(
+        '/complaint',
+        queryParams: {
+          if (targetUserId != null) 'target-user-id': targetUserId,
+        },
       );
 
   void go(BuildContext context) => context.go(location);

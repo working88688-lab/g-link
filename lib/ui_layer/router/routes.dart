@@ -6,6 +6,7 @@ import 'package:g_link/ui_layer/page/chat/chat_page.dart';
 import 'package:g_link/ui_layer/page/chat/search/chat_records_search_page.dart';
 import 'package:g_link/ui_layer/page/chat/search/global_search_page.dart';
 import 'package:g_link/ui_layer/page/chat/search/user_search_page.dart';
+import 'package:g_link/ui_layer/page/complaint/complaint_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
 import 'package:g_link/ui_layer/page/chat/message_page.dart';
@@ -155,6 +156,24 @@ class GuideRoute extends GoRouteData {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: const GuidePage(),
+    );
+  }
+}
+
+@TypedGoRoute<ComplaintRoute>(path: AppRouterPaths.complaint)
+class ComplaintRoute extends GoRouteData {
+  const ComplaintRoute({this.targetUserId});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final String? targetUserId;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: ComplaintPage(targetUserId: targetUserId),
     );
   }
 }

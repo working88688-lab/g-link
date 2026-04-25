@@ -241,11 +241,12 @@ class _ChatPageState extends State<ChatPage> {
                   value: 'clear',
                   icon: MyImagePaths.iconChatClearRecord,
                   label: '清空聊天'),
-              const OverlayMenuItem(
+              OverlayMenuItem(
                   value: 'report',
                   icon: MyImagePaths.iconChatReport,
                   label: '投诉',
-                  color: Color(0xFFFF2056)),
+                  color: const Color(0xFFFF2056),
+                  onTap: () => const ComplaintRoute().push(context)),
             ],
             child: MyImage.asset(
               MyImagePaths.iconChatMore,
