@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,15 +12,15 @@ import '../../theme.dart';
 import '../../widgets/my_app_bar.dart';
 
 /// 投诉原因列表
-const _complaintReasons = [
-  '虚假信息',
-  '暴力、仇恨、血腥',
-  '骚扰或辱骂',
-  '色情或成人内容',
-  '诈骗或欺诈',
-  '侵犯隐私',
-  '其他',
-];
+List<String> get _complaintReasons => [
+      'complaintReasonFakeInfo'.tr(),
+      'complaintReasonViolence'.tr(),
+      'complaintReasonHarassment'.tr(),
+      'complaintReasonAdult'.tr(),
+      'complaintReasonFraud'.tr(),
+      'complaintReasonPrivacy'.tr(),
+      'complaintReasonOther'.tr(),
+    ];
 
 class ComplaintPage extends StatefulWidget {
   /// 被投诉的用户 ID，可选
@@ -84,7 +85,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
     if (!mounted) return;
     setState(() => _submitting = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('投诉已提交，我们将尽快处理')),
+      SnackBar(content: Text('complaintSubmitted'.tr())),
     );
     context.pop();
   }
@@ -95,9 +96,12 @@ class _ComplaintPageState extends State<ComplaintPage> {
       backgroundColor: Colors.white,
       appBar: MyAppBar(
         titleWidget: Text(
-          '投诉',
+          'complaintTitle'.tr(),
           textAlign: TextAlign.center,
-          style: TextStyle(color: Color(0xFF1D293D), fontSize: 16.sp, fontWeight: FontWeight.w600),
+          style: TextStyle(
+              color: Color(0xFF1D293D),
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         backArrowOnTap: _onBack,
@@ -119,9 +123,10 @@ class _ComplaintPageState extends State<ComplaintPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-            padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 16.w, bottom: 8.w),
+            padding: EdgeInsets.only(
+                left: 16.w, right: 16.w, top: 16.w, bottom: 8.w),
             child: Text(
-              '请选择投诉该账号的原因',
+              'complaintSelectReason'.tr(),
               style: TextStyle(
                 fontSize: 14.17.sp,
                 color: const Color(0xFF62748E),
@@ -170,7 +175,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
               SizedBox(height: 16.w),
               // 详细描述
               Text(
-                '详细描述',
+                'complaintDetailTitle'.tr(),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: const Color(0xFF45556C),
@@ -181,7 +186,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
               SizedBox(height: 19.h),
               // 图片材料
               Text(
-                '图片材料',
+                'complaintImageTitle'.tr(),
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: const Color(0xFF45556C),
@@ -214,10 +219,12 @@ class _ComplaintPageState extends State<ComplaintPage> {
             controller: _descController,
             maxLines: 5,
             maxLength: _maxDescLength,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+            buildCounter: (_,
+                    {required currentLength, required isFocused, maxLength}) =>
+                null,
             style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1A1F2C)),
             decoration: InputDecoration(
-              hintText: '请描述具体原因',
+              hintText: 'complaintDescHint'.tr(),
               hintStyle: TextStyle(
                 fontSize: 14.sp,
                 color: const Color(0xFF90A1B9),
@@ -272,7 +279,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         ),
         SizedBox(height: 6.h),
         Text(
-          '最多可上传$_maxImages张',
+          'complaintMaxImages'.tr(namedArgs: {'count': '$_maxImages'}),
           style: TextStyle(fontSize: 14.sp, color: const Color(0xFF90A1B9)),
         ),
       ],
@@ -309,7 +316,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                     ),
                   )
                 : Text(
-                    '提交',
+                    'complaintSubmit'.tr(),
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: Colors.white,

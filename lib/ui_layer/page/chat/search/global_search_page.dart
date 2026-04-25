@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domain.dart';
@@ -256,7 +257,7 @@ class _HistoryView extends StatelessWidget {
           SizedBox(height: 14.w),
           Row(
             children: [
-              Text('历史记录',
+              Text('searchHistoryTitle'.tr(),
                   style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w500,
@@ -264,7 +265,7 @@ class _HistoryView extends StatelessWidget {
               const Spacer(),
               GestureDetector(
                 onTap: onClear,
-                child: Text('清空',
+                child: Text('searchHistoryClear'.tr(),
                     style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -349,7 +350,7 @@ class _ContactsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SearchSectionHeader(title: '联系人'),
+        SearchSectionHeader(title: 'searchSectionContacts'.tr()),
         ...items.map((c) => _ContactTile(name: c.name, keyword: query)),
       ],
     );
@@ -407,7 +408,7 @@ class _ChatRecordsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SearchSectionHeader(title: '聊天记录'),
+        SearchSectionHeader(title: 'searchSectionChatRecords'.tr()),
         ...items.map((r) => ChatRecordTile(
               item: r,
               keyword: query,

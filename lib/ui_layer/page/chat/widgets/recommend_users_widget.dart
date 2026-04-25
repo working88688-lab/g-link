@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/profile.dart';
@@ -32,7 +33,8 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
   }
 
   Future<void> _loadRecommendations() async {
-    final result = await context.read<ProfileDomain>().getRecommendedUsers(limit: 20);
+    final result =
+        await context.read<ProfileDomain>().getRecommendedUsers(limit: 20);
     if (!mounted) return;
     setState(() {
       if (result.status == 0 && result.data != null) {
@@ -41,7 +43,8 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
     });
   }
 
-  bool _isFollowing(RecommendedUser user) => _followingOverride[user.uid] ?? user.isFollowing;
+  bool _isFollowing(RecommendedUser user) =>
+      _followingOverride[user.uid] ?? user.isFollowing;
 
   void _toggleFollow(RecommendedUser user) {
     setState(() {
@@ -59,7 +62,7 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              '为你推荐',
+              'recommendTitle'.tr(),
               style: TextStyle(
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w500,
@@ -73,7 +76,7 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                 setState(() => _closed = true);
               },
               child: Text(
-                '关闭',
+                'recommendClose'.tr(),
                 style: TextStyle(
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
@@ -102,7 +105,8 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                           child: Image.network(
                             user.avatarUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(Icons.person, size: 28.sp, color: Colors.white),
+                            errorBuilder: (_, __, ___) => Icon(Icons.person,
+                                size: 28.sp, color: Colors.white),
                           ),
                         )
                       : Icon(Icons.person, size: 28.sp, color: Colors.white),
@@ -114,7 +118,9 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        user.nickname.isNotEmpty ? user.nickname : user.username,
+                        user.nickname.isNotEmpty
+                            ? user.nickname
+                            : user.username,
                         style: TextStyle(
                           color: const Color(0xFF0F172B),
                           fontSize: 15.sp,
@@ -122,7 +128,10 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                         ),
                       ),
                       Text(
-                        '${CommonUtils.renderEnFixedNumber(user.followerCount)}粉丝',
+                        'commonFollowerCount'.tr(namedArgs: {
+                          'count': CommonUtils.renderEnFixedNumber(
+                              user.followerCount)
+                        }),
                         style: TextStyle(
                           color: const Color(0xFF62748E),
                           fontSize: 12.sp,
@@ -138,15 +147,23 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                     height: 33.5.w,
                     width: 60.w,
                     decoration: BoxDecoration(
-                      color: _isFollowing(user) ? const Color(0xFF1A1F2C) : null,
-                      border: _isFollowing(user) ? null : Border.all(color: const Color(0xFFCCCCCC), width: 1.w),
+                      color:
+                          _isFollowing(user) ? const Color(0xFF1A1F2C) : null,
+                      border: _isFollowing(user)
+                          ? null
+                          : Border.all(
+                              color: const Color(0xFFCCCCCC), width: 1.w),
                       borderRadius: BorderRadius.circular(100.r),
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _isFollowing(user) ? '已关注' : '关注',
+                      _isFollowing(user)
+                          ? 'commonFollowed'.tr()
+                          : 'commonFollow'.tr(),
                       style: TextStyle(
-                        color: _isFollowing(user) ? const Color(0xFFF8F9FE) : const Color(0xFF1A1F2C),
+                        color: _isFollowing(user)
+                            ? const Color(0xFFF8F9FE)
+                            : const Color(0xFF1A1F2C),
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
                       ),

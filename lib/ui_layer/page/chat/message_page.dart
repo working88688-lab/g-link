@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -82,7 +83,16 @@ String _formatMsgTime(String iso) {
     if (diff == 0) {
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } else if (diff < 7) {
-      const weekdays = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+      final weekdays = [
+        '',
+        'weekdayMon'.tr(),
+        'weekdayTue'.tr(),
+        'weekdayWed'.tr(),
+        'weekdayThu'.tr(),
+        'weekdayFri'.tr(),
+        'weekdaySat'.tr(),
+        'weekdaySun'.tr()
+      ];
       return weekdays[dt.weekday];
     } else {
       return '${dt.month}/${dt.day}';
@@ -113,7 +123,7 @@ class _MessagePageState extends State<MessagePage> {
     OverlayMenuItem(
       value: 'search',
       icon: MyImagePaths.iconSearch2,
-      label: '搜索用户',
+      label: 'chatMenuSearchUsers'.tr(),
       onTap: () => const UserSearchRoute().push(context),
     ),
   ];
@@ -208,7 +218,7 @@ class _MessagePageState extends State<MessagePage> {
         children: [
           Consumer<AppChatNotifier>(
             builder: (_, chat, __) => Text(
-              '消息 (${chat.totalUnread})',
+              'messageTitle'.tr(namedArgs: {'count': '${chat.totalUnread}'}),
               style: TextStyle(
                 fontSize: 18.sp,
                 fontWeight: FontWeight.w700,
@@ -228,7 +238,8 @@ class _MessagePageState extends State<MessagePage> {
     return GestureDetector(
       onTap: () => const GlobalSearchRoute().push(context),
       child: Padding(
-        padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
+        padding:
+            EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
         child: Container(
           height: 46.w,
           decoration: BoxDecoration(
@@ -244,9 +255,12 @@ class _MessagePageState extends State<MessagePage> {
                 contentPadding: EdgeInsets.symmetric(vertical: 11.w),
                 prefixIcon: Stack(
                   alignment: Alignment.center,
-                  children: [MyImage.asset(MyImagePaths.iconSearch, width: 24.w, height: 24.w)],
+                  children: [
+                    MyImage.asset(MyImagePaths.iconSearch,
+                        width: 24.w, height: 24.w)
+                  ],
                 ),
-                hintText: '搜索联系人或聊天记录',
+                hintText: 'messageSearchHint'.tr(),
                 hintStyle: TextStyle(
                   fontSize: 15.sp,
                   color: const Color(0xFF90A1B9),
@@ -269,7 +283,7 @@ class _MessagePageState extends State<MessagePage> {
           MyImage.asset(MyImagePaths.emptyMessage, height: 95.w),
           SizedBox(height: 1.w),
           Text(
-            "暂无消息",
+            'messageEmpty'.tr(),
             style: TextStyle(fontSize: 14.sp, color: Colors.black),
           ),
           SizedBox(height: 32.w),
@@ -334,7 +348,8 @@ class _SwipeableTile extends StatefulWidget {
   State<_SwipeableTile> createState() => _SwipeableTileState();
 }
 
-class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProviderStateMixin {
+class _SwipeableTileState extends State<_SwipeableTile>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   double _dragOffset = 0;
 
@@ -400,7 +415,7 @@ class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProvide
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _ActionBtn(
-                  label: '置顶',
+                  label: 'chatActionPin'.tr(),
                   textColor: const Color(0xFFFFFFFF),
                   color: const Color(0xFFF5A623),
                   onTap: () {
@@ -409,7 +424,7 @@ class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProvide
                   },
                 ),
                 _ActionBtn(
-                  label: '静音',
+                  label: 'chatActionMute'.tr(),
                   textColor: const Color(0xFF1A1F2C),
                   color: const Color(0xFFD1D1D6),
                   onTap: () {
@@ -418,7 +433,7 @@ class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProvide
                   },
                 ),
                 _ActionBtn(
-                  label: '删除',
+                  label: 'chatActionDelete'.tr(),
                   textColor: const Color(0xFFFFFFFF),
                   color: const Color(0xFFFF2D55),
                   onTap: () {
@@ -462,7 +477,11 @@ class _ActionBtn extends StatelessWidget {
   final VoidCallback onTap;
   final Color textColor;
 
-  const _ActionBtn({required this.label, required this.color, required this.onTap, required this.textColor});
+  const _ActionBtn(
+      {required this.label,
+      required this.color,
+      required this.onTap,
+      required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +529,9 @@ class _MsgTile extends StatelessWidget {
               bottom: 16.w,
             ),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
+              border: Border(
+                  bottom:
+                      BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
             ),
             child: Row(
               children: [
@@ -540,7 +561,9 @@ class _MsgTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16.r),
             color: const Color(0xFFD1D1D6),
           ),
-          child: item.avatarUrl.isEmpty ? Icon(Icons.person, size: 28.sp, color: Colors.white) : null,
+          child: item.avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 28.sp, color: Colors.white)
+              : null,
         ),
         if (item.isOnline)
           Positioned(
@@ -577,7 +600,8 @@ class _MsgTile extends StatelessWidget {
             ),
             if (item.isMuted) ...[
               SizedBox(width: 4.w),
-              MyImage.asset(MyImagePaths.iconVolumeOff, width: 16.w, height: 16.w),
+              MyImage.asset(MyImagePaths.iconVolumeOff,
+                  width: 16.w, height: 16.w),
             ],
           ],
         ),
@@ -605,9 +629,14 @@ class _MsgTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
-              MyImage.asset(item.readStatus == ReadStatus.sent ? MyImagePaths.iconCheck : MyImagePaths.iconDoneAll,
-                  width: 14.w, height: 14.w),
+            if (item.readStatus == ReadStatus.sent ||
+                item.readStatus == ReadStatus.delivered)
+              MyImage.asset(
+                  item.readStatus == ReadStatus.sent
+                      ? MyImagePaths.iconCheck
+                      : MyImagePaths.iconDoneAll,
+                  width: 14.w,
+                  height: 14.w),
             SizedBox(width: 2.w),
             Container(
               width: 40.w,
@@ -635,7 +664,9 @@ class _MsgTile extends StatelessWidget {
                     constraints: BoxConstraints(minWidth: 18.w),
                     height: 18.w,
                     decoration: BoxDecoration(
-                      color: item.isMuted ? const Color(0xFF90A1B9) : const Color(0xFFFF2056),
+                      color: item.isMuted
+                          ? const Color(0xFF90A1B9)
+                          : const Color(0xFFFF2056),
                       borderRadius: BorderRadius.circular(15.r),
                     ),
                     alignment: Alignment.center,

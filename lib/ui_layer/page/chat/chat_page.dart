@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../image_paths.dart';
@@ -227,24 +228,24 @@ class _ChatPageState extends State<ChatPage> {
               OverlayMenuItem(
                   value: 'search',
                   icon: MyImagePaths.iconChatSearch,
-                  label: '搜索',
+                  label: 'chatMenuSearch'.tr(),
                   onTap: () => const ChatRecordsSearchRoute().push(context)),
-              const OverlayMenuItem(
+              OverlayMenuItem(
                   value: 'unpin',
                   icon: MyImagePaths.iconChatUnpin,
-                  label: '取消置顶'),
-              const OverlayMenuItem(
+                  label: 'chatActionUnpin'.tr()),
+              OverlayMenuItem(
                   value: 'unmute',
                   icon: MyImagePaths.iconChatUnmute,
-                  label: '取消静音'),
-              const OverlayMenuItem(
+                  label: 'chatActionUnmute'.tr()),
+              OverlayMenuItem(
                   value: 'clear',
                   icon: MyImagePaths.iconChatClearRecord,
-                  label: '清空聊天'),
+                  label: 'chatMenuClearChat'.tr()),
               OverlayMenuItem(
                   value: 'report',
                   icon: MyImagePaths.iconChatReport,
-                  label: '投诉',
+                  label: 'chatMenuReport'.tr(),
                   color: const Color(0xFFFF2056),
                   onTap: () => const ComplaintRoute().push(context)),
             ],
@@ -427,7 +428,7 @@ class _ChatPageState extends State<ChatPage> {
                   border: InputBorder.none,
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 15.w, vertical: 13.w),
-                  hintText: '发消息',
+                  hintText: 'chatInputHint'.tr(),
                   hintStyle: TextStyle(
                       fontSize: 12.sp, color: const Color(0xFF90A1B9)),
                   suffixIcon: GestureDetector(
@@ -512,8 +513,12 @@ class _ChatPageState extends State<ChatPage> {
               mainAxisSpacing: 25.w,
               childAspectRatio: 46 / 67,
               children: [
-                _PanelItem(icon: MyImagePaths.iconChatAlbum, label: '相册'),
-                _PanelItem(icon: MyImagePaths.iconChatCamera, label: '拍摄'),
+                _PanelItem(
+                    icon: MyImagePaths.iconChatAlbum,
+                    label: 'chatPanelAlbum'.tr()),
+                _PanelItem(
+                    icon: MyImagePaths.iconChatCamera,
+                    label: 'chatPanelCamera'.tr()),
               ],
             ),
           ),

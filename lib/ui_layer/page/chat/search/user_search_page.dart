@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/search.dart';
@@ -92,7 +93,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoading = false;
-        _error = '搜索失败，请稍后重试';
+        _error = 'userSearchFailed'.tr();
       });
     }
   }
@@ -115,7 +116,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
           child: Icon(Icons.arrow_back_ios,
               size: 20.sp, color: const Color(0xFF0F172B)),
         ),
-        title: Text('搜索用户',
+        title: Text('userSearchTitle'.tr(),
             style: TextStyle(
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w600,
@@ -127,7 +128,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
         child: Column(
           children: [
             SearchInputBar(
-              hintText: '搜索用户名或昵称',
+              hintText: 'userSearchHint'.tr(),
               controller: _ctrl,
               focusNode: _focusNode,
               query: _query,
@@ -177,7 +178,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
     }
     if (_users.isEmpty) {
       return Center(
-        child: Text('暂无结果',
+        child: Text('commonNoResults'.tr(),
             style: TextStyle(fontSize: 14.sp, color: const Color(0xFF62748E))),
       );
     }
@@ -251,7 +252,9 @@ class _UserTileState extends State<_UserTile> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    user.isFollowing ? '已关注' : '关注',
+                    user.isFollowing
+                        ? 'commonFollowed'.tr()
+                        : 'commonFollow'.tr(),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: user.isFollowing
@@ -273,7 +276,7 @@ class _UserTileState extends State<_UserTile> {
                     borderRadius: BorderRadius.circular(100.r),
                   ),
                   alignment: Alignment.center,
-                  child: Text('发消息',
+                  child: Text('commonSendMessage'.tr(),
                       style: TextStyle(
                           fontSize: 13.sp,
                           color: Colors.white,
@@ -288,7 +291,9 @@ class _UserTileState extends State<_UserTile> {
               SizedBox(width: 40.w),
               SizedBox(width: 12.w),
               Text(
-                '${CommonUtils.renderEnFixedNumber(user.followerCount)}粉丝',
+                'commonFollowerCount'.tr(namedArgs: {
+                  'count': CommonUtils.renderEnFixedNumber(user.followerCount)
+                }),
                 style:
                     TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
               ),
