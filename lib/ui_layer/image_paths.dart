@@ -23,6 +23,7 @@ class MyImagePaths {
   static const cn = './assets/images/cn.png';
   static const emptyMessage = './assets/images/empty_message.png';
   static const glinkWhite = './assets/images/glink_white.png';
+  static const iconArrowRight = './assets/images/icon_arrow_right.png';
   static const iconChatAlbum = './assets/images/icon_chat_album.png';
   static const iconChatCamera = './assets/images/icon_chat_camera.png';
   static const iconChatClearRecord = './assets/images/icon_chat_clear_record.png';
@@ -39,6 +40,7 @@ class MyImagePaths {
   static const iconMic = './assets/images/icon_mic.png';
   static const iconSearch = './assets/images/icon_search.png';
   static const iconSearch2 = './assets/images/icon_search2.png';
+  static const iconUploadPlus = './assets/images/icon_upload_plus.png';
   static const iconVolumeOff = './assets/images/icon_volume_off.png';
   static const img = './assets/images/img.png';
   static const logoGradient = './assets/images/logo_gradient.png';
