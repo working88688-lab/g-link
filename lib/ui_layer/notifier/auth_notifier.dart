@@ -3,8 +3,49 @@ import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/model/auth_models.dart';
 
 class AuthNotifier extends ChangeNotifier {
-  AuthNotifier(this._authDomain,
-      {required this.deviceId, required this.deviceType});
+  AuthNotifier(
+    this._authDomain, {
+    required this.deviceId,
+    required this.deviceType,
+  });
+
+  String _areaCode = '+01';
+
+  String get areaCode => _areaCode;
+
+  void setAreaCode(String value) {
+    _areaCode = value;
+    notifyListeners();
+  }
+
+  bool _loadingCode = false;
+
+  bool get loadingCode => _loadingCode;
+
+  void setLoadingCode(bool value) {
+    _loadingCode = value;
+    notifyListeners();
+  }
+
+  bool _visiPassword = false;
+
+  bool get visiPassword => _visiPassword;
+
+  void setVisiPassword(bool value) {
+    _visiPassword = value;
+    notifyListeners();
+  }
+
+  bool _checkAgreement = false;
+
+  bool get checkAgreement => _checkAgreement;
+
+  void setCheckAgreement(bool value) {
+    _checkAgreement = value;
+    notifyListeners();
+  }
+
+
 
   final AuthDomain _authDomain;
   final String deviceId;

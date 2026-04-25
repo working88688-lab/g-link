@@ -128,7 +128,7 @@
   "authRegisterAccount": "注册账号",
   "authRegisterAccountHint": "输入手机号（不含区号）或邮箱",
   "authCode": "验证码",
-  "authCodeHint": "请输入6位验证码",
+  "authCodeHint": "请输入验证码",
   "authSendCode": "发送验证码",
   "authAgreement": "我已阅读并同意《用户协议》和《隐私政策》",
   "authRegisterAction": "注册并登录",
@@ -136,5 +136,13 @@
   "authAccountBeforeCode": "请先输入手机号或邮箱",
   "authCodeSent": "验证码已发送，请注意查收",
   "authCodeSendFailed": "验证码发送失败，请稍后重试",
-  "authAgreementRequired": "请先同意用户协议"
+  "authAgreementRequired": "请先同意用户协议",
+  "registerWorldTip": "世界每一个角落的他，给你带来更多精彩",
+  "phoneRegister": "手机号注册",
+  "emailRegister": "邮箱注册",
+  "emailHint": "请输入邮箱",
+  "phoneHint": "请输入手机号",
+  "getCode": "获取验证码",
+  "setPWD1": "请设置密码（6-20位字符）",
+  "setPWD2": "请确认新密码（6-20位）"
 }

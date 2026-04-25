@@ -6,6 +6,9 @@ class AppRouterPaths {
   /// 登入
   static const login = '/login';
 
+  /// 注册
+  static const register = '/register';
+
   /// 首页
   static const home = '/home';
 

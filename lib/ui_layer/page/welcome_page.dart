@@ -35,18 +35,20 @@ class _WelcomePageState extends State<WelcomePage> {
     _timer?.cancel();
     final appDomain = context.read<AppDomain>();
     final hasToken = (appDomain.info['token'] ?? '').toString().isNotEmpty;
-    if (!hasToken) {
+    // if (!hasToken) {
       if (!mounted) return;
-      const LoginRoute().go(context);
+
+      const RegisterRoute().go(context);
+      // const LoginRoute().go(context);
       return;
-    }
-    final guided = await appDomain.cache.readGuideCompleted();
-    if (!mounted) return;
-    if (guided) {
-      const HomeRoute().go(context);
-      return;
-    }
-    const GuideRoute().go(context);
+    // }
+    // final guided = await appDomain.cache.readGuideCompleted();
+    // if (!mounted) return;
+    // if (guided) {
+    //   const HomeRoute().go(context);
+    //   return;
+    // }
+    // const GuideRoute().go(context);
   }
 
   @override

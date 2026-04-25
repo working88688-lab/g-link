@@ -7,6 +7,7 @@ import 'package:g_link/ui_layer/page/home_page.dart';
 import 'package:g_link/ui_layer/page/chat/message_page.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
+import 'package:g_link/ui_layer/page/register/register_page.dart';
 import 'package:g_link/ui_layer/page/short_video_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
@@ -48,6 +49,28 @@ class LoginRoute extends GoRouteData {
           deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
         ),
         child: const AuthPage(),
+      ),
+    );
+  }
+}
+
+@TypedGoRoute<RegisterRoute>(path: AppRouterPaths.register)
+class RegisterRoute extends GoRouteData {
+  const RegisterRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    final authDomain = context.read<AuthDomain>();
+    final appDomain = context.read<AppDomain>();
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: ChangeNotifierProvider(
+        create: (_) => AuthNotifier(
+          authDomain,
+          deviceId: '${appDomain.info['oauth_id'] ?? ''}',
+          deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
+        ),
+        child: const RegisterPage(),
       ),
     );
   }
