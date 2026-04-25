@@ -52,17 +52,19 @@ class _ComplaintPageState extends State<ComplaintPage> {
   Future<void> _loadReportTypes() async {
     try {
       final types = await context.read<ReportDomain>().getReportTypes();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _reportTypes = types;
           _loadingTypes = false;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loadingTypes = false;
           _loadError = 'complaintLoadTypesFailed'.tr();
         });
+      }
     }
   }
 

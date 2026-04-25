@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -11,35 +13,58 @@ class AppBottomSheet {
     Color backgroundColor = Colors.white,
     double? topRadius,
     bool useRootNavigator = true,
+    Decoration? decoration,
+    double? blurSigma,
+    bool showHandle = true,
+    Color handleColor = const Color(0xFFD1D1D6),
   }) {
+    final barrierColor = blurSigma != null ? Colors.transparent : null;
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
       useRootNavigator: useRootNavigator,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(topRadius ?? 16.w)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(height: 6.w),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFD1D1D6),
-                borderRadius: BorderRadius.circular(2),
+      barrierColor: barrierColor,
+      builder: (_) {
+        final radius = BorderRadius.vertical(top: Radius.circular(topRadius ?? 16.w));
+        Widget content = Container(
+          width: double.infinity,
+          decoration: decoration ??
+              BoxDecoration(
+                color: backgroundColor,
+                borderRadius: radius,
               ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showHandle) ...[
+                SizedBox(height: 6.w),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: handleColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
+              SizedBox(height: 10.w),
+              child,
+            ],
+          ),
+        );
+        if (blurSigma != null) {
+          // ClipRRect 将 BackdropFilter 的模糊效果限定在弹窗圆角矩形内
+          content = ClipRRect(
+            borderRadius: radius,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+              child: content,
             ),
-            SizedBox(height: 10.w),
-            child,
-          ],
-        ),
-      ),
+          );
+        }
+        return content;
+      },
     );
   }
 
@@ -63,8 +88,7 @@ class AppBottomSheet {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   title,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               );
             }
@@ -95,8 +119,7 @@ class AppBottomSheet {
             children: [
               Text(
                 title,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               Row(
@@ -120,8 +143,7 @@ class AppBottomSheet {
                                 child: Icon(action.icon, color: Colors.black87),
                               ),
                               const SizedBox(height: 6),
-                              Text(action.label,
-                                  style: const TextStyle(fontSize: 12)),
+                              Text(action.label, style: const TextStyle(fontSize: 12)),
                             ],
                           ),
                         ),

@@ -12,7 +12,7 @@ import 'package:g_link/ui_layer/page/home_page.dart';
 import 'package:g_link/ui_layer/page/chat/message_page.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
-import 'package:g_link/ui_layer/page/short_video_page.dart';
+import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/domain/domains/auth.dart';
