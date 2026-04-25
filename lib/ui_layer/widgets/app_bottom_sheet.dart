@@ -1,6 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppBottomSheet {
+  /// 通用底部弹窗：圆角白色背景，顶部拖拽条，内容由 [child] 决定。
+  /// [useRootNavigator] 为 true 时弹窗会覆盖底部导航栏，false 则显示在导航栏上方。
+  static Future<T?> show<T>({
+    required BuildContext context,
+    required Widget child,
+    bool isScrollControlled = true,
+    Color backgroundColor = Colors.white,
+    double? topRadius,
+    bool useRootNavigator = true,
+  }) {
+    return showModalBottomSheet<T>(
+      context: context,
+      isScrollControlled: isScrollControlled,
+      useRootNavigator: useRootNavigator,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(topRadius ?? 16.w)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 6.w),
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D1D6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            SizedBox(height: 10.w),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
   static Future<void> showSimpleList({
     required BuildContext context,
     required String title,
