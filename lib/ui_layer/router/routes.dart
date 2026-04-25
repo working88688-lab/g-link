@@ -167,7 +167,7 @@ class ComplaintRoute extends GoRouteData {
   static final GlobalKey<NavigatorState> $parentNavigatorKey =
       AppRouter.rootNavigatorKey;
 
-  final String? targetUserId;
+  final int? targetUserId;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {

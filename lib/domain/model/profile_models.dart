@@ -122,3 +122,17 @@ class RecommendedUser {
     );
   }
 }
+
+class ReportTypeItem {
+  const ReportTypeItem({required this.id, required this.name});
+
+  final int id;
+  final String name;
+
+  factory ReportTypeItem.fromJson(Json json) {
+    return ReportTypeItem(
+      id: json['id'] as int,
+      name: '${json['name'] ?? ''}',
+    );
+  }
+}

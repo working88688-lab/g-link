@@ -3,28 +3,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/report.dart';
+import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
 import '../../image_paths.dart';
-import '../../theme.dart';
 import '../../widgets/my_app_bar.dart';
 
-/// 投诉原因列表
-List<String> get _complaintReasons => [
-      'complaintReasonFakeInfo'.tr(),
-      'complaintReasonViolence'.tr(),
-      'complaintReasonHarassment'.tr(),
-      'complaintReasonAdult'.tr(),
-      'complaintReasonFraud'.tr(),
-      'complaintReasonPrivacy'.tr(),
-      'complaintReasonOther'.tr(),
-    ];
-
 class ComplaintPage extends StatefulWidget {
-  /// 被投诉的用户 ID，可选
-  final String? targetUserId;
+  /// 被投诉的用户 UID
+  final int? targetUserId;
 
   const ComplaintPage({super.key, this.targetUserId});
 
@@ -36,13 +27,40 @@ class _ComplaintPageState extends State<ComplaintPage> {
   /// 当前步骤：0 = 选择原因，1 = 填写详情
   int _step = 0;
 
-  String? _selectedReason;
+  ReportTypeItem? _selectedType;
+  List<ReportTypeItem> _reportTypes = [];
+  bool _loadingTypes = true;
+  String? _loadError;
+
   final TextEditingController _descController = TextEditingController();
   final List<XFile> _images = [];
   bool _submitting = false;
 
   static const int _maxImages = 5;
   static const int _maxDescLength = 200;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReportTypes();
+  }
+
+  Future<void> _loadReportTypes() async {
+    try {
+      final types = await context.read<ReportDomain>().getReportTypes();
+      if (mounted)
+        setState(() {
+          _reportTypes = types;
+          _loadingTypes = false;
+        });
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          _loadingTypes = false;
+          _loadError = 'complaintLoadTypesFailed'.tr();
+        });
+    }
+  }
 
   @override
   void dispose() {
@@ -63,9 +81,9 @@ class _ComplaintPageState extends State<ComplaintPage> {
     setState(() => _images.removeAt(index));
   }
 
-  void _onReasonTap(String reason) {
+  void _onReasonTap(ReportTypeItem type) {
     setState(() {
-      _selectedReason = reason;
+      _selectedType = type;
       _step = 1;
     });
   }
@@ -79,15 +97,42 @@ class _ComplaintPageState extends State<ComplaintPage> {
   }
 
   Future<void> _submit() async {
+    final uid = widget.targetUserId;
+    final type = _selectedType;
+    if (uid == null || type == null) return;
+
     setState(() => _submitting = true);
-    // TODO: 接入实际的投诉提交 API
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('complaintSubmitted'.tr())),
-    );
-    context.pop();
+    try {
+      // 上传图片，收集 download_url
+      final List<String> evidenceUrls = [];
+      final domain = context.read<ReportDomain>();
+      for (final img in _images) {
+        final url = await domain.uploadReportEvidence(img.path);
+        evidenceUrls.add(url);
+      }
+
+      await domain.submitUserReport(
+        uid: uid,
+        reasonType: type.id,
+        reasonDetail: _descController.text.trim().isEmpty
+            ? null
+            : _descController.text.trim(),
+        evidenceUrls: evidenceUrls,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('complaintSubmitted'.tr())),
+      );
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('complaintSubmitFailed'.tr())),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -118,6 +163,32 @@ class _ComplaintPageState extends State<ComplaintPage> {
   // ─── 第一步：选择原因 ───────────────────────────────────────────────────────
 
   Widget _buildReasonStep({Key? key}) {
+    if (_loadingTypes) {
+      return const Center(
+          key: ValueKey('loading'), child: CircularProgressIndicator());
+    }
+    if (_loadError != null) {
+      return Center(
+        key: ValueKey('error'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_loadError!,
+                style: TextStyle(color: Colors.red, fontSize: 14.sp)),
+            SizedBox(height: 12.h),
+            TextButton(
+                onPressed: () {
+                  setState(() {
+                    _loadingTypes = true;
+                    _loadError = null;
+                  });
+                  _loadReportTypes();
+                },
+                child: Text('retry'.tr())),
+          ],
+        ),
+      );
+    }
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,15 +205,13 @@ class _ComplaintPageState extends State<ComplaintPage> {
             )),
         Expanded(
           child: ListView.separated(
-            itemCount: _complaintReasons.length,
-            separatorBuilder: (_, __) => SizedBox(
-              height: 0.w,
-            ),
+            itemCount: _reportTypes.length,
+            separatorBuilder: (_, __) => SizedBox(height: 0.w),
             itemBuilder: (context, index) {
-              final reason = _complaintReasons[index];
+              final type = _reportTypes[index];
               return _ReasonItem(
-                reason: reason,
-                onTap: () => _onReasonTap(reason),
+                reason: type.name,
+                onTap: () => _onReasonTap(type),
               );
             },
           ),
@@ -165,7 +234,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             children: [
               // 已选原因标签
               Text(
-                _selectedReason ?? '',
+                _selectedType?.name ?? '',
                 style: TextStyle(
                   fontSize: 18.sp,
                   color: const Color(0xFF1A1F2C),

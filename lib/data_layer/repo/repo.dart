@@ -36,6 +36,7 @@ import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
 import 'package:g_link/data_layer/data_source/home_service.dart';
+import 'package:g_link/data_layer/data_source/user_report_service.dart';
 import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
 import 'package:g_link/data_layer/data_source/auth_service.dart';
@@ -65,6 +66,7 @@ abstract class _BaseAppRepo implements AppDomain {
   late final _authService = AuthService(_apiDio);
   late final _searchService = SearchService(_v1Dio);
   late final _chatService = ChatService(_v1Dio);
+  late final _userReportService = UserReportService(_v1Dio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
