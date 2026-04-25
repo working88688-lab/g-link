@@ -10,14 +10,16 @@ mixin _Report on _BaseAppRepo implements ReportDomain {
       _userReportService.getReportTypes();
 
   @override
-  Future<void> submitUserReport({
-    required int uid,
+  Future<void> submitReport({
+    required ReportTarget target,
+    required int targetId,
     required int reasonType,
     String? reasonDetail,
     required List<String> evidenceUrls,
   }) =>
-      _userReportService.submitUserReport(
-        uid: uid,
+      _userReportService.submitReport(
+        target: target,
+        targetId: targetId,
         reasonType: reasonType,
         reasonDetail: reasonDetail,
         evidenceUrls: evidenceUrls,

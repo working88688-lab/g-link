@@ -16,6 +16,7 @@ import 'package:g_link/ui_layer/page/short_video_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/domain/domains/auth.dart';
+import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -162,18 +163,28 @@ class GuideRoute extends GoRouteData {
 
 @TypedGoRoute<ComplaintRoute>(path: AppRouterPaths.complaint)
 class ComplaintRoute extends GoRouteData {
-  const ComplaintRoute({this.targetUserId});
+  const ComplaintRoute({this.targetId, this.targetType});
 
   static final GlobalKey<NavigatorState> $parentNavigatorKey =
       AppRouter.rootNavigatorKey;
 
-  final int? targetUserId;
+  /// 被举报对象 ID
+  final int? targetId;
+
+  /// 举报类型: 'user' | 'video' | 'comment' | 'post'，缺省 'user'
+  final String? targetType;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
+    final target = switch (targetType) {
+      'video' => ReportTarget.video,
+      'comment' => ReportTarget.comment,
+      'post' => ReportTarget.post,
+      _ => ReportTarget.user,
+    };
     return CommonUtils.buildSlideTransitionPage(
       state: state,
-      child: ComplaintPage(targetUserId: targetUserId),
+      child: ComplaintPage(targetId: targetId, reportTarget: target),
     );
   }
 }

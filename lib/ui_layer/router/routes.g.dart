@@ -229,13 +229,15 @@ RouteBase get $complaintRoute => GoRouteData.$route(
 
 extension $ComplaintRouteExtension on ComplaintRoute {
   static ComplaintRoute _fromState(GoRouterState state) => ComplaintRoute(
-        targetUserId: state.uri.queryParameters['target-user-id'],
+        targetId: int.tryParse(state.uri.queryParameters['target-id'] ?? ''),
+        targetType: state.uri.queryParameters['target-type'],
       );
 
   String get location => GoRouteData.$location(
         '/complaint',
         queryParams: {
-          if (targetUserId != null) 'target-user-id': targetUserId,
+          if (targetId != null) 'target-id': '$targetId',
+          if (targetType != null) 'target-type': targetType,
         },
       );
 

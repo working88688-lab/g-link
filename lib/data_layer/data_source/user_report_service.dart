@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 
 class UserReportService {
@@ -70,14 +71,21 @@ class UserReportService {
     }
   }
 
-  Future<void> submitUserReport({
-    required int uid,
+  Future<void> submitReport({
+    required ReportTarget target,
+    required int targetId,
     required int reasonType,
     String? reasonDetail,
     required List<String> evidenceUrls,
   }) async {
+    final path = switch (target) {
+      ReportTarget.user => '/api/v1/users/$targetId/report',
+      ReportTarget.video => '/api/v1/videos/$targetId/report',
+      ReportTarget.comment => '/api/v1/comments/$targetId/report',
+      ReportTarget.post => '/api/v1/posts/$targetId/report',
+    };
     await _dio.post(
-      '/api/v1/users/$uid/report',
+      path,
       data: {
         'reason_type': reasonType,
         if (reasonDetail != null && reasonDetail.isNotEmpty)

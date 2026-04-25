@@ -14,10 +14,14 @@ import '../../image_paths.dart';
 import '../../widgets/my_app_bar.dart';
 
 class ComplaintPage extends StatefulWidget {
-  /// 被投诉的用户 UID
-  final int? targetUserId;
+  final int? targetId;
+  final ReportTarget reportTarget;
 
-  const ComplaintPage({super.key, this.targetUserId});
+  const ComplaintPage({
+    super.key,
+    this.targetId,
+    this.reportTarget = ReportTarget.user,
+  });
 
   @override
   State<ComplaintPage> createState() => _ComplaintPageState();
@@ -97,9 +101,9 @@ class _ComplaintPageState extends State<ComplaintPage> {
   }
 
   Future<void> _submit() async {
-    final uid = widget.targetUserId;
+    final id = widget.targetId;
     final type = _selectedType;
-    if (uid == null || type == null) return;
+    if (id == null || type == null) return;
 
     setState(() => _submitting = true);
     try {
@@ -111,8 +115,9 @@ class _ComplaintPageState extends State<ComplaintPage> {
         evidenceUrls.add(url);
       }
 
-      await domain.submitUserReport(
-        uid: uid,
+      await domain.submitReport(
+        target: widget.reportTarget,
+        targetId: id,
         reasonType: type.id,
         reasonDetail: _descController.text.trim().isEmpty
             ? null
