@@ -24,8 +24,20 @@ class AppRouterPaths {
   /// 引导页
   static const guide = '/guide';
 
+  /// 投诉用户
+  static const complaint = '/complaint';
 
+  /// 聊天会话详情
+  static const chatConversation = '/chat_conversation';
 
+  /// 消息 - 用户搜索
+  static const userSearch = '/user_search';
+
+  /// 消息 - 全局搜索（联系人+聊天记录）
+  static const globalSearch = '/global_search';
+
+  /// 聊天 - 聊天记录搜索
+  static const chatRecordsSearch = '/chat_records_search';
 
   /// 暗网
   static const anWang = '/anWang';

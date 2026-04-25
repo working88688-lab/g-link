@@ -11,6 +11,10 @@ List<RouteBase> get $appRoutes => [
       $loginRoute,
       $statefulShellRoute,
       $guideRoute,
+      $chatConversationRoute,
+      $userSearchRoute,
+      $globalSearchRoute,
+      $chatRecordsSearchRoute,
     ];
 
 RouteBase get $welcomeRoute => GoRouteData.$route(
@@ -204,6 +208,133 @@ extension $GuideRouteExtension on GuideRoute {
 
   String get location => GoRouteData.$location(
         '/guide',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $chatConversationRoute => GoRouteData.$route(
+      path: '/chat_conversation',
+      parentNavigatorKey: ChatConversationRoute.$parentNavigatorKey,
+      factory: $ChatConversationRouteExtension._fromState,
+    );
+
+extension $ChatConversationRouteExtension on ChatConversationRoute {
+  static ChatConversationRoute _fromState(GoRouterState state) =>
+      ChatConversationRoute(
+        name: state.uri.queryParameters['name']!,
+        avatarUrl: state.uri.queryParameters['avatar-url'] ?? '',
+        isOnline: _$convertMapValue(
+                'is-online', state.uri.queryParameters, _$boolConverter) ??
+            false,
+      );
+
+  String get location => GoRouteData.$location(
+        '/chat_conversation',
+        queryParams: {
+          'name': name,
+          if (avatarUrl != '') 'avatar-url': avatarUrl,
+          if (isOnline != false) 'is-online': isOnline.toString(),
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+T? _$convertMapValue<T>(
+  String key,
+  Map<String, String> map,
+  T Function(String) converter,
+) {
+  final value = map[key];
+  return value == null ? null : converter(value);
+}
+
+bool _$boolConverter(String value) {
+  switch (value) {
+    case 'true':
+      return true;
+    case 'false':
+      return false;
+    default:
+      throw UnsupportedError('Cannot convert "$value" into a bool.');
+  }
+}
+
+RouteBase get $userSearchRoute => GoRouteData.$route(
+      path: '/user_search',
+      parentNavigatorKey: UserSearchRoute.$parentNavigatorKey,
+      factory: $UserSearchRouteExtension._fromState,
+    );
+
+extension $UserSearchRouteExtension on UserSearchRoute {
+  static UserSearchRoute _fromState(GoRouterState state) =>
+      const UserSearchRoute();
+
+  String get location => GoRouteData.$location(
+        '/user_search',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $globalSearchRoute => GoRouteData.$route(
+      path: '/global_search',
+      parentNavigatorKey: GlobalSearchRoute.$parentNavigatorKey,
+      factory: $GlobalSearchRouteExtension._fromState,
+    );
+
+extension $GlobalSearchRouteExtension on GlobalSearchRoute {
+  static GlobalSearchRoute _fromState(GoRouterState state) =>
+      const GlobalSearchRoute();
+
+  String get location => GoRouteData.$location(
+        '/global_search',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $chatRecordsSearchRoute => GoRouteData.$route(
+      path: '/chat_records_search',
+      parentNavigatorKey: ChatRecordsSearchRoute.$parentNavigatorKey,
+      factory: $ChatRecordsSearchRouteExtension._fromState,
+    );
+
+extension $ChatRecordsSearchRouteExtension on ChatRecordsSearchRoute {
+  static ChatRecordsSearchRoute _fromState(GoRouterState state) =>
+      const ChatRecordsSearchRoute();
+
+  String get location => GoRouteData.$location(
+        '/chat_records_search',
       );
 
   void go(BuildContext context) => context.go(location);

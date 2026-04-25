@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/auth_page.dart';
+import 'package:g_link/ui_layer/page/chat/chat_page.dart';
+import 'package:g_link/ui_layer/page/chat/search/chat_records_search_page.dart';
+import 'package:g_link/ui_layer/page/chat/search/global_search_page.dart';
+import 'package:g_link/ui_layer/page/chat/search/user_search_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
 import 'package:g_link/ui_layer/page/chat/message_page.dart';
@@ -14,6 +18,7 @@ import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'router.dart';
 import 'paths.dart';
 
 part 'routes.g.dart';
@@ -150,6 +155,82 @@ class GuideRoute extends GoRouteData {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: const GuidePage(),
+    );
+  }
+}
+
+@TypedGoRoute<ChatConversationRoute>(path: AppRouterPaths.chatConversation)
+class ChatConversationRoute extends GoRouteData {
+  const ChatConversationRoute({
+    required this.name,
+    this.avatarUrl = '',
+    this.isOnline = false,
+  });
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final String name;
+  final String avatarUrl;
+  final bool isOnline;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: ChatPage(
+        name: name,
+        avatarUrl: avatarUrl,
+        isOnline: isOnline,
+      ),
+    );
+  }
+}
+
+@TypedGoRoute<UserSearchRoute>(path: AppRouterPaths.userSearch)
+class UserSearchRoute extends GoRouteData {
+  const UserSearchRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const UserSearchPage(),
+    );
+  }
+}
+
+@TypedGoRoute<GlobalSearchRoute>(path: AppRouterPaths.globalSearch)
+class GlobalSearchRoute extends GoRouteData {
+  const GlobalSearchRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const GlobalSearchPage(),
+    );
+  }
+}
+
+@TypedGoRoute<ChatRecordsSearchRoute>(path: AppRouterPaths.chatRecordsSearch)
+class ChatRecordsSearchRoute extends GoRouteData {
+  const ChatRecordsSearchRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const ChatRecordsSearchPage(),
     );
   }
 }
