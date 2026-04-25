@@ -9,4 +9,15 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
   Future<MessageSearchResult> searchMessages(
           {required String q, int limit = 10}) =>
       _chatService.searchMessages(q: q, limit: limit);
+
+  @override
+  Future<void> deleteChat(int chatId) => _chatService.deleteChat(chatId);
+
+  @override
+  Future<void> togglePin(int chatId, {required bool isPinned}) =>
+      _chatService.togglePin(chatId, isPinned: isPinned);
+
+  @override
+  Future<void> toggleMute(int chatId, {required bool isMuted}) =>
+      _chatService.toggleMute(chatId, isMuted: isMuted);
 }

@@ -18,6 +18,7 @@ enum ReadStatus { unread, sent, delivered }
 
 class _MsgItem {
   final String id;
+  final int chatId;
   final String name;
   final String avatarUrl;
   final String lastMsg;
@@ -30,6 +31,7 @@ class _MsgItem {
 
   const _MsgItem({
     required this.id,
+    required this.chatId,
     required this.name,
     required this.avatarUrl,
     required this.lastMsg,
@@ -48,6 +50,7 @@ class _MsgItem {
   }) =>
       _MsgItem(
         id: id,
+        chatId: chatId,
         name: name,
         avatarUrl: avatarUrl,
         lastMsg: lastMsg,
@@ -62,6 +65,7 @@ class _MsgItem {
   factory _MsgItem.fromChatItem(ChatItem c) {
     return _MsgItem(
       id: c.id.toString(),
+      chatId: c.chatId,
       name: c.name,
       avatarUrl: c.avatarUrl,
       lastMsg: c.lastMsgContent,
@@ -151,25 +155,64 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   void _pin(String id) {
+    final idx = _items.indexWhere((e) => e.id == id);
+    if (idx < 0) return;
+    final item = _items[idx];
+    final newPinned = !item.isPinned;
+    // 乐观更新 UI
     setState(() {
-      final idx = _items.indexWhere((e) => e.id == id);
-      if (idx < 0) return;
-      final item = _items[idx].copyWith(isPinned: !_items[idx].isPinned);
+      final updated = item.copyWith(isPinned: newPinned);
       _items.removeAt(idx);
-      _items.insert(0, item);
+      _items.insert(0, updated);
+    });
+    context
+        .read<AppDomain>()
+        .togglePin(item.chatId, isPinned: item.isPinned)
+        .catchError((_) {
+      // 失败回滚
+      if (!mounted) return;
+      setState(() {
+        final rollbackIdx = _items.indexWhere((e) => e.id == id);
+        if (rollbackIdx < 0) return;
+        _items[rollbackIdx] =
+            _items[rollbackIdx].copyWith(isPinned: item.isPinned);
+      });
     });
   }
 
   void _mute(String id) {
-    setState(() {
-      final idx = _items.indexWhere((e) => e.id == id);
-      if (idx < 0) return;
-      _items[idx] = _items[idx].copyWith(isMuted: !_items[idx].isMuted);
+    final idx = _items.indexWhere((e) => e.id == id);
+    if (idx < 0) return;
+    final item = _items[idx];
+    final newMuted = !item.isMuted;
+    // 乐观更新 UI
+    setState(() => _items[idx] = item.copyWith(isMuted: newMuted));
+    context
+        .read<AppDomain>()
+        .toggleMute(item.chatId, isMuted: item.isMuted)
+        .catchError((_) {
+      // 失败回滚
+      if (!mounted) return;
+      setState(() {
+        final rollbackIdx = _items.indexWhere((e) => e.id == id);
+        if (rollbackIdx < 0) return;
+        _items[rollbackIdx] =
+            _items[rollbackIdx].copyWith(isMuted: item.isMuted);
+      });
     });
   }
 
   void _delete(String id) {
+    final idx = _items.indexWhere((e) => e.id == id);
+    if (idx < 0) return;
+    final item = _items[idx];
+    // 乐观更新 UI
     setState(() => _items.removeWhere((e) => e.id == id));
+    context.read<AppDomain>().deleteChat(item.chatId).catchError((_) {
+      // 失败回滚
+      if (!mounted) return;
+      setState(() => _items.insert(idx, item));
+    });
   }
 
   @override

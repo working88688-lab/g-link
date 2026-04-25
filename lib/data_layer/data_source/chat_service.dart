@@ -39,4 +39,26 @@ class ChatService {
         .toList();
     return (contacts: contacts, messages: messages);
   }
+
+  Future<void> deleteChat(int chatId) async {
+    await _dio.delete('/api/v1/chats/$chatId');
+  }
+
+  /// isPinned=false → POST /pin；isPinned=true → DELETE /pin
+  Future<void> togglePin(int chatId, {required bool isPinned}) async {
+    if (isPinned) {
+      await _dio.delete('/api/v1/chats/$chatId/pin');
+    } else {
+      await _dio.post('/api/v1/chats/$chatId/pin');
+    }
+  }
+
+  /// isMuted=false → POST /mute；isMuted=true → DELETE /mute
+  Future<void> toggleMute(int chatId, {required bool isMuted}) async {
+    if (isMuted) {
+      await _dio.delete('/api/v1/chats/$chatId/mute');
+    } else {
+      await _dio.post('/api/v1/chats/$chatId/mute');
+    }
+  }
 }
