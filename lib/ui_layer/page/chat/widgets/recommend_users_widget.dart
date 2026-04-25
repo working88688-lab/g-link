@@ -6,7 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 // ──────────────────────────────────────────
 
 class RecommendUsersWidget extends StatefulWidget {
-  const RecommendUsersWidget({super.key});
+  final Function? onClose;
+
+  const RecommendUsersWidget({super.key, this.onClose});
 
   @override
   State<RecommendUsersWidget> createState() => _RecommendUsersWidgetState();
@@ -34,7 +36,10 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () => setState(() => _closed = true),
+              onTap: () {
+                widget.onClose?.call();
+                setState(() => _closed = true);
+              },
               child: Text(
                 '关闭',
                 style: TextStyle(
@@ -95,7 +100,7 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
                       border: i % 2 == 0
                           ? null
                           : Border.all(
-                              color: const Color(0xFFCCCCCC), width: 1.w),
+                          color: const Color(0xFFCCCCCC), width: 1.w),
                       borderRadius: BorderRadius.circular(100.r),
                     ),
                     alignment: Alignment.center,

@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../image_paths.dart';
 import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
-import 'search/search_page.dart';
+import 'search/chat_records_search_page.dart';
 
 // ──────────────────────────────────────────
 // 数据模型
@@ -230,8 +230,7 @@ class _ChatPageState extends State<ChatPage> {
                   label: '搜索',
                   onTap: () => Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
-                          builder: (_) => const ChatSearchPage(
-                              mode: SearchMode.chatRecords),
+                          builder: (_) => const ChatRecordsSearchPage(),
                         ),
                       )),
               const OverlayMenuItem(

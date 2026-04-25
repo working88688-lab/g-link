@@ -199,19 +199,23 @@ class _CacheManager implements CacheDomain {
   }
 
   @override
-  Future<List<String>> readSearchHistory() async {
-    if (await appBox.read(_searchHistoryKey) case final data?) {
+  Future<List<String>> readSearchHistory({String namespace = 'default'}) async {
+    final key = '${_searchHistoryKey}_$namespace';
+    if (await appBox.read(key) case final data?) {
       return List<String>.from(data);
     }
     return [];
   }
 
   @override
-  Future<void> upsertSearchHistory({required List<String> searchHistory}) =>
-      appBox.upsert(_searchHistoryKey, searchHistory);
+  Future<void> upsertSearchHistory(
+          {required List<String> searchHistory,
+          String namespace = 'default'}) =>
+      appBox.upsert('${_searchHistoryKey}_$namespace', searchHistory);
 
   @override
-  Future<void> clearSearchHistory() => appBox.delete(_searchHistoryKey);
+  Future<void> clearSearchHistory({String namespace = 'default'}) =>
+      appBox.delete('${_searchHistoryKey}_$namespace');
 
   @override
   Future<bool> readGuideCompleted() async {

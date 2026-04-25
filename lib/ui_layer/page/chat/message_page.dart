@@ -6,7 +6,8 @@ import 'package:g_link/domain/model/chat_model.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'chat_page.dart';
-import 'search/search_page.dart';
+import 'search/global_search_page.dart';
+import 'search/user_search_page.dart';
 import 'widgets/recommend_users_widget.dart';
 import '../../widgets/overlay_menu_button.dart';
 
@@ -168,11 +169,11 @@ class _MessagePageState extends State<MessagePage> {
   late final _menuItems = [
     OverlayMenuItem(
       value: 'search',
-      icon: 'icon_search2',
+      icon: MyImagePaths.iconSearch2,
       label: '搜索用户',
       onTap: () => Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
-          builder: (_) => const ChatSearchPage(mode: SearchMode.users),
+          builder: (_) => const UserSearchPage(),
         ),
       ),
     ),
@@ -286,13 +287,10 @@ class _MessagePageState extends State<MessagePage> {
   Widget _buildSearchBar() {
     return GestureDetector(
       onTap: () => Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-            builder: (_) =>
-                const ChatSearchPage(mode: SearchMode.contactsAndRecords)),
+        MaterialPageRoute(builder: (_) => const GlobalSearchPage()),
       ),
       child: Padding(
-        padding:
-            EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
+        padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
         child: Container(
           height: 46.w,
           decoration: BoxDecoration(
@@ -308,10 +306,7 @@ class _MessagePageState extends State<MessagePage> {
                 contentPadding: EdgeInsets.symmetric(vertical: 11.w),
                 prefixIcon: Stack(
                   alignment: Alignment.center,
-                  children: [
-                    MyImage.asset(MyImagePaths.iconSearch,
-                        width: 24.w, height: 24.w)
-                  ],
+                  children: [MyImage.asset(MyImagePaths.iconSearch, width: 24.w, height: 24.w)],
                 ),
                 hintText: '搜索联系人或聊天记录',
                 hintStyle: TextStyle(
@@ -405,8 +400,7 @@ class _SwipeableTile extends StatefulWidget {
   State<_SwipeableTile> createState() => _SwipeableTileState();
 }
 
-class _SwipeableTileState extends State<_SwipeableTile>
-    with SingleTickerProviderStateMixin {
+class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   double _dragOffset = 0;
 
@@ -534,11 +528,7 @@ class _ActionBtn extends StatelessWidget {
   final VoidCallback onTap;
   final Color textColor;
 
-  const _ActionBtn(
-      {required this.label,
-      required this.color,
-      required this.onTap,
-      required this.textColor});
+  const _ActionBtn({required this.label, required this.color, required this.onTap, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -586,9 +576,7 @@ class _MsgTile extends StatelessWidget {
               bottom: 16.w,
             ),
             decoration: BoxDecoration(
-              border: Border(
-                  bottom:
-                      BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
+              border: Border(bottom: BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
             ),
             child: Row(
               children: [
@@ -618,9 +606,7 @@ class _MsgTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(16.r),
             color: const Color(0xFFD1D1D6),
           ),
-          child: item.avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 28.sp, color: Colors.white)
-              : null,
+          child: item.avatarUrl.isEmpty ? Icon(Icons.person, size: 28.sp, color: Colors.white) : null,
         ),
         if (item.isOnline)
           Positioned(
@@ -657,8 +643,7 @@ class _MsgTile extends StatelessWidget {
             ),
             if (item.isMuted) ...[
               SizedBox(width: 4.w),
-              MyImage.asset(MyImagePaths.iconVolumeOff,
-                  width: 16.w, height: 16.w),
+              MyImage.asset(MyImagePaths.iconVolumeOff, width: 16.w, height: 16.w),
             ],
           ],
         ),
@@ -686,14 +671,9 @@ class _MsgTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (item.readStatus == ReadStatus.sent ||
-                item.readStatus == ReadStatus.delivered)
-              MyImage.asset(
-                  item.readStatus == ReadStatus.sent
-                      ? MyImagePaths.iconCheck
-                      : MyImagePaths.iconDoneAll,
-                  width: 14.w,
-                  height: 14.w),
+            if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
+              MyImage.asset(item.readStatus == ReadStatus.sent ? MyImagePaths.iconCheck : MyImagePaths.iconDoneAll,
+                  width: 14.w, height: 14.w),
             SizedBox(width: 2.w),
             Container(
               width: 40.w,
@@ -721,9 +701,7 @@ class _MsgTile extends StatelessWidget {
                     constraints: BoxConstraints(minWidth: 18.w),
                     height: 18.w,
                     decoration: BoxDecoration(
-                      color: item.isMuted
-                          ? const Color(0xFF90A1B9)
-                          : const Color(0xFFFF2056),
+                      color: item.isMuted ? const Color(0xFF90A1B9) : const Color(0xFFFF2056),
                       borderRadius: BorderRadius.circular(15.r),
                     ),
                     alignment: Alignment.center,
