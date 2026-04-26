@@ -1,21 +1,24 @@
+import 'dart:typed_data';
+
 import 'package:cross_file/cross_file.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:g_link/domain/model/home_data_model.dart';
+
 import '../../domain/domain.dart';
 import '../../domain/type_def.dart';
-import 'dart:typed_data';
-import 'package:dio/dio.dart';
 
 class HomeConfigNotifier extends ChangeNotifier {
   HomeConfigNotifier(this._domain);
 
   int _currentIndex = 0;
+  bool _disposed = false;
 
   int get currentIndex => _currentIndex;
 
   void setCurrentIndex(int index) {
     _currentIndex = index;
-    notifyListeners();
+    _safeNotify();
   }
 
   final AppDomain _domain;
@@ -30,18 +33,6 @@ class HomeConfigNotifier extends ChangeNotifier {
   final _searchHistory = <String>[];
 
   Future<bool> init() async {
-    // final result = await _domain.getHomeConfig();
-    // if (result.data case final data?) {
-    //   _homeData = data;
-    //   _config = _homeData.config;
-    //   await _initSearchHistory();
-    //   return true;
-    // } else if (result.msg == 'token无效') {
-    //   return init(); //重复调一次，防止用户在未启动app时已被挤下线后无法获取数据
-    // } else {
-    //   return false;
-    // }
-
     return false;
   }
 
@@ -101,20 +92,29 @@ class HomeConfigNotifier extends ChangeNotifier {
     }
   }
 
-  /// 更新搜索记录
   Future<void> upsertSearchHistory({
     required List<String> searchHistory,
   }) async {
     await _domain.cache.upsertSearchHistory(searchHistory: searchHistory);
     _searchHistory.clear();
     _searchHistory.addAll(searchHistory);
-    notifyListeners();
+    _safeNotify();
   }
 
-  /// 更新搜索记录
   Future<void> clearSearchHistory() async {
     await _domain.cache.clearSearchHistory();
     _searchHistory.clear();
+    _safeNotify();
+  }
+
+  void _safeNotify() {
+    if (_disposed) return;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

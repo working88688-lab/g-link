@@ -8,6 +8,7 @@ class MyImagePaths {
   static const iconChatCamera = './assets/images/icon_chat_camera.png';
   static const appTabMineN = './assets/images/app_tab_mine_n.png';
   static const appTabHomeS = './assets/images/app_tab_home_s.png';
+  static const userVideo = './assets/images/user_video.png';
   static const appBackIcon = './assets/images/app_back_icon.png';
   static const iconSearch = './assets/images/icon_search.png';
   static const iconChatPlus = './assets/images/icon_chat_plus.png';
@@ -23,6 +24,7 @@ class MyImagePaths {
   static const appTabPublish = './assets/images/app_tab_publish.png';
   static const appUpdateUpBg = './assets/images/app_update_up_bg.png';
   static const glinkWhite = './assets/images/glink_white.png';
+  static const userPost = './assets/images/user_post.png';
   static const check1 = './assets/images/check1.png';
   static const apple = './assets/images/apple.png';
   static const splash = './assets/images/splash.png';
@@ -31,6 +33,7 @@ class MyImagePaths {
   static const iconChatAlbum = './assets/images/icon_chat_album.png';
   static const appAnnouncement = './assets/images/app_announcement.png';
   static const joinGlink = './assets/images/join_glink.png';
+  static const userFavorite = './assets/images/user_favorite.png';
   static const iconChatUnpin = './assets/images/icon_chat_unpin.png';
   static const iconInputClear = './assets/images/icon_input_clear.png';
   static const iconDoneAll = './assets/images/icon_done_all.png';

@@ -20,3 +20,5 @@ A new Flutter project.
 fvm flutter build web --web-renderer html --release
 fvm dart add_version.dart
 # apk 名称格式 包名_版本号_时间戳.apk
+
+## 接口地址 https://api.zywsbgha.cc/docs

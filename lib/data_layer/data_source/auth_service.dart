@@ -66,4 +66,24 @@ class AuthService extends BaseService {
             'type': type,
           },
           encrypted: false);
+
+  AsyncJson resetPassword({
+    required String type,
+    String? countryCode,
+    String? phone,
+    String? email,
+    required String code,
+    required String password,
+  }) =>
+      post('/auth/reset-password',
+          data: {
+            'type': type,
+            if (countryCode != null && countryCode.isNotEmpty)
+              'country_code': countryCode,
+            if (phone != null && phone.isNotEmpty) 'phone': phone,
+            if (email != null && email.isNotEmpty) 'email': email,
+            'code': code,
+            'password': password,
+          },
+          encrypted: false);
 }

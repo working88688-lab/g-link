@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/theme/theme_manager.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';
 
 class WelcomePage extends StatefulWidget {
@@ -18,11 +20,13 @@ class WelcomePage extends StatefulWidget {
 
 class _WelcomePageState extends State<WelcomePage> {
   Timer? _timer;
+  String? _splashImageUrl;
+  String? _splashActionUrl;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 2), _routeOnboardingPage);
+    _initSplashAd();
   }
 
   @override
@@ -34,21 +38,43 @@ class _WelcomePageState extends State<WelcomePage> {
   void _routeOnboardingPage() async {
     _timer?.cancel();
     final appDomain = context.read<AppDomain>();
-    final hasToken = (appDomain.info['token'] ?? '').toString().isNotEmpty;
-    // if (!hasToken) {
-      if (!mounted) return;
-
-      const RegisterRoute().go(context);
-      // const LoginRoute().go(context);
+    final guided = await appDomain.cache.readGuideCompleted();
+    if (!mounted) return;
+    if (guided) {
+      const HomeRoute().go(context);
       return;
-    // }
-    // final guided = await appDomain.cache.readGuideCompleted();
-    // if (!mounted) return;
-    // if (guided) {
-    //   const HomeRoute().go(context);
-    //   return;
-    // }
-    // const GuideRoute().go(context);
+    }
+    const GuideRoute().go(context);
+  }
+
+  Future<void> _initSplashAd() async {
+    var delaySeconds = 2;
+    var shouldStartTimer = true;
+    try {
+      final result = await context
+          .read<HomeDomain>()
+          .getSplashAd()
+          .timeout(const Duration(seconds: 2));
+      if (!mounted) return;
+      final ad = result.data;
+      if (result.status == 0 && ad != null && ad.imageUrl.isNotEmpty) {
+        setState(() {
+          _splashImageUrl = ad.imageUrl;
+          _splashActionUrl = ad.actionUrl;
+        });
+        delaySeconds = ad.duration.clamp(1, 8);
+      }
+    } catch (_) {
+      // Keep local splash fallback.
+    } finally {
+      if (!mounted) {
+        shouldStartTimer = false;
+      }
+    }
+    if (shouldStartTimer && mounted) {
+      _timer?.cancel();
+      _timer = Timer(Duration(seconds: delaySeconds), _routeOnboardingPage);
+    }
   }
 
   @override
@@ -80,11 +106,28 @@ class _WelcomePageState extends State<WelcomePage> {
         systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-        body: MyImage.asset(
-          MyImagePaths.splash,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            final link = _splashActionUrl ?? '';
+            if (link.isNotEmpty) {
+              CommonUtils.launchUrl(link);
+            }
+          },
+          child: _splashImageUrl != null
+              ? MyImage.network(
+                  _splashImageUrl!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                  placeHolder: null,
+                )
+              : MyImage.asset(
+                  MyImagePaths.splash,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
         ),
       ),
     );

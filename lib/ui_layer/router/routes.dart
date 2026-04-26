@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/auth_page.dart';
+import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
-import 'package:g_link/ui_layer/page/chat/message_page.dart';
+import 'package:g_link/ui_layer/page/message_page_v2.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
@@ -60,6 +61,19 @@ class RegisterRoute extends GoRouteData {
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const RegisterPage(),
+    );
+  }
+}
+
+@TypedGoRoute<ForgotPasswordRoute>(path: AppRouterPaths.forgotPassword)
+class ForgotPasswordRoute extends GoRouteData {
+  const ForgotPasswordRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
     final authDomain = context.read<AuthDomain>();
     final appDomain = context.read<AppDomain>();
     return CommonUtils.buildSlideTransitionPage(
@@ -70,7 +84,7 @@ class RegisterRoute extends GoRouteData {
           deviceId: '${appDomain.info['oauth_id'] ?? ''}',
           deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
         ),
-        child: const RegisterPage(),
+        child: const ForgotPasswordPage(),
       ),
     );
   }
@@ -154,7 +168,7 @@ class MessageRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      const MessagePage();
+      const MessagePageV2();
 }
 
 class MineRoute extends GoRouteData {

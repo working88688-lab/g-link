@@ -74,4 +74,26 @@ mixin _Auth on _BaseAppRepo implements AuthDomain {
         .deserialize()
         .guard;
   }
+
+  @override
+  AsyncResult resetPassword({
+    required String type,
+    String? countryCode,
+    String? phone,
+    String? email,
+    required String code,
+    required String password,
+  }) async {
+    return _authService
+        .resetPassword(
+          type: type,
+          countryCode: countryCode,
+          phone: phone,
+          email: email,
+          code: code,
+          password: password,
+        )
+        .deserialize()
+        .guard;
+  }
 }

@@ -9,6 +9,9 @@ class AppRouterPaths {
   /// 注册
   static const register = '/register';
 
+  /// 忘记密码
+  static const forgotPassword = '/forgot_password';
+
   /// 首页
   static const home = '/home';
 
@@ -26,9 +29,6 @@ class AppRouterPaths {
 
   /// 引导页
   static const guide = '/guide';
-
-
-
 
   /// 暗网
   static const anWang = '/anWang';

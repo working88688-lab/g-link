@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/profile_models.dart';
-import 'package:g_link/ui_layer/notifier/guide_page_notifier.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:provider/provider.dart';
@@ -17,12 +16,9 @@ class WelcomeGuide2Page extends StatefulWidget {
 }
 
 class _WelcomeGuide2PageState extends State<WelcomeGuide2Page> {
-  bool _agreePolicy = true;
-  bool _pushNoticeEnabled = true;
-  bool _autoPlayEnabled = true;
-  bool _dataSaverEnabled = false;
   bool _isLoadingPrefs = true;
   List<InterestTag> _interests = const [];
+  final Set<int> _selectedTagIds = <int>{};
 
   @override
   void initState() {
@@ -31,173 +27,102 @@ class _WelcomeGuide2PageState extends State<WelcomeGuide2Page> {
   }
 
   Future<void> _loadPrefs() async {
-    final appDomain = context.read<AppDomain>();
     final profileDomain = context.read<ProfileDomain>();
-    final push = await appDomain.cache.readGuidePushNoticeEnabled();
-    final autoPlay = await appDomain.cache.readGuideAutoPlayEnabled();
-    final saver = await appDomain.cache.readGuideDataSaverEnabled();
     final interestResult = await profileDomain.getInterestTags();
     if (!mounted) return;
     setState(() {
-      _pushNoticeEnabled = push;
-      _autoPlayEnabled = autoPlay;
-      _dataSaverEnabled = saver;
       _interests = interestResult.data ?? const [];
+      _selectedTagIds
+        ..clear()
+        ..addAll(_interests.where((e) => e.isSelected).map((e) => e.id));
       _isLoadingPrefs = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final notifier = context.read<GuidePageNotifier>();
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 13.w),
       child: _isLoadingPrefs
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          : Stack(
               children: [
-                SizedBox(height: 20.w),
-                Text(
-                  'guidePrefsTitle'.tr(),
-                  style: MyTheme.black16bold.copyWith(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color.fromRGBO(26, 31, 44, 1),
-                  ),
-                ),
-                SizedBox(height: 8.w),
-                Text(
-                  'guidePrefsDesc'.tr(),
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: const Color.fromRGBO(98, 116, 142, 1),
-                    height: 1.4,
-                  ),
-                ),
-                SizedBox(height: 22.w),
-                _buildSwitchCard(
-                  title: 'guidePushNoticeTitle'.tr(),
-                  subtitle: 'guidePushNoticeDesc'.tr(),
-                  value: _pushNoticeEnabled,
-                  onChanged: (value) {
-                    setState(() => _pushNoticeEnabled = value);
-                  },
-                ),
-                SizedBox(height: 12.w),
-                _buildSwitchCard(
-                  title: 'guideAutoPlayTitle'.tr(),
-                  subtitle: 'guideAutoPlayDesc'.tr(),
-                  value: _autoPlayEnabled,
-                  onChanged: (value) {
-                    setState(() => _autoPlayEnabled = value);
-                  },
-                ),
-                SizedBox(height: 12.w),
-                _buildSwitchCard(
-                  title: 'guideDataSaverTitle'.tr(),
-                  subtitle: 'guideDataSaverDesc'.tr(),
-                  value: _dataSaverEnabled,
-                  onChanged: (value) {
-                    setState(() => _dataSaverEnabled = value);
-                  },
-                ),
-                if (_interests.isNotEmpty) ...[
-                  SizedBox(height: 14.w),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _interests.take(8).map((tag) {
-                      return Chip(
-                        label: Text(tag.name),
-                        backgroundColor: tag.isSelected
-                            ? const Color(0xFF1A1F2C).withValues(alpha: 0.12)
-                            : const Color(0xFFE3E7ED),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                const Spacer(),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8.w),
-                  onTap: () => setState(() => _agreePolicy = !_agreePolicy),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.w),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _agreePolicy
-                              ? Icons.check_circle_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          size: 18.w,
-                          color: _agreePolicy
-                              ? const Color.fromRGBO(26, 31, 44, 1)
-                              : const Color.fromRGBO(98, 116, 142, 1),
-                        ),
-                        SizedBox(width: 8.w),
-                        Expanded(
-                          child: Text(
-                            'guideAgreePolicy'.tr(),
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: const Color.fromRGBO(98, 116, 142, 1),
-                            ),
-                          ),
-                        ),
-                      ],
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 20.w),
+                    Text(
+                      'guideInterestTitle'.tr(),
+                      style: MyTheme.black16bold.copyWith(
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w700,
+                        color: const Color.fromRGBO(26, 31, 44, 1),
+                      ),
                     ),
-                  ),
-                ),
-                SizedBox(height: 6.w),
-                GestureDetector(
-                  onTap: () async {
-                    if (!_agreePolicy) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('guideAgreePolicyRequired'.tr())),
-                      );
-                      return;
-                    }
-                    final appDomain = context.read<AppDomain>();
-                    await appDomain.cache.upsertGuidePushNoticeEnabled(
-                      _pushNoticeEnabled,
-                    );
-                    await appDomain.cache.upsertGuideAutoPlayEnabled(
-                      _autoPlayEnabled,
-                    );
-                    await appDomain.cache.upsertGuideDataSaverEnabled(
-                      _dataSaverEnabled,
-                    );
-                    await appDomain.cache.upsertGuideCompleted(true);
-                    if (!context.mounted) return;
-                    if (!context.mounted) return;
-                    const HomeRoute().go(context);
-                  },
-                  child: Container(
-                    alignment: Alignment.center,
-                    margin:
-                        EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.w),
-                    decoration: BoxDecoration(
-                      color: const Color.fromRGBO(26, 31, 44, 1),
-                      borderRadius: BorderRadius.all(Radius.circular(40.w)),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: 15.w),
-                    child: Text(
-                      'guideStartExperience'.tr(),
-                      style: MyTheme.black16bold.copyWith(color: Colors.white),
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: notifier.toPreviousStep,
-                  child: Container(
-                    alignment: Alignment.center,
-                    margin: EdgeInsets.only(bottom: 20.w),
-                    child: Text(
-                      'guidePrevStep'.tr(),
+                    SizedBox(height: 6.w),
+                    Text(
+                      'guideInterestSubtitle'.tr(),
                       style: TextStyle(
-                        fontSize: 14.sp,
-                        color: const Color.fromRGBO(98, 116, 142, 1),
+                        fontSize: 13.sp,
+                        color: const Color.fromRGBO(118, 136, 160, 1),
+                        height: 1.3,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 18.w),
+                    Expanded(
+                      child: GridView.builder(
+                        padding: EdgeInsets.only(bottom: 120.w),
+                        itemCount: _interests.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 10.w,
+                          mainAxisSpacing: 10.w,
+                          childAspectRatio: 0.78,
+                        ),
+                        itemBuilder: (_, index) {
+                          final tag = _interests[index];
+                          final selected = _selectedTagIds.contains(tag.id);
+                          return _buildInterestCard(tag, selected);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 20.w,
+                  child: GestureDetector(
+                    onTap: _submitSelection,
+                    child: Container(
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.symmetric(horizontal: 2.w),
+                      height: 56.w,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF111A2C),
+                        borderRadius: BorderRadius.all(Radius.circular(30.w)),
+                      ),
+                      child: RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          children: [
+                            TextSpan(text: 'guideEnterApp'.tr()),
+                            TextSpan(
+                              text: ' ${'guideSelectedCount'.tr(args: [
+                                    '${_selectedTagIds.length}'
+                                  ])}',
+                              style: TextStyle(
+                                color: const Color(0xFF7E879A),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -207,46 +132,111 @@ class _WelcomeGuide2PageState extends State<WelcomeGuide2Page> {
     );
   }
 
-  Widget _buildSwitchCard({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.w),
-        color: const Color.fromRGBO(227, 231, 237, 0.3),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                    color: const Color.fromRGBO(26, 31, 44, 1),
-                  ),
-                ),
-                SizedBox(height: 4.w),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: const Color.fromRGBO(98, 116, 142, 1),
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildInterestCard(InterestTag tag, bool selected) {
+    final icon = _interestEmoji(tag);
+    return GestureDetector(
+      onTap: () => _toggleTag(tag.id),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F9FC),
+          borderRadius: BorderRadius.circular(12.w),
+          border: Border.all(
+            color: selected ? const Color(0xFF1A2233) : Colors.transparent,
+            width: 1.4,
           ),
-          Switch(value: value, onChanged: onChanged),
-        ],
+        ),
+        padding: EdgeInsets.symmetric(vertical: 12.w, horizontal: 6.w),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              icon,
+              style: TextStyle(fontSize: 27.sp),
+            ),
+            SizedBox(height: 8.w),
+            Text(
+              tag.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF1A2233),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _toggleTag(int id) {
+    final next = Set<int>.from(_selectedTagIds);
+    if (next.contains(id)) {
+      next.remove(id);
+    } else {
+      if (next.length >= 10) {
+        _showToast('guideInterestMax'.tr());
+        return;
+      }
+      next.add(id);
+    }
+    setState(() {
+      _selectedTagIds
+        ..clear()
+        ..addAll(next);
+    });
+  }
+
+  Future<void> _submitSelection() async {
+    if (_selectedTagIds.length < 3) {
+      _showToast('guideInterestMin'.tr());
+      return;
+    }
+    final profileDomain = context.read<ProfileDomain>();
+    final result = await profileDomain.submitOnboardingInterests(
+      tagIds: _selectedTagIds.toList(),
+    );
+    if (!mounted) return;
+    if (result.status != 0) {
+      _showToast(result.msg ?? 'commonRetry'.tr());
+      return;
+    }
+    final completeResult = await profileDomain.completeOnboarding();
+    if (!mounted) return;
+    if (completeResult.status != 0) {
+      _showToast(completeResult.msg ?? 'commonRetry'.tr());
+      return;
+    }
+    final appDomain = context.read<AppDomain>();
+    await appDomain.cache.upsertGuideCompleted(true);
+    if (!mounted) return;
+    const HomeRoute().go(context);
+  }
+
+  void _showToast(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  String _interestEmoji(InterestTag tag) {
+    const map = <String, String>{
+      '摄影': '📷',
+      '旅行': '✈️',
+      '美食': '🍜',
+      '穿搭': '👗',
+      '健身': '💪',
+      '音乐': '🎵',
+      '影视': '🎬',
+      '电影': '🎬',
+      '游戏': '🎮',
+      '科技': '💻',
+      '绘画': '🎨',
+      '手帐': '📒',
+      '读书': '📖',
+      '宠物': '🐾',
+      '搞笑': '😁',
+      '汽车': '🚗',
+    };
+    return map[tag.name] ?? '✨';
   }
 }

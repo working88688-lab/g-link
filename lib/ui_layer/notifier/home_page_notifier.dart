@@ -6,6 +6,7 @@ class HomePageNotifier extends ChangeNotifier {
   int _selectedCategory = 0;
   bool _isSubmitting = false;
   final Set<int> _likedPostIds = <int>{};
+  bool _disposed = false;
 
   int get selectedCategory => _selectedCategory;
   bool get isSubmitting => _isSubmitting;
@@ -15,7 +16,7 @@ class HomePageNotifier extends ChangeNotifier {
   void updateCategory(int index) {
     if (_selectedCategory == index) return;
     _selectedCategory = index;
-    notifyListeners();
+    _safeNotify();
   }
 
   void toggleLike(int postId) {
@@ -24,7 +25,7 @@ class HomePageNotifier extends ChangeNotifier {
     } else {
       _likedPostIds.add(postId);
     }
-    notifyListeners();
+    _safeNotify();
   }
 
   Future<void> submitPost({
@@ -33,9 +34,20 @@ class HomePageNotifier extends ChangeNotifier {
   }) async {
     if (title.isEmpty || content.isEmpty) return;
     _isSubmitting = true;
-    notifyListeners();
+    _safeNotify();
     await Future<void>.delayed(const Duration(milliseconds: 700));
     _isSubmitting = false;
+    _safeNotify();
+  }
+
+  void _safeNotify() {
+    if (_disposed) return;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

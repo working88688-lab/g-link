@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:analytics_sdk/analytics_sdk.dart';
 import 'package:analytics_sdk/enum/user_type_enum.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,10 +14,13 @@ import '../../domain/enum.dart';
 
 class UserNotifier extends ChangeNotifier {
   UserNotifier(this._remoteDomain) {
-    _remoteDomain.tokenStatusStream.listen(_tokenStatusListener);
+    _tokenStatusSubscription =
+        _remoteDomain.tokenStatusStream.listen(_tokenStatusListener);
   }
 
   final RemoteDomain _remoteDomain;
+  late final StreamSubscription<MyTokenStatus?> _tokenStatusSubscription;
+  bool _disposed = false;
 
   bool get isInit => _isInit;
   bool _isInit = false;
@@ -33,7 +38,7 @@ class UserNotifier extends ChangeNotifier {
   void _tokenStatusListener(MyTokenStatus? status) async {
     if (_tokenStatus != status) {
       _tokenStatus = status;
-      notifyListeners();
+      _safeNotify();
     }
   }
 
@@ -43,50 +48,50 @@ class UserNotifier extends ChangeNotifier {
 
   void patchUserFollowStatus(Iterable<String> ids) {
     _userFollowingStatus.addAll(ids);
-    notifyListeners();
+    _safeNotify();
   }
 
   Future changeUserFollow(String id) async {
-  //   if (_isLoadingFollowUser.contains(id)) return;
-  //   _isLoadingFollowUser.add(id);
-  //
-  //   final res = await _remoteDomain.communityFollowUser(aff: id);
-  //   if (res.isValid) {
-  //     if (!_userFollowingStatus.remove(id)) {
-  //       _userFollowingStatus.add(id);
-  //     }
-  //   } else {
-  //     MyToast.showText(text: res.msg ?? '');
-  //   }
-  //
-  //   _isLoadingFollowUser.remove(id);
-  //   notifyListeners();
-  // }
-  //
-  // Future<bool> init() async {
-  //   final result = await _remoteDomain.getUserInfo();
-  //   AppGlobal.aff = result.data?.aff ?? 0;
-  //
-  //   initSystemNotice();
-  //
-  //   AnalyticsSdk.setUid(result.data?.aff?.toString() ?? '');
-  //   AnalyticsSdk.setChannel(
-  //     (result.data?.channel == 'self' ? '' : result.data?.channel) ?? '',
-  //   );
-  //   AnalyticsSdk.setUserIdAndType(
-  //     userId: (AppGlobal.aff > 0) ? AppGlobal.aff.toString() : '',
-  //     userTypeEnum: ((result.data?.vipLevel ?? 0) > 0)
-  //         ? UserTypeEnum.vip
-  //         : UserTypeEnum.normal,
-  //   );
-  //
-  //   if (result.data case final data?) {
-  //     _member = data;
-  //     _isInit = true;
-  //     notifyListeners();
-  //     return true;
-  //   }
-  //   return false;
+    //   if (_isLoadingFollowUser.contains(id)) return;
+    //   _isLoadingFollowUser.add(id);
+    //
+    //   final res = await _remoteDomain.communityFollowUser(aff: id);
+    //   if (res.isValid) {
+    //     if (!_userFollowingStatus.remove(id)) {
+    //       _userFollowingStatus.add(id);
+    //     }
+    //   } else {
+    //     MyToast.showText(text: res.msg ?? '');
+    //   }
+    //
+    //   _isLoadingFollowUser.remove(id);
+    //   notifyListeners();
+    // }
+    //
+    // Future<bool> init() async {
+    //   final result = await _remoteDomain.getUserInfo();
+    //   AppGlobal.aff = result.data?.aff ?? 0;
+    //
+    //   initSystemNotice();
+    //
+    //   AnalyticsSdk.setUid(result.data?.aff?.toString() ?? '');
+    //   AnalyticsSdk.setChannel(
+    //     (result.data?.channel == 'self' ? '' : result.data?.channel) ?? '',
+    //   );
+    //   AnalyticsSdk.setUserIdAndType(
+    //     userId: (AppGlobal.aff > 0) ? AppGlobal.aff.toString() : '',
+    //     userTypeEnum: ((result.data?.vipLevel ?? 0) > 0)
+    //         ? UserTypeEnum.vip
+    //         : UserTypeEnum.normal,
+    //   );
+    //
+    //   if (result.data case final data?) {
+    //     _member = data;
+    //     _isInit = true;
+    //     notifyListeners();
+    //     return true;
+    //   }
+    //   return false;
   }
 
   Future initSystemNotice() async {
@@ -100,98 +105,98 @@ class UserNotifier extends ChangeNotifier {
 
   void readSystemNotice() {
     _systemNotice = _systemNotice?.copyWith(systemNoticeCount: 0);
-    notifyListeners();
+    _safeNotify();
   }
 
   void readCustomerService() {
     _systemNotice = _systemNotice?.copyWith(feedCount: 0);
-    notifyListeners();
+    _safeNotify();
   }
 
   /// 更新用户馀额
   void setMoney({required int money}) {
     _member = _member.copyWith(money: money);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setExp(int? newExp) {
     _member = _member.copyWith(exp: newExp);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setThumb({required String thumb}) {
     _member = _member.copyWith(thumb: thumb);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setNickName({required String nickName}) {
     _member = _member.copyWith(nickname: nickName);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setInviteBy({required dynamic inviteBy}) {
     _member = _member.copyWith(invitedBy: inviteBy);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setBindEmail({required dynamic inviteBy}) {
     _member = _member.copyWith(bindEmail: 1);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setDownNum({required int num}) {
     _member = _member.copyWith(videoDownloadValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setCartoonDownNum({required int num}) {
     _member = _member.copyWith(cartoonDownValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setStripValue({required int num}) {
     _member = _member.copyWith(stripValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setImgFaceValue({required int num}) {
     _member = _member.copyWith(imgFaceValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setAiNovelValue({required int num}) {
     _member = _member.copyWith(aiNovelValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setAiKissValue({required int num}) {
     _member = _member.copyWith(aiKissValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setAiAudioValue({required int num}) {
     _member = _member.copyWith(aiAudioValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setAiVideoFaceValue({required int num}) {
     _member = _member.copyWith(aiVideoFaceValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setIMValue({required int imValue}) {
     _member = _member.copyWith(imValue: imValue);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setMagicValue({required int num}) {
     _member = _member.copyWith(aiMagicValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   void setDrawValue({required int num}) {
     _member = _member.copyWith(aiDrawValue: num);
-    notifyListeners();
+    _safeNotify();
   }
 
   Future logout() async {
@@ -199,5 +204,17 @@ class UserNotifier extends ChangeNotifier {
     // await _remoteDomain.logout();
     // AnalyticsSdk.logoutUser();
     // await init();
+  }
+
+  void _safeNotify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _tokenStatusSubscription.cancel();
+    super.dispose();
   }
 }
