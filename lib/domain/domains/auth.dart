@@ -3,7 +3,11 @@ import 'package:g_link/domain/type_def.dart';
 
 abstract class AuthDomain {
   AsyncResult<AuthResultData> login({
+    required String type,
     required String account,
+    String? countryCode,
+    String? phone,
+    String? email,
     required String password,
     required String deviceId,
     required String deviceType,
@@ -37,4 +41,6 @@ abstract class AuthDomain {
     required String code,
     required String password,
   });
+
+  AsyncResult<List<AuthCountryCode>> getCountryCodes();
 }

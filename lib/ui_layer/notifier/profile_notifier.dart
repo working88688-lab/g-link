@@ -116,21 +116,30 @@ class ProfileNotifier extends ChangeNotifier {
     loadingVideos = true;
     _safeNotify();
     if (tabIndex == 0) {
-      final result = await _profileDomain.getMyPosts(limit: 21);
+      final result = await _profileDomain.getUserPosts(
+        uid: profile!.uid,
+        limit: 21,
+      );
       if (result.status == 0 && result.data != null) {
         posts = result.data!;
       } else {
         _handleError(result.status, result.msg, fallback: 'Load posts failed');
       }
     } else if (tabIndex == 1) {
-      final result = await _profileDomain.getMyVideos(limit: 21);
+      final result = await _profileDomain.getUserVideos(
+        uid: profile!.uid,
+        limit: 21,
+      );
       if (result.status == 0 && result.data != null) {
         videos = result.data!;
       } else {
         _handleError(result.status, result.msg, fallback: 'Load videos failed');
       }
     } else {
-      final result = await _profileDomain.getMyLikes(limit: 21);
+      final result = await _profileDomain.getUserLikes(
+        uid: profile!.uid,
+        limit: 21,
+      );
       if (result.status == 0 && result.data != null) {
         likes = result.data!;
       } else {

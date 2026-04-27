@@ -12,7 +12,7 @@ abstract class BaseService {
   String get service;
 
   AsyncJson post(String path,
-      {Object? data, bool encrypted = true, bool jsonBody = false}) async {
+      {Object? data, bool encrypted = true, bool jsonBody = true}) async {
     logger.i('请求的路径:${'/api/$service$path'}');
     final result = (await _dio.post(
       '/api/$service$path',
@@ -59,7 +59,7 @@ abstract class BaseService {
   }
 
   AsyncJson put(String path,
-      {Object? data, bool encrypted = true, bool jsonBody = false}) async {
+      {Object? data, bool encrypted = true, bool jsonBody = true}) async {
     logger.i('请求的路径:${'/api/$service$path'}');
     final result = (await _dio.put(
       '/api/$service$path',

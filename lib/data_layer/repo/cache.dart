@@ -31,6 +31,7 @@ class _CacheManager implements CacheDomain {
   final _guideAutoPlayKey = 'guide_auto_play';
   final _guideDataSaverKey = 'guide_data_saver';
   final _guideLanguageTypeKey = 'guide_language_type';
+  final _authPhoneCountryCodeKey = 'auth_phone_country_code';
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -199,23 +200,19 @@ class _CacheManager implements CacheDomain {
   }
 
   @override
-  Future<List<String>> readSearchHistory({String namespace = 'default'}) async {
-    final key = '${_searchHistoryKey}_$namespace';
-    if (await appBox.read(key) case final data?) {
+  Future<List<String>> readSearchHistory() async {
+    if (await appBox.read(_searchHistoryKey) case final data?) {
       return List<String>.from(data);
     }
     return [];
   }
 
   @override
-  Future<void> upsertSearchHistory(
-          {required List<String> searchHistory,
-          String namespace = 'default'}) =>
-      appBox.upsert('${_searchHistoryKey}_$namespace', searchHistory);
+  Future<void> upsertSearchHistory({required List<String> searchHistory}) =>
+      appBox.upsert(_searchHistoryKey, searchHistory);
 
   @override
-  Future<void> clearSearchHistory({String namespace = 'default'}) =>
-      appBox.delete('${_searchHistoryKey}_$namespace');
+  Future<void> clearSearchHistory() => appBox.delete(_searchHistoryKey);
 
   @override
   Future<bool> readGuideCompleted() async {
@@ -261,6 +258,14 @@ class _CacheManager implements CacheDomain {
   @override
   Future<void> upsertGuideLanguageType(int type) =>
       appBox.upsert(_guideLanguageTypeKey, type);
+
+  @override
+  Future<String?> readAuthPhoneCountryCode() async =>
+      (await appBox.read(_authPhoneCountryCodeKey))?.toString();
+
+  @override
+  Future<void> upsertAuthPhoneCountryCode(String code) =>
+      appBox.upsert(_authPhoneCountryCodeKey, code);
 
   @override
   Future<List> readDownloadVideoTasks() async {

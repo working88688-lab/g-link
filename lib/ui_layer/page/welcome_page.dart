@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:g_link/app_global.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
@@ -45,6 +46,8 @@ class _WelcomePageState extends State<WelcomePage> {
       return;
     }
     const GuideRoute().go(context);
+
+    // const LoginRoute().go(context);
   }
 
   Future<void> _initSplashAd() async {
@@ -79,6 +82,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
+    AppGlobal.context = context;
     // return Scaffold(
     //   body: MediaQuery.removePadding(
     //     context: context,

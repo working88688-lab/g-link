@@ -96,6 +96,15 @@ class EventTracking {
           ),
         );
 
+        _dio?.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              CommonUtils.log('[cURL] ${_toCurl(options)}');
+              handler.next(options);
+            },
+          ),
+        );
+
         if (reportConfig.isEncryption == 1) {
           final secretValue = PlatformAwareCrypto.encryptSecret(
               '${reportConfig.authenticationKey}_${reportConfig.authenticationTime}');
@@ -147,6 +156,30 @@ class EventTracking {
         CommonUtils.log('Dio初始化失败: $e');
       }
     }
+  }
+
+  String _toCurl(RequestOptions options) {
+    final buffer = StringBuffer(
+        "curl -X ${options.method.toUpperCase()} '${options.uri}'");
+    options.headers.forEach((key, value) {
+      if (value == null) return;
+      final escaped = value.toString().replaceAll("'", r"'\''");
+      buffer.write(" -H '$key: $escaped'");
+    });
+    final data = options.data;
+    if (data != null) {
+      if (data is FormData) {
+        for (final field in data.fields) {
+          final v = field.value.replaceAll("'", r"'\''");
+          buffer.write(" -F '${field.key}=$v'");
+        }
+      } else {
+        final body = data is String ? data : jsonEncode(data);
+        final escapedBody = body.replaceAll("'", r"'\''");
+        buffer.write(" --data-raw '$escapedBody'");
+      }
+    }
+    return buffer.toString();
   }
 
   /// 获取设备信息

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:g_link/app_global.dart';
@@ -11,6 +12,41 @@ import 'package:permission_handler/permission_handler.dart';
 
 Dio dio = Dio();
 
+String _toCurl(RequestOptions options) {
+  final buffer =
+      StringBuffer("curl -X ${options.method.toUpperCase()} '${options.uri}'");
+  options.headers.forEach((key, value) {
+    if (value == null) return;
+    final escaped = value.toString().replaceAll("'", r"'\''");
+    buffer.write(" -H '$key: $escaped'");
+  });
+  final data = options.data;
+  if (data != null) {
+    if (data is FormData) {
+      for (final field in data.fields) {
+        final v = field.value.replaceAll("'", r"'\''");
+        buffer.write(" -F '${field.key}=$v'");
+      }
+    } else {
+      final body = data is String ? data : jsonEncode(data);
+      final escapedBody = body.replaceAll("'", r"'\''");
+      buffer.write(" --data-raw '$escapedBody'");
+    }
+  }
+  return buffer.toString();
+}
+
+void _attachCurlLogger(Dio target) {
+  target.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) {
+        CommonUtils.log('[cURL] ${_toCurl(options)}');
+        handler.next(options);
+      },
+    ),
+  );
+}
+
 // 短视频
 class PreloadUtils {
   static List preloadTasks = []; // 下载任务队列
@@ -18,9 +54,14 @@ class PreloadUtils {
   static int finishCount = 0; // 当前下载完成的分片数量
   static bool currentRemove = false; // 当前下载任务是否被删除
   static bool alreadyAsked = false; // 是否申请过文件夹访问权限
+  static bool _curlAttached = false;
 
   // 接收预加载视频数组
   static Future<void> receivePreloadData(List<VlogModel> dataArr) async {
+    if (!_curlAttached) {
+      _attachCurlLogger(dio);
+      _curlAttached = true;
+    }
     removeCurrentTask();
 
     for (var videoInfo in dataArr) {
@@ -271,7 +312,9 @@ class PreloadUtils {
   static Future<Map> getTsList(String urlPath) async {
     // 视频地址解密
     String decrypted;
-    var res = await Dio().get(urlPath);
+    final tmpDio = Dio();
+    _attachCurlLogger(tmpDio);
+    var res = await tmpDio.get(urlPath);
     if (AppGlobal.m3u8Encrypt == '1') {
       decrypted = PlatformAwareCrypto.decryptM3U8(res.data);
     } else {

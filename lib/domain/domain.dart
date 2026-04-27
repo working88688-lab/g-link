@@ -1,11 +1,9 @@
 import 'package:g_link/domain/domains/chat.dart';
-import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/model/ad_model.dart';
 import 'package:g_link/domain/remote_domain.dart';
 import 'package:g_link/domain/type_def.dart';
 
-abstract class AppDomain
-    implements LocaleDomain, RemoteDomain, ChatDomain, SearchDomain {}
+abstract class AppDomain implements LocaleDomain, RemoteDomain, ChatDomain {}
 
 abstract class LocaleDomain {
   CacheDomain get cache;
@@ -68,6 +66,10 @@ abstract class CacheDomain
   /// 引导语言类型: 0=zh-CN, 1=en-US
   Future<int> readGuideLanguageType();
   Future<void> upsertGuideLanguageType(int type);
+
+  /// 认证流程默认手机号区号（纯数字，如 1/86）
+  Future<String?> readAuthPhoneCountryCode();
+  Future<void> upsertAuthPhoneCountryCode(String code);
 }
 
 abstract class VideoDownloadCacheDomain {
