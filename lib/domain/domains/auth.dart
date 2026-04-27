@@ -28,4 +28,13 @@ abstract class AuthDomain {
     String? email,
     required String type,
   });
+
+  AsyncResult resetPassword({
+    required String type,
+    String? countryCode,
+    String? phone,
+    String? email,
+    required String code,
+    required String password,
+  });
 }

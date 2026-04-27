@@ -375,11 +375,13 @@ class CommonUtils {
       // iOS/web系统上使用默认的页面过渡动画（支持滑动返回）
       return CupertinoPage(
         key: state.pageKey,
+        name: state.name ?? state.path,
         child: child,
       );
     } else {
       return CustomTransitionPage<void>(
         key: state.pageKey,
+        name: state.name ?? state.path,
         child: child,
         transitionDuration: transitionDuration,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

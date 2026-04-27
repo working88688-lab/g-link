@@ -11,12 +11,16 @@ abstract class BaseService {
 
   String get service;
 
-  AsyncJson post(String path, {Object? data, bool encrypted = true}) async {
+  AsyncJson post(String path,
+      {Object? data, bool encrypted = true, bool jsonBody = false}) async {
     logger.i('请求的路径:${'/api/$service$path'}');
     final result = (await _dio.post(
       '/api/$service$path',
       data: data,
       options: Options(
+        contentType: jsonBody
+            ? Headers.jsonContentType
+            : Headers.formUrlEncodedContentType,
         extra: {
           'skipEncrypt': !encrypted,
         },
@@ -50,6 +54,31 @@ abstract class BaseService {
     }
     developer.log(
       'RequstPath: ${_dio.options.baseUrl}/api/$service$path, params: $queryParameters, \nResult: $result',
+    );
+    return result;
+  }
+
+  AsyncJson put(String path,
+      {Object? data, bool encrypted = true, bool jsonBody = false}) async {
+    logger.i('请求的路径:${'/api/$service$path'}');
+    final result = (await _dio.put(
+      '/api/$service$path',
+      data: data,
+      options: Options(
+        contentType: jsonBody
+            ? Headers.jsonContentType
+            : Headers.formUrlEncodedContentType,
+        extra: {
+          'skipEncrypt': !encrypted,
+        },
+      ),
+    ))
+        .data;
+    if (result == null) {
+      throw ResponseNullException();
+    }
+    developer.log(
+      'RequstPath: ${_dio.options.baseUrl}/api/$service$path, params: $data, \nResult: $result',
     );
     return result;
   }

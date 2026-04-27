@@ -7,12 +7,15 @@ import 'package:g_link/ui_layer/page/chat/search/chat_records_search_page.dart';
 import 'package:g_link/ui_layer/page/chat/search/global_search_page.dart';
 import 'package:g_link/ui_layer/page/chat/search/user_search_page.dart';
 import 'package:g_link/ui_layer/page/complaint/complaint_page.dart';
+import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home_page.dart';
-import 'package:g_link/ui_layer/page/chat/message_page.dart';
+import 'package:g_link/ui_layer/page/message_page_v2.dart';
 import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
+import 'package:g_link/ui_layer/page/register/register_page.dart';
+import 'package:g_link/ui_layer/page/short_video_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/domain/domains/auth.dart';
@@ -55,6 +58,41 @@ class LoginRoute extends GoRouteData {
           deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
         ),
         child: const AuthPage(),
+      ),
+    );
+  }
+}
+
+@TypedGoRoute<RegisterRoute>(path: AppRouterPaths.register)
+class RegisterRoute extends GoRouteData {
+  const RegisterRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const RegisterPage(),
+    );
+  }
+}
+
+@TypedGoRoute<ForgotPasswordRoute>(path: AppRouterPaths.forgotPassword)
+class ForgotPasswordRoute extends GoRouteData {
+  const ForgotPasswordRoute();
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    final authDomain = context.read<AuthDomain>();
+    final appDomain = context.read<AppDomain>();
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: ChangeNotifierProvider(
+        create: (_) => AuthNotifier(
+          authDomain,
+          deviceId: '${appDomain.info['oauth_id'] ?? ''}',
+          deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
+        ),
+        child: const ForgotPasswordPage(),
       ),
     );
   }
@@ -138,7 +176,7 @@ class MessageRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      const MessagePage();
+      const MessagePageV2();
 }
 
 class MineRoute extends GoRouteData {

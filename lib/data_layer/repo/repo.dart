@@ -18,7 +18,10 @@ import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/result.dart';
 import 'package:g_link/report/ui_layer/report_timing_interceptor.dart';
+import 'package:g_link/ui_layer/router/paths.dart';
+import 'package:g_link/ui_layer/router/router.dart';
 import 'package:g_link/utils/common_utils.dart';
+import 'package:g_link/utils/my_toast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:utils/utils.dart';
 import 'package:crypto/crypto.dart';
@@ -96,8 +99,8 @@ abstract class _BaseAppRepo implements AppDomain {
   )..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          final token = _appInfo.token;
-          if (token != null) {
+          final token = _appInfo.token?.trim();
+          if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
@@ -114,6 +117,7 @@ abstract class _BaseAppRepo implements AppDomain {
   );
 
   bool _isInitialized = false;
+  bool _authRedirecting = false;
   Json _appInfo = {};
 
   @override
@@ -132,11 +136,17 @@ abstract class _BaseAppRepo implements AppDomain {
     _apiDio.interceptors.add(
       InterceptorsWrapper(
         onResponse: (response, handler) async {
-          if (response.data case final Map data when data['msg'] == 'token无效') {
-            await _cleanToken();
-            _tokenValidStreamController.sink.add(MyTokenStatus.invalid);
+          if (_isAuthRequiredResponse(response.data)) {
+            await _handleAuthRequired();
           }
           return handler.next(response);
+        },
+        onError: (err, handler) async {
+          final statusCode = err.response?.statusCode;
+          if (statusCode == 401 || statusCode == 403) {
+            await _handleAuthRequired();
+          }
+          return handler.next(err);
         },
       ),
     );
@@ -150,6 +160,35 @@ abstract class _BaseAppRepo implements AppDomain {
         await _cacheManager.deleteAuthToken();
       }
     } catch (_) {}
+  }
+
+  bool _isAuthRequiredResponse(dynamic data) {
+    if (data is! Map) return false;
+    final msg = '${data['msg'] ?? data['message'] ?? ''}'.toLowerCase();
+    final code = int.tryParse('${data['code'] ?? data['status'] ?? ''}') ?? 0;
+    if (msg.contains('token无效') ||
+        msg.contains('未登录') ||
+        msg.contains('需要登录') ||
+        msg.contains('invalid token') ||
+        msg.contains('token has expired') ||
+        msg.contains('please login again')) {
+      return true;
+    }
+    return code == 401 || code == 403 || code == -401;
+  }
+
+  Future<void> _handleAuthRequired() async {
+    if (_authRedirecting) return;
+    _authRedirecting = true;
+    await _cleanToken();
+    _tokenValidStreamController.sink.add(MyTokenStatus.invalid);
+    MyToast.showText(text: '需要登录');
+    try {
+      AppRouter.router.go(AppRouterPaths.login);
+    } finally {
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      _authRedirecting = false;
+    }
   }
 
   void _updateToken(String token, String refreshToken) {
@@ -181,9 +220,9 @@ abstract class _BaseAppRepo implements AppDomain {
       'oauth_type': getOAuthType(),
     });
 
-    final token = await _cacheManager.readAuthToken();
+    final token = (await _cacheManager.readAuthToken())?.trim();
 
-    if (token != null) {
+    if (token != null && token.isNotEmpty) {
       info.token = token;
       _tokenValidStreamController.sink.add(MyTokenStatus.valid);
     } else {

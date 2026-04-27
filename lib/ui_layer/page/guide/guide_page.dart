@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/report/ui_layer/report_gesture_detector.dart';
-import 'package:g_link/ui_layer/background_page.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/guide_page_notifier.dart';
+import 'package:g_link/ui_layer/page/background_page.dart';
 import 'package:g_link/ui_layer/page/guide/welcome_guide1_page.dart';
 import 'package:g_link/ui_layer/page/guide/welcome_guide2_page.dart';
 import 'package:g_link/ui_layer/theme.dart';
