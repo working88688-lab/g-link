@@ -5,11 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/page/short_video/widgets/short_video_toast.dart';
 import 'package:g_link/ui_layer/widgets/app_bottom_sheet.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 import '../../router/routes.dart';
 import 'widgets/comment_section.dart';
+import 'widgets/music_sheet.dart';
+import 'widgets/not_interested_sheet.dart';
+import 'widgets/share_sheet.dart';
 import 'widgets/video_card.dart';
 import 'models/video_item_model.dart';
 import 'widgets/video_top_bar.dart';
@@ -57,11 +61,25 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
                 item: _videos[i],
                 onToggleFollow: () => setState(() => _videos[i].isFollowing = !_videos[i].isFollowing),
                 onToggleLike: () => setState(() => _videos[i].isLiked = !_videos[i].isLiked),
-                onToggleFavorite: () => setState(() => _videos[i].isFavorited = !_videos[i].isFavorited),
+                onToggleFavorite: () {
+                  setState(() {
+                    _videos[i].isFavorited = !_videos[i].isFavorited;
+
+                    ShortVideoToast.show(context,
+                        icon: MyImage.asset(
+                          _videos[i].isFavorited ? MyImagePaths.iconSuccess : MyImagePaths.iconToastUncollection,
+                          width: 22.w,
+                        ),
+                        title: _videos[i].isFavorited ? "收藏成功" : "已取消收藏",
+                        onTap: () {});
+                  });
+                },
                 onToggleMute: () => setState(() => _videos[i].isMuted = !_videos[i].isMuted),
                 onMore: () => _onMore(i),
+                onShare: () => _openShare(),
                 onComment: () => _openComment(i),
                 onExpandTap: () => _openDesc(i),
+                onMusicTap: () => _openMusic(i),
               ),
             ),
             Positioned(
@@ -74,6 +92,11 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
         ),
       ),
     );
+  }
+
+  // ── 音乐弹窗 ────────────────────────────
+  void _openMusic(int i) {
+    MusicSheet.show(context, musicText: _videos[i].music);
   }
 
   // ── 描述弹窗 ────────────────────────────
@@ -205,8 +228,19 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
               _buildMoreCard([
                 _buildMoreItem(MyImage.asset(MyImagePaths.iconClearScreen, width: 18.w),
                     'shortVideoMoreClearScreen'.tr(), const SizedBox(), () {}),
-                _buildMoreItem(MyImage.asset(MyImagePaths.iconDowload, width: 18.w), 'shortVideoMoreCache'.tr(),
-                    const SizedBox(), () {}),
+                _buildMoreItem(
+                    MyImage.asset(MyImagePaths.iconDowload, width: 18.w), 'shortVideoMoreCache'.tr(), const SizedBox(),
+                    () {
+                  Navigator.of(context, rootNavigator: true).pop();
+
+                  ShortVideoToast.show(context,
+                      icon: MyImage.asset(
+                        MyImagePaths.iconSuccess,
+                        width: 22.w,
+                      ),
+                      title: "已加入离线缓存列表",
+                      onTap: () {});
+                }),
                 _buildMoreItem(
                   MyImage.asset(MyImagePaths.iconSpeed, width: 18.w),
                   'shortVideoMoreSpeed'.tr(),
@@ -242,8 +276,18 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
               ]),
               SizedBox(height: 20.w),
               _buildMoreCard([
-                _buildMoreItem(MyImage.asset(MyImagePaths.iconNotInterested, width: 18.w),
-                    'shortVideoMoreNotInterested'.tr(), const SizedBox(), () {}),
+                _buildMoreItem(
+                  MyImage.asset(MyImagePaths.iconNotInterested, width: 18.w),
+                  'shortVideoMoreNotInterested'.tr(),
+                  const SizedBox(),
+                  () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    AppBottomSheet.show(
+                      context: context,
+                      child: NotInterestedSheet(item: _videos[i]),
+                    );
+                  },
+                ),
                 _buildMoreItem(
                   MyImage.asset(MyImagePaths.iconReport, width: 18.w),
                   'shortVideoReport'.tr(),
@@ -292,6 +336,14 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
     await AppBottomSheet.show(
       context: context,
       child: CommentContent(authorName: item.authorName, showTitle: true),
+    );
+  }
+
+  // ── 分享弹窗 ─────────────────────────────
+  Future<void> _openShare() async {
+    await AppBottomSheet.show(
+      context: context,
+      child: const ShareSheet(),
     );
   }
 }

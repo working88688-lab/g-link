@@ -4,11 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/ui_layer/page/background_page.dart';
-// import 'package:g_link/ui_layer/page/common/common_webview_page.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/widgets/my_app_bar.dart';
 import 'package:provider/provider.dart';
+
+import 'common/common_webview_page.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -450,10 +451,10 @@ class _AuthPageState extends State<AuthPage> {
     required String title,
     required String url,
   }) async {
-    // await Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (_) => CommonWebViewPage(title: title, url: url),
-    //   ),
-    // );
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CommonWebViewPage(title: title, url: url),
+      ),
+    );
   }
 }

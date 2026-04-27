@@ -7,12 +7,13 @@ import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
-// import 'package:g_link/ui_layer/page/common/common_webview_page.dart';
 import 'package:g_link/ui_layer/page/background_page.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/widgets/my_app_bar.dart';
 import 'package:provider/provider.dart';
+
+import '../common/common_webview_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -934,11 +935,11 @@ class _RegisterPageState extends State<RegisterPage> {
     required String title,
     required String url,
   }) async {
-    // await Navigator.of(context).push(
-    //   MaterialPageRoute(
-    //     builder: (_) => CommonWebViewPage(title: title, url: url),
-    //   ),
-    // );
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CommonWebViewPage(title: title, url: url),
+      ),
+    );
   }
 
   ({String display, String request, String nameKey}) get _selectedCountryCode =>

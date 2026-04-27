@@ -57,6 +57,7 @@ class MyImagePaths {
   static const iconMic = './assets/images/icon_mic.png';
   static const iconMore = './assets/images/icon_more.png';
   static const iconMusical = './assets/images/icon_musical.png';
+  static const iconMusicUncollection = './assets/images/icon_music_uncollection.png';
   static const iconMute = './assets/images/icon_mute.png';
   static const iconNotInterested = './assets/images/icon_not_interested.png';
   static const iconOmmentUnlike = './assets/images/icon_omment_unlike.png';
@@ -64,9 +65,19 @@ class MyImagePaths {
   static const iconSearch = './assets/images/icon_search.png';
   static const iconSearch2 = './assets/images/icon_search2.png';
   static const iconShare = './assets/images/icon_share.png';
+  static const iconShareAlbum = './assets/images/icon_share_album.png';
+  static const iconShareFacebook = './assets/images/icon_share_facebook.png';
+  static const iconShareLink = './assets/images/icon_share_link.png';
+  static const iconShareMore = './assets/images/icon_share_more.png';
+  static const iconShareReddit = './assets/images/icon_share_reddit.png';
+  static const iconShareWhatsapp = './assets/images/icon_share_whatsapp.png';
+  static const iconShareX = './assets/images/icon_share_x.png';
+  static const iconShortToastArrowRight = './assets/images/icon_short_toast_arrow_right.png';
   static const iconShortVideoFollow = './assets/images/icon_short_video_follow.png';
   static const iconShortVideoSearch = './assets/images/icon_short_video_search.png';
   static const iconSpeed = './assets/images/icon_speed.png';
+  static const iconSuccess = './assets/images/icon_success.png';
+  static const iconToastUncollection = './assets/images/icon_toast_uncollection.png';
   static const iconUploadPlus = './assets/images/icon_upload_plus.png';
   static const iconVolumeOff = './assets/images/icon_volume_off.png';
   static const img = './assets/images/img.png';

@@ -17,7 +17,9 @@ class VideoCard extends StatefulWidget {
   final VoidCallback onToggleMute;
   final VoidCallback onComment;
   final VoidCallback onMore;
+  final VoidCallback onShare;
   final VoidCallback? onExpandTap;
+  final VoidCallback? onMusicTap;
 
   const VideoCard({
     super.key,
@@ -28,7 +30,9 @@ class VideoCard extends StatefulWidget {
     required this.onToggleMute,
     required this.onComment,
     required this.onMore,
+    required this.onShare,
     this.onExpandTap,
+    this.onMusicTap,
   });
 
   @override
@@ -84,6 +88,7 @@ class _VideoCardState extends State<VideoCard> {
             onToggleMute: widget.onToggleMute,
             onComment: widget.onComment,
             onMore: widget.onMore,
+            onShare: widget.onShare,
           ),
         ),
 
@@ -92,7 +97,7 @@ class _VideoCardState extends State<VideoCard> {
           left: 8.w,
           right: 75.w,
           bottom: 40.w,
-          child: VideoContentInfo(item: item, onExpandTap: widget.onExpandTap),
+          child: VideoContentInfo(item: item, onExpandTap: widget.onExpandTap, onMusicTap: widget.onMusicTap),
         ),
 
         // 底部进度条
@@ -118,6 +123,7 @@ class VideoActionBar extends StatelessWidget {
   final VoidCallback onToggleMute;
   final VoidCallback onComment;
   final VoidCallback onMore;
+  final VoidCallback onShare;
 
   const VideoActionBar({
     super.key,
@@ -128,6 +134,7 @@ class VideoActionBar extends StatelessWidget {
     required this.onToggleMute,
     required this.onComment,
     required this.onMore,
+    required this.onShare,
   });
 
   @override
@@ -165,7 +172,7 @@ class VideoActionBar extends StatelessWidget {
           icon: MyImage.asset(MyImagePaths.iconShare, width: 32.w),
           color: Colors.white,
           count: item.shares,
-          onTap: () {},
+          onTap: onShare,
           flipHorizontal: true,
         ),
         SizedBox(height: 20.w),
@@ -289,8 +296,9 @@ class VideoActionBtn extends StatelessWidget {
 class VideoContentInfo extends StatelessWidget {
   final VideoItemModel item;
   final VoidCallback? onExpandTap;
+  final VoidCallback? onMusicTap;
 
-  const VideoContentInfo({super.key, required this.item, this.onExpandTap});
+  const VideoContentInfo({super.key, required this.item, this.onExpandTap, this.onMusicTap});
 
   @override
   Widget build(BuildContext context) {
@@ -372,7 +380,9 @@ class VideoContentInfo extends StatelessWidget {
         ),
         SizedBox(height: 16.w),
         // 音乐
-        Container(
+        GestureDetector(
+          onTap: onMusicTap,
+          child: Container(
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(6.w),
@@ -401,6 +411,7 @@ class VideoContentInfo extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ],
