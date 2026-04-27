@@ -70,7 +70,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
                           _videos[i].isFavorited ? MyImagePaths.iconSuccess : MyImagePaths.iconToastUncollection,
                           width: 22.w,
                         ),
-                        title: _videos[i].isFavorited ? "收藏成功" : "已取消收藏",
+                        title: _videos[i].isFavorited ? 'shortVideoToastFavorited'.tr() : 'shortVideoToastUnfavorited'.tr(),
                         onTap: () {});
                   });
                 },
@@ -238,7 +238,7 @@ class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProvid
                         MyImagePaths.iconSuccess,
                         width: 22.w,
                       ),
-                      title: "已加入离线缓存列表",
+                      title: 'shortVideoToastCached'.tr(),
                       onTap: () {});
                 }),
                 _buildMoreItem(
