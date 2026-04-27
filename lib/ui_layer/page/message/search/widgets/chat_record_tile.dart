@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:g_link/ui_layer/page/chat/search/models/search_models.dart';
+import 'package:g_link/ui_layer/page/message/search/models/search_models.dart';
 
 /// 聊天记录搜索结果 — 列表项
 /// - 有 [extraCount] 时显示 "N 条相关聊天记录"，可点击钻取详情

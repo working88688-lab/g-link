@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
-import 'package:g_link/ui_layer/page/chat/widgets/recommend_users_widget.dart';
+import 'package:g_link/ui_layer/page/message/widgets/recommend_users_widget.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';

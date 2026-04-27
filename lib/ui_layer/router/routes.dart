@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/auth_page.dart';
-import 'package:g_link/ui_layer/page/chat/chat_page.dart';
-import 'package:g_link/ui_layer/page/chat/search/chat_records_search_page.dart';
-import 'package:g_link/ui_layer/page/chat/search/global_search_page.dart';
-import 'package:g_link/ui_layer/page/chat/search/user_search_page.dart';
+import 'package:g_link/ui_layer/page/message/chat_page.dart';
+import 'package:g_link/ui_layer/page/message/message_page.dart';
+import 'package:g_link/ui_layer/page/message/search/chat_records_search_page.dart';
+import 'package:g_link/ui_layer/page/message/search/global_search_page.dart';
+import 'package:g_link/ui_layer/page/message/search/user_search_page.dart';
 import 'package:g_link/ui_layer/page/complaint/complaint_page.dart';
 import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
@@ -15,7 +16,6 @@ import 'package:g_link/ui_layer/page/mine_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
-import 'package:g_link/ui_layer/page/short_video_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/domain/domains/auth.dart';
@@ -23,6 +23,7 @@ import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../page/message/message_page.dart';
 import 'router.dart';
 import 'paths.dart';
 
@@ -52,11 +53,12 @@ class LoginRoute extends GoRouteData {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: ChangeNotifierProvider(
-        create: (_) => AuthNotifier(
-          authDomain,
-          deviceId: '${appDomain.info['oauth_id'] ?? ''}',
-          deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
-        ),
+        create: (_) =>
+            AuthNotifier(
+              authDomain,
+              deviceId: '${appDomain.info['oauth_id'] ?? ''}',
+              deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
+            ),
         child: const AuthPage(),
       ),
     );
@@ -87,11 +89,12 @@ class ForgotPasswordRoute extends GoRouteData {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: ChangeNotifierProvider(
-        create: (_) => AuthNotifier(
-          authDomain,
-          deviceId: '${appDomain.info['oauth_id'] ?? ''}',
-          deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
-        ),
+        create: (_) =>
+            AuthNotifier(
+              authDomain,
+              deviceId: '${appDomain.info['oauth_id'] ?? ''}',
+              deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
+            ),
         child: const ForgotPasswordPage(),
       ),
     );
@@ -176,7 +179,7 @@ class MessageRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) =>
-      const MessagePageV2();
+      const MessagePage();
 }
 
 class MineRoute extends GoRouteData {
