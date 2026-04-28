@@ -31,11 +31,13 @@ import 'package:http_parser/http_parser.dart';
 import 'package:g_link/app_config.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/domain/model/ad_model.dart';
+import 'package:g_link/domain/model/feed_models.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
+import 'package:g_link/data_layer/data_source/feed_service.dart';
 import 'package:g_link/data_layer/data_source/home_service.dart';
 import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
@@ -47,12 +49,14 @@ import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/enum.dart';
 import 'package:g_link/domain/type_def.dart';
 
+import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/domain/domains/search.dart';
 
 part 'cache.dart';
 
 part 'mixins/chat_mixin.dart';
+part 'mixins/feed_mixin.dart';
 part 'mixins/home_mixin.dart';
 part 'mixins/report_mixin.dart';
 part 'mixins/profile_mixin.dart';
@@ -60,10 +64,11 @@ part 'mixins/auth_mixin.dart';
 part 'mixins/search_mixin.dart';
 
 class AppRepo extends _BaseAppRepo
-    with _Home, _Report, _Profile, _Auth, _Chat, _Search {}
+    with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
+  late final _feedService = FeedService(_apiDio);
   late final _reportService = ReportService(_apiDio);
   late final _userReportService = UserReportService(_apiDio);
   late final _profileService = ProfileService(_apiDio);

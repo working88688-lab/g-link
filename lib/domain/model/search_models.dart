@@ -1,3 +1,5 @@
+import 'package:g_link/domain/model/profile_models.dart';
+
 class UserSearchItem {
   const UserSearchItem({
     required this.uid,
@@ -32,4 +34,34 @@ class UserSearchResult {
   final List<UserSearchItem> items;
   final String? nextCursor;
   final bool hasMore;
+}
+
+class SearchHotItem {
+  const SearchHotItem({
+    required this.rank,
+    required this.keyword,
+    required this.score,
+  });
+
+  final int rank;
+  final String keyword;
+  final int score;
+
+  factory SearchHotItem.fromJson(Map<String, dynamic> json) => SearchHotItem(
+        rank: (json['rank'] as int?) ?? 0,
+        keyword: (json['keyword'] as String?) ?? '',
+        score: (json['score'] as int?) ?? 0,
+      );
+}
+
+class SearchHomeData {
+  const SearchHomeData({
+    required this.history,
+    required this.hot,
+    required this.recommendUsers,
+  });
+
+  final List<String> history;
+  final List<SearchHotItem> hot;
+  final List<RecommendedUser> recommendUsers;
 }

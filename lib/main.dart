@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/data_layer/repo/repo.dart';
 import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/report.dart';
@@ -57,6 +58,7 @@ void main() async {
       providers: [
         Provider<AppDomain>(lazy: false, create: (_) => appRepo),
         Provider<HomeDomain>(lazy: false, create: (_) => appRepo),
+        Provider<FeedDomain>(lazy: false, create: (_) => appRepo),
         Provider<ProfileDomain>(lazy: false, create: (_) => appRepo),
         Provider<ReportDomain>(lazy: false, create: (_) => appRepo),
         Provider<AuthDomain>(lazy: false, create: (_) => appRepo),

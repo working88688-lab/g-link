@@ -8,4 +8,7 @@ mixin _Search on _BaseAppRepo implements SearchDomain {
     int limit = 20,
   }) =>
       _searchService.searchUsers(q: q, cursor: cursor, limit: limit);
+
+  @override
+  Future<SearchHomeData> getSearchHome() => _searchService.getSearchHome();
 }

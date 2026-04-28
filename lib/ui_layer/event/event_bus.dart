@@ -7,3 +7,13 @@ class MyEvent {
 
   MyEvent(this.message);
 }
+
+class FollowStatusChangedEvent {
+  const FollowStatusChangedEvent({
+    required this.uid,
+    required this.isFollowing,
+  });
+
+  final int uid;
+  final bool isFollowing;
+}

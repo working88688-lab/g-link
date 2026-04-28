@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:g_link/domain/model/feed_models.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/domain/type_def.dart';
 
@@ -38,6 +39,13 @@ abstract class ProfileDomain {
   AsyncResult<List<InterestTag>> getInterestTags();
 
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});
+
+  /// 关注指定用户。返回最新关系快照（含双向 is_following / 粉丝数）。
+  AsyncResult<FollowResult> followUser({required int uid});
+
+  /// 取消关注指定用户。幂等接口：未关注调用也返回成功。
+  AsyncResult<FollowResult> unfollowUser({required int uid});
+
   AsyncResult updateMyProfile({
     String? nickname,
     String? username,

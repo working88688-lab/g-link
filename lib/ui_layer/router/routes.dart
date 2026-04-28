@@ -10,9 +10,10 @@ import 'package:g_link/ui_layer/page/message/search/user_search_page.dart';
 import 'package:g_link/ui_layer/page/complaint/complaint_page.dart';
 import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
-import 'package:g_link/ui_layer/page/home_page.dart';
+import 'package:g_link/ui_layer/page/home/home_page.dart';
 import 'package:g_link/ui_layer/page/mine/mine_page.dart';
 import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
+import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
@@ -186,6 +187,24 @@ class MineRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const MinePage();
+}
+
+@TypedGoRoute<RecommendFollowListRoute>(path: AppRouterPaths.mineRecommendFollow)
+class RecommendFollowListRoute extends GoRouteData {
+  const RecommendFollowListRoute({this.limit = 10});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final int limit;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: RecommendFollowListPage(limit: limit),
+    );
+  }
 }
 
 @TypedGoRoute<EditProfileRoute>(path: AppRouterPaths.mineEditProfile)

@@ -91,6 +91,31 @@ abstract class BaseService {
     return result;
   }
 
+  AsyncJson delete(String path,
+      {Object? data,
+      Map<String, dynamic>? queryParameters,
+      bool encrypted = true}) async {
+    logger.i('请求的路径:${'/api/$service$path'}');
+    final result = (await _dio.delete(
+      '/api/$service$path',
+      data: data,
+      queryParameters: queryParameters,
+      options: Options(
+        extra: {
+          'skipEncrypt': !encrypted,
+        },
+      ),
+    ))
+        .data;
+    if (result == null) {
+      throw ResponseNullException();
+    }
+    developer.log(
+      'RequstPath: ${_dio.options.baseUrl}/api/$service$path, params: $data, \nResult: $result',
+    );
+    return result;
+  }
+
   AsyncJson patch(String path,
       {Object? data, bool encrypted = true, bool jsonBody = true}) async {
     logger.i('请求的路径:${'/api/$service$path'}');

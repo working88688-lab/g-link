@@ -105,6 +105,18 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       }).guard;
 
   @override
+  AsyncResult<FollowResult> followUser({required int uid}) => _profileService
+      .followUser(uid: uid)
+      .deserializeJsonBy((json) => FollowResult.fromJson(Json.from(json)))
+      .guard;
+
+  @override
+  AsyncResult<FollowResult> unfollowUser({required int uid}) => _profileService
+      .unfollowUser(uid: uid)
+      .deserializeJsonBy((json) => FollowResult.fromJson(Json.from(json)))
+      .guard;
+
+  @override
   AsyncResult updateMyProfile({
     String? nickname,
     String? username,
