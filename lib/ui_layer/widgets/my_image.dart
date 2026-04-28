@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
@@ -134,7 +136,13 @@ class MyImage extends StatelessWidget {
             fadeInDuration: const Duration(milliseconds: 500),
             placeholder: kTransparentImage,
             imageErrorBuilder: (context, error, stackTrace) {
-              return Container(); //todo: 图片请求出错时可在此设置异常图片显示
+              developer.log(
+                '[my-image] network image load failed: $url\nerror: $error',
+                name: 'my-image',
+                error: error,
+                stackTrace: stackTrace,
+              );
+              return Container();
             },
           );
           if (placeHolder == null) {

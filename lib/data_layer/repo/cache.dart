@@ -32,6 +32,7 @@ class _CacheManager implements CacheDomain {
   final _guideDataSaverKey = 'guide_data_saver';
   final _guideLanguageTypeKey = 'guide_language_type';
   final _authPhoneCountryCodeKey = 'auth_phone_country_code';
+  final _myProfileKey = 'my_profile_cache';
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -266,6 +267,26 @@ class _CacheManager implements CacheDomain {
   @override
   Future<void> upsertAuthPhoneCountryCode(String code) =>
       appBox.upsert(_authPhoneCountryCodeKey, code);
+
+  /// 读取上次缓存的"我的"个人资料 JSON。
+  ///
+  /// 返回原始 Map 而不是模型对象，是为了让 mixin 层去做 fromJson 解析与异常隔离，
+  /// 避免在 cache 层引入对 [UserProfile] 的强耦合。
+  Future<Json?> readMyProfile() async {
+    final raw = await appBox.read(_myProfileKey);
+    if (raw == null) return null;
+    try {
+      return Json.from(raw);
+    } catch (_) {
+      // 旧版本写入的结构不兼容时直接当作没有缓存，由上层重新拉网络。
+      return null;
+    }
+  }
+
+  Future<void> upsertMyProfile(Json json) =>
+      appBox.upsert(_myProfileKey, json);
+
+  Future<void> deleteMyProfile() => appBox.delete(_myProfileKey);
 
   @override
   Future<List> readDownloadVideoTasks() async {

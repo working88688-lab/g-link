@@ -5,9 +5,11 @@ import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/profile_notifier.dart';
+import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:provider/provider.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -16,15 +18,34 @@ class MinePage extends StatefulWidget {
   State<MinePage> createState() => _MinePageState();
 }
 
-class _MinePageState extends State<MinePage> {
+class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
   late final List<RefreshController> _refreshControllers =
       List<RefreshController>.generate(
     3,
     (_) => RefreshController(initialRefresh: false),
   );
 
+  /// VisibilityDetector 需要一个稳定的 key 才能正确派发 onVisibilityChanged，
+  /// 用 widget 路径做 key 即可。
+  static const _visibilityKey = ValueKey<String>('mine-page-visibility');
+
+  /// 用来在 build 完成后触发首次 bootstrap，以及给 VisibilityDetector 拉新数据用。
+  ProfileNotifier? _notifier;
+
+  /// 上一次可见状态——避免 VisibilityDetector 由于 fraction 抖动多次回调时
+  /// 一直触发刷新（虽然 [ProfileNotifier.refreshIfStale] 内部已经节流，但能
+  /// 在外层就避开就更好）。
+  bool _wasVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     for (final c in _refreshControllers) {
       c.dispose();
     }
@@ -32,17 +53,42 @@ class _MinePageState extends State<MinePage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // app 从后台回到前台、且当前 tab 就是个人主页时也要刷新：纯靠 visibility
+    // 在某些机型 / 后台模式下不会回调。
+    if (state == AppLifecycleState.resumed && _wasVisible) {
+      _notifier?.refreshIfStale();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (ctx) => ProfileNotifier(ctx.read<ProfileDomain>())
-            ..fetchMineProfileAndVideos(),
+          create: (ctx) {
+            final n = ProfileNotifier(ctx.read<ProfileDomain>())
+              ..bootstrapMineProfile();
+            _notifier = n;
+            return n;
+          },
         ),
       ],
       child: Scaffold(
         backgroundColor: Colors.white,
-        body: Consumer<ProfileNotifier>(builder: (context, notifier, _) {
+        body: VisibilityDetector(
+          key: _visibilityKey,
+          onVisibilityChanged: (info) {
+            // 阈值 50%：bottomNav 切换造成的 dispose-and-rebuild、半遮挡都不算
+            // "重新可见"，避免和 [bootstrapMineProfile] 的首次拉取重复。
+            final visible = info.visibleFraction >= 0.5;
+            if (visible && !_wasVisible) {
+              _notifier?.refreshIfStale();
+            }
+            _wasVisible = visible;
+          },
+          child: Consumer<ProfileNotifier>(builder: (context, notifier, _) {
           final profile =
               context.select<ProfileNotifier, UserProfile?>((n) => n.profile) ??
                   const UserProfile(
@@ -112,6 +158,7 @@ class _MinePageState extends State<MinePage> {
             ],
           );
         }),
+        ),
       ),
     );
   }
@@ -231,19 +278,35 @@ class _MinePageState extends State<MinePage> {
                   ),
                 ),
               ),
-              Container(
-                margin: EdgeInsets.only(bottom: 6.w),
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.w),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF121D33),
-                  borderRadius: BorderRadius.circular(22.w),
-                ),
-                child: Text(
-                  'mineEditProfile'.tr(),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
+              GestureDetector(
+                onTap: () async {
+                  final updated = await EditProfileRoute(
+                    nickname: profile.nickname,
+                    username: profile.username,
+                    bio: profile.bio,
+                    userLocation: profile.location,
+                    avatarUrl: profile.avatarUrl,
+                    coverUrl: profile.coverUrl,
+                  ).push<bool>(context);
+                  if (updated == true) {
+                    await notifier.fetchMineProfileAndVideos();
+                  }
+                },
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 6.w),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF121D33),
+                    borderRadius: BorderRadius.circular(22.w),
+                  ),
+                  child: Text(
+                    'mineEditProfile'.tr(),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),

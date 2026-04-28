@@ -81,8 +81,10 @@ abstract class _BaseAppRepo implements AppDomain {
   late final _apiDio = Dio(
     BaseOptions(
       baseUrl: BuildConfig.apiBaseUrl,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
+      // 5s 在跨地域 / 弱网下太激进，个人主页刷新等接口经常被这个超时干掉。
+      // 放宽到 15/20s，仍能在服务端真挂掉时及时报错。
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 20),
       contentType: Headers.formUrlEncodedContentType,
     ),
   );
@@ -178,6 +180,9 @@ abstract class _BaseAppRepo implements AppDomain {
         _appInfo.removeToken();
         await _cacheManager.deleteAuthToken();
       }
+      // 同步清掉个人资料缓存：避免下个账号登录时 MinePage 先闪一帧上一个用户的
+      // 头像/昵称（缓存是按 key 存的，不带账号区分）。
+      await _cacheManager.deleteMyProfile();
     } catch (_) {}
   }
 

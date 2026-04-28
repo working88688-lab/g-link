@@ -75,6 +75,35 @@ class UserProfile {
           'video_count', int.tryParse('${stats['video_count'] ?? 0}') ?? 0),
     );
   }
+
+  /// 序列化结构刻意贴近后端 `getMyProfile` 返回值，方便 [UserProfile.fromJson]
+  /// 直接复用：本地缓存里存的是「上次后端响应」的镜像，下次冷启动直接 fromJson
+  /// 复活，不需要单独维护一份 cache schema。
+  Json toJson() {
+    return <String, dynamic>{
+      'uid': uid,
+      'username': username,
+      'nickname': nickname,
+      'avatar_url': avatarUrl,
+      'cover_url': coverUrl,
+      'bio': bio,
+      'location': location,
+      'profession_tags': professionTags,
+      'is_self': isSelf,
+      'stats': <String, dynamic>{
+        'following_count': followingCount,
+        'following_count_display': followingCountDisplay,
+        'follower_count': followerCount,
+        'follower_count_display': followerCountDisplay,
+        'like_count': likeCount,
+        'like_count_display': likeCountDisplay,
+        'post_count': postCount,
+        'post_count_display': postCountDisplay,
+        'video_count': videoCount,
+        'video_count_display': videoCountDisplay,
+      },
+    };
+  }
 }
 
 class UserPostItem {
@@ -198,4 +227,14 @@ class ReportTypeItem {
       name: '${json['name'] ?? ''}',
     );
   }
+}
+
+class UploadedImagePayload {
+  const UploadedImagePayload({
+    required this.objectKey,
+    required this.downloadUrl,
+  });
+
+  final String objectKey;
+  final String downloadUrl;
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:bot_toast/bot_toast.dart';
 import 'package:dio/dio.dart';
@@ -57,22 +58,44 @@ class AutoEncryptAndDecryptInterceptor extends Interceptor {
     if (response.data case final Map data
         when data['data'] != null && data['data'] is String) {
       Map<dynamic, dynamic> result = Map.from(response.data);
-      response.data =
-          await fd.compute(PlatformAwareCrypto.decryptResData, response.data);
-      // response.data = await PlatformAwareCrypto.decryptResData(response.data);
+      // 历史实现里只要 data['data'] 是 String 就尝试 AES-CBC 解密。但有些接口
+      // 即使没标 `encrypted: false`，返回的 data 也可能是明文字符串（错误信息、
+      // token 字段、纯文本提示等），传进 AES-CBC 必报：
+      //   error:1e00007b:Cipher functions:OPENSSL_internal:WRONG_FINAL_BLOCK_LENGTH
+      // 这里捕获掉，打条带 URL 的日志方便定位元凶，并保留原响应透传，
+      // 避免单条接口的错配把整个请求链炸掉。
+      try {
+        response.data = await fd.compute(
+          PlatformAwareCrypto.decryptResData,
+          response.data,
+        );
 
-      if (response.requestOptions.path.contains('home/config')) {
-        String sign = result.remove("sign").toString();
-        final clientTime = response.requestOptions.extra['clientTime'];
-        final serverTime = result['timestamp'];
-        _jumpOffice(result, sign, clientTime, serverTime, response);
+        if (response.requestOptions.path.contains('home/config')) {
+          String sign = result.remove("sign").toString();
+          final clientTime = response.requestOptions.extra['clientTime'];
+          final serverTime = result['timestamp'];
+          _jumpOffice(result, sign, clientTime, serverTime, response);
+        }
+      } catch (err, stackTrace) {
+        final url = response.requestOptions.uri.toString();
+        final preview = (data['data'] as String);
+        final shortPreview =
+            preview.length > 64 ? '${preview.substring(0, 64)}…' : preview;
+        developer.log(
+          '[crypto-interceptor] decrypt failed; url=$url '
+          'data.length=${preview.length} data.preview="$shortPreview"; '
+          '请确认该接口是否应当走加密；如果不应该，请在调用处加 encrypted: false。',
+          name: 'crypto-interceptor',
+          error: err,
+          stackTrace: stackTrace,
+        );
+        // 透传原始响应，下游业务自己处理；不要让一条接口的错配影响整个 onResponse 链。
+        response.data = result;
       }
     }
 
     //打印返回数据
     CommonUtils.log('Result: ${jsonEncode(response.data)}');
-
-    // logger.i(response.data);
 
     return super.onResponse(response, handler);
   }
