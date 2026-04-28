@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/ui_layer/page/background_page.dart';
@@ -26,12 +28,40 @@ class _AuthPageState extends State<AuthPage> {
   final _loginPasswordController = TextEditingController();
   bool _agreePolicy = true;
   bool _loginPwdVisible = false;
+  bool _countryCodesLoaded = false;
+  int _selectedCountryCodeIndex = 0;
+  String? _cachedCountryCodeRequest;
 
   @override
   void dispose() {
     _loginAccountController.dispose();
     _loginPasswordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_countryCodesLoaded) return;
+    _countryCodesLoaded = true;
+    _initCountryCodes();
+  }
+
+  Future<void> _initCountryCodes() async {
+    final appDomain = context.read<AppDomain>();
+    final savedCode = await appDomain.cache.readAuthPhoneCountryCode();
+    if (mounted && savedCode != null && savedCode.isNotEmpty) {
+      setState(() => _cachedCountryCodeRequest = savedCode);
+    }
+    final notifier = context.read<AuthNotifier>();
+    await notifier.fetchCountryCodes();
+    if (!mounted) return;
+    if (!mounted || savedCode == null || savedCode.isEmpty) return;
+    final list = notifier.countryCodes;
+    final idx = list.indexWhere((e) => e.request == savedCode);
+    if (idx >= 0 && idx != _selectedCountryCodeIndex) {
+      setState(() => _selectedCountryCodeIndex = idx);
+    }
   }
 
   @override
@@ -216,6 +246,7 @@ class _AuthPageState extends State<AuthPage> {
               hint: 'authPhoneOrEmailHint'.tr(),
               controller: _loginAccountController,
               leftIcon: MyImagePaths.appPhone,
+              rightChild: _buildCountryCodePicker(context),
             ),
             SizedBox(height: 12.w),
             _buildInputRow(
@@ -361,9 +392,9 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _submitLogin(BuildContext context) async {
-    final account = _loginAccountController.text.trim();
+    final accountRaw = _loginAccountController.text.trim();
     final password = _loginPasswordController.text.trim();
-    if (account.isEmpty || password.isEmpty) {
+    if (accountRaw.isEmpty || password.isEmpty) {
       _toast(context, 'authFillRequired'.tr());
       return;
     }
@@ -371,8 +402,12 @@ class _AuthPageState extends State<AuthPage> {
       _toast(context, 'authAgreementRequired'.tr());
       return;
     }
+    final isEmail = accountRaw.contains('@');
+    final account =
+        isEmail ? accountRaw : accountRaw.replaceAll(RegExp(r"[\\s-]"), "");
     final success = await context.read<AuthNotifier>().login(
           account: account,
+          countryCode: isEmail ? null : _selectedCountryCode(context).request,
           password: password,
         );
     if (!context.mounted || !success) return;
@@ -455,6 +490,104 @@ class _AuthPageState extends State<AuthPage> {
       MaterialPageRoute(
         builder: (_) => CommonWebViewPage(title: title, url: url),
       ),
+    );
+  }
+
+  Widget _buildCountryCodePicker(BuildContext context) {
+    return Consumer<AuthNotifier>(
+      builder: (context, notifier, _) {
+        final item = _selectedCountryCode(context);
+        return Row(
+          children: [
+            Container(width: 1.w, height: 22.w, color: const Color(0xFF32384A)),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10.w),
+              child: Text(
+                item.display,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () =>
+                  _showCountryCodeSelector(context, notifier.countryCodes),
+              behavior: HitTestBehavior.opaque,
+              child: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: Colors.white,
+                size: 18.w,
+              ),
+            ),
+            SizedBox(width: 10.w),
+          ],
+        );
+      },
+    );
+  }
+
+  AuthCountryCode _selectedCountryCode(BuildContext context) {
+    final list = context.read<AuthNotifier>().countryCodes;
+    if (list.isEmpty) {
+      final request = _cachedCountryCodeRequest?.trim();
+      if (request != null && request.isNotEmpty) {
+        return AuthCountryCode(
+          display: '+$request',
+          request: request,
+          name: '',
+        );
+      }
+      return const AuthCountryCode(
+          display: '+01', request: '1', name: 'US/Canada');
+    }
+    final index = _selectedCountryCodeIndex.clamp(0, list.length - 1);
+    return list[index];
+  }
+
+  Future<void> _showCountryCodeSelector(
+    BuildContext context,
+    List<AuthCountryCode> list,
+  ) async {
+    if (list.isEmpty) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF151A24),
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: list.length,
+            separatorBuilder: (_, __) =>
+                const Divider(height: 1, color: Color(0xFF2E3443)),
+            itemBuilder: (_, index) {
+              final item = list[index];
+              final selected = index == _selectedCountryCodeIndex;
+              return ListTile(
+                leading: item.flagEmoji.isNotEmpty
+                    ? Text(item.flagEmoji, style: TextStyle(fontSize: 20.sp))
+                    : null,
+                title: Text(
+                  '${item.display}  ${item.name}',
+                  style: TextStyle(
+                    color: selected ? Colors.white : const Color(0xFFA6ADBC),
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+                trailing: selected
+                    ? const Icon(Icons.check, color: Colors.white)
+                    : null,
+                onTap: () {
+                  setState(() => _selectedCountryCodeIndex = index);
+                  Navigator.of(sheetContext).pop();
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

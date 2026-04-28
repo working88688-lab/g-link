@@ -31,6 +31,8 @@ class _CacheManager implements CacheDomain {
   final _guideAutoPlayKey = 'guide_auto_play';
   final _guideDataSaverKey = 'guide_data_saver';
   final _guideLanguageTypeKey = 'guide_language_type';
+  final _authPhoneCountryCodeKey = 'auth_phone_country_code';
+  final _myProfileKey = 'my_profile_cache';
 
   Future<void> init() async {
     if (_isInitialized) return;
@@ -199,23 +201,19 @@ class _CacheManager implements CacheDomain {
   }
 
   @override
-  Future<List<String>> readSearchHistory({String namespace = 'default'}) async {
-    final key = '${_searchHistoryKey}_$namespace';
-    if (await appBox.read(key) case final data?) {
+  Future<List<String>> readSearchHistory() async {
+    if (await appBox.read(_searchHistoryKey) case final data?) {
       return List<String>.from(data);
     }
     return [];
   }
 
   @override
-  Future<void> upsertSearchHistory(
-          {required List<String> searchHistory,
-          String namespace = 'default'}) =>
-      appBox.upsert('${_searchHistoryKey}_$namespace', searchHistory);
+  Future<void> upsertSearchHistory({required List<String> searchHistory}) =>
+      appBox.upsert(_searchHistoryKey, searchHistory);
 
   @override
-  Future<void> clearSearchHistory({String namespace = 'default'}) =>
-      appBox.delete('${_searchHistoryKey}_$namespace');
+  Future<void> clearSearchHistory() => appBox.delete(_searchHistoryKey);
 
   @override
   Future<bool> readGuideCompleted() async {
@@ -261,6 +259,34 @@ class _CacheManager implements CacheDomain {
   @override
   Future<void> upsertGuideLanguageType(int type) =>
       appBox.upsert(_guideLanguageTypeKey, type);
+
+  @override
+  Future<String?> readAuthPhoneCountryCode() async =>
+      (await appBox.read(_authPhoneCountryCodeKey))?.toString();
+
+  @override
+  Future<void> upsertAuthPhoneCountryCode(String code) =>
+      appBox.upsert(_authPhoneCountryCodeKey, code);
+
+  /// 读取上次缓存的"我的"个人资料 JSON。
+  ///
+  /// 返回原始 Map 而不是模型对象，是为了让 mixin 层去做 fromJson 解析与异常隔离，
+  /// 避免在 cache 层引入对 [UserProfile] 的强耦合。
+  Future<Json?> readMyProfile() async {
+    final raw = await appBox.read(_myProfileKey);
+    if (raw == null) return null;
+    try {
+      return Json.from(raw);
+    } catch (_) {
+      // 旧版本写入的结构不兼容时直接当作没有缓存，由上层重新拉网络。
+      return null;
+    }
+  }
+
+  Future<void> upsertMyProfile(Json json) =>
+      appBox.upsert(_myProfileKey, json);
+
+  Future<void> deleteMyProfile() => appBox.delete(_myProfileKey);
 
   @override
   Future<List> readDownloadVideoTasks() async {

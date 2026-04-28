@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/app_global.dart';
 import 'package:g_link/data_layer/repo/repo.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/home.dart';
@@ -101,6 +102,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
+    AppGlobal.context = context;
     final botToastBuilder = BotToastInit();
 
     return MaterialApp.router(

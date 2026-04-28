@@ -1,11 +1,30 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/model/profile_models.dart';
+import 'package:g_link/utils/common_utils.dart';
 
 class UserReportService {
-  UserReportService(this._dio) : _rawDio = Dio();
+  UserReportService(this._dio) : _rawDio = Dio() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          CommonUtils.log('[cURL] ${_toCurl(options)}');
+          handler.next(options);
+        },
+      ),
+    );
+    _rawDio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          CommonUtils.log('[cURL] ${_toCurl(options)}');
+          handler.next(options);
+        },
+      ),
+    );
+  }
 
   final Dio _dio;
 
@@ -69,6 +88,30 @@ class UserReportService {
       default:
         return 'application/octet-stream';
     }
+  }
+
+  String _toCurl(RequestOptions options) {
+    final buffer = StringBuffer(
+        "curl -X ${options.method.toUpperCase()} '${options.uri}'");
+    options.headers.forEach((key, value) {
+      if (value == null) return;
+      final escaped = value.toString().replaceAll("'", r"'\''");
+      buffer.write(" -H '$key: $escaped'");
+    });
+    final data = options.data;
+    if (data != null) {
+      if (data is FormData) {
+        for (final field in data.fields) {
+          final v = field.value.replaceAll("'", r"'\''");
+          buffer.write(" -F '${field.key}=$v'");
+        }
+      } else {
+        final body = data is String ? data : jsonEncode(data);
+        final escapedBody = body.replaceAll("'", r"'\''");
+        buffer.write(" --data-raw '$escapedBody'");
+      }
+    }
+    return buffer.toString();
   }
 
   Future<void> submitReport({

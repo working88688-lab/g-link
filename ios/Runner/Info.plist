@@ -4,6 +4,10 @@
 	<dict>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>需要获取你的位置以自动填写所在地</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>需要获取你的位置以自动填写所在地</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

@@ -247,6 +247,15 @@ class CommonUtils {
     if (url == null) {
       return '';
     }
+    if (url.isEmpty) {
+      return '';
+    }
+    // 仅对支持 "!WxH" 规则的图片域名做裁剪，S3/OSS 原图链接必须保持原样。
+    if (url.contains('amazonaws.com') ||
+        url.contains('glink-oss') ||
+        url.contains('?')) {
+      return url;
+    }
     String t = '';
     if (url.contains('!')) {
       return url;

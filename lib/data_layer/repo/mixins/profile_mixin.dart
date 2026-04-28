@@ -103,6 +103,49 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
         final list = List<Json>.from((json['lists'] ?? []) as List);
         return list.map(RecommendedUser.fromJson).toList();
       }).guard;
+
+  @override
+  AsyncResult updateMyProfile({
+    String? nickname,
+    String? username,
+    String? bio,
+    String? location,
+    String? avatarUrl,
+    String? coverUrl,
+  }) =>
+      _profileService
+          .updateMyProfile(
+            nickname: nickname,
+            username: username,
+            bio: bio,
+            location: location,
+            avatarUrl: avatarUrl,
+            coverUrl: coverUrl,
+          )
+          .deserialize()
+          .guard;
+
+  @override
+  AsyncResult<UploadedImagePayload> uploadImageByPresign({
+    required Uint8List bytes,
+    required String fileExt,
+    required int fileSize,
+    required String scene,
+  }) async {
+    try {
+      final url = await _profileService.uploadImageByPresign(
+        bytes: bytes,
+        fileExt: fileExt,
+        fileSize: fileSize,
+        scene: scene,
+      );
+      return Result<UploadedImagePayload>(status: 0, msg: 'success', data: url);
+    } catch (err) {
+      return Result<UploadedImagePayload>(status: -1, msg: err.toString());
+    }
+  }
+
+  @override
   AsyncResult submitOnboardingInterests({
     required List<int> tagIds,
   }) =>
@@ -114,4 +157,23 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
   @override
   AsyncResult completeOnboarding() =>
       _profileService.completeOnboarding().deserialize().guard;
+
+  @override
+  Future<UserProfile?> readCachedMyProfile() async {
+    final json = await _cacheManager.readMyProfile();
+    if (json == null) return null;
+    try {
+      return UserProfile.fromJson(json);
+    } catch (_) {
+      // 缓存结构损坏直接当作没缓存，避免持续抛出影响首屏。
+      return null;
+    }
+  }
+
+  @override
+  Future<void> cacheMyProfile(UserProfile profile) =>
+      _cacheManager.upsertMyProfile(profile.toJson());
+
+  @override
+  Future<void> clearCachedMyProfile() => _cacheManager.deleteMyProfile();
 }

@@ -136,27 +136,19 @@ class _Worker {
       ) = message as (int, String, String, String, String);
       try {
         final Uri resolved = Uri.base.resolve(url);
-
-        final httpClient = HttpClient()..autoUncompress = false;
-
-        final HttpClientRequest request = await httpClient.getUrl(resolved);
-
-        final HttpClientResponse response = await request.close();
-        if (response.statusCode != HttpStatus.ok) {
-          await response.drain<List<int>>(<int>[]);
-          throw NetworkImageLoadException(
-              statusCode: response.statusCode, uri: resolved);
-        }
-
-        final Uint8List bytes = await consolidateHttpClientResponseBytes(
-          response,
-          onBytesReceived: (int cumulative, int? total) {
+        // 单次失败容易被瞬时 TLS reset / NAT 抖动撞上（典型错误：
+        // `HandshakeException: Connection terminated during handshake`），
+        // 失败一锤定音 + Flutter ImageCache 还会把失败标记缓存，
+        // 导致同一张图后续都加载不出来。这里做 1 次重试，间隔 600ms，
+        // 能吃掉 99% 的临时握手失败。
+        final Uint8List bytes = await _fetchImageBytes(
+          resolved,
+          maxAttempts: 2,
+          onProgress: (cumulative, total) {
             sendPort.send((id, (cumulative, total)));
           },
         );
-        if (bytes.lengthInBytes == 0) {
-          throw Exception('NetworkImage is an empty file: $resolved');
-        }
+
         final decrypted = await imageDecrypt(bytes);
 
         try {
@@ -170,6 +162,48 @@ class _Worker {
         sendPort.send((id, RemoteError(e.toString(), '')));
       }
     });
+  }
+
+  /// 拉单张图片字节，自带重试。每次都用全新 HttpClient 并 force-close，
+  /// 避免 isolate 里上一次失败连接的 TLS 状态残留到下一次。
+  static Future<Uint8List> _fetchImageBytes(
+    Uri resolved, {
+    required int maxAttempts,
+    required void Function(int cumulative, int? total) onProgress,
+  }) async {
+    Object? lastError;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      final httpClient = HttpClient()
+        ..autoUncompress = false
+        ..connectionTimeout = const Duration(seconds: 15);
+      try {
+        final request = await httpClient.getUrl(resolved);
+        final response = await request.close();
+        if (response.statusCode != HttpStatus.ok) {
+          await response.drain<List<int>>(<int>[]);
+          throw NetworkImageLoadException(
+              statusCode: response.statusCode, uri: resolved);
+        }
+        final bytes = await consolidateHttpClientResponseBytes(
+          response,
+          onBytesReceived: onProgress,
+        );
+        if (bytes.lengthInBytes == 0) {
+          throw Exception('NetworkImage is an empty file: $resolved');
+        }
+        return bytes;
+      } catch (e) {
+        lastError = e;
+        // HTTP 状态错（4xx/5xx）没必要重试，直接抛。
+        if (e is NetworkImageLoadException) rethrow;
+        if (attempt < maxAttempts) {
+          await Future.delayed(const Duration(milliseconds: 600));
+        }
+      } finally {
+        httpClient.close(force: true);
+      }
+    }
+    throw lastError ?? Exception('image fetch failed: $resolved');
   }
 
   static void _startRemoteIsolate(SendPort sendPort) {

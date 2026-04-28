@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper_null_safety_flutter3/flutter_swiper_null_safety_flutter3.dart';
+import 'package:g_link/app_global.dart';
 import 'package:g_link/report/ui_layer/report_app_down_center_dialog.dart';
 import 'package:g_link/report/ui_layer/report_gesture_detector.dart';
 import 'package:g_link/report/ui_layer/report_popup_alert.dart';
@@ -261,6 +262,7 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
 
   @override
   Widget build(BuildContext context) {
+    AppGlobal.context = context;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,

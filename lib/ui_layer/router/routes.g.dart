@@ -12,6 +12,7 @@ List<RouteBase> get $appRoutes => [
       $registerRoute,
       $forgotPasswordRoute,
       $statefulShellRoute,
+      $editProfileRoute,
       $guideRoute,
       $complaintRoute,
       $chatConversationRoute,
@@ -246,6 +247,44 @@ extension $MineRouteExtension on MineRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
+RouteBase get $editProfileRoute => GoRouteData.$route(
+      path: '/mine/edit_profile',
+      parentNavigatorKey: EditProfileRoute.$parentNavigatorKey,
+      factory: $EditProfileRouteExtension._fromState,
+    );
+
+extension $EditProfileRouteExtension on EditProfileRoute {
+  static EditProfileRoute _fromState(GoRouterState state) => EditProfileRoute(
+        nickname: state.uri.queryParameters['nickname']!,
+        username: state.uri.queryParameters['username']!,
+        bio: state.uri.queryParameters['bio']!,
+        userLocation: state.uri.queryParameters['user-location']!,
+        avatarUrl: state.uri.queryParameters['avatar-url']!,
+        coverUrl: state.uri.queryParameters['cover-url']!,
+      );
+
+  String get location => GoRouteData.$location(
+        '/mine/edit_profile',
+        queryParams: {
+          'nickname': nickname,
+          'username': username,
+          'bio': bio,
+          'user-location': userLocation,
+          'avatar-url': avatarUrl,
+          'cover-url': coverUrl,
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
 RouteBase get $guideRoute => GoRouteData.$route(
       path: '/guide',
       factory: $GuideRouteExtension._fromState,
@@ -276,14 +315,15 @@ RouteBase get $complaintRoute => GoRouteData.$route(
 
 extension $ComplaintRouteExtension on ComplaintRoute {
   static ComplaintRoute _fromState(GoRouterState state) => ComplaintRoute(
-        targetId: int.tryParse(state.uri.queryParameters['target-id'] ?? ''),
+        targetId: _$convertMapValue(
+            'target-id', state.uri.queryParameters, int.parse),
         targetType: state.uri.queryParameters['target-type'],
       );
 
   String get location => GoRouteData.$location(
         '/complaint',
         queryParams: {
-          if (targetId != null) 'target-id': '$targetId',
+          if (targetId != null) 'target-id': targetId!.toString(),
           if (targetType != null) 'target-type': targetType,
         },
       );
@@ -296,6 +336,15 @@ extension $ComplaintRouteExtension on ComplaintRoute {
       context.pushReplacement(location);
 
   void replace(BuildContext context) => context.replace(location);
+}
+
+T? _$convertMapValue<T>(
+  String key,
+  Map<String, String> map,
+  T Function(String) converter,
+) {
+  final value = map[key];
+  return value == null ? null : converter(value);
 }
 
 RouteBase get $chatConversationRoute => GoRouteData.$route(
@@ -331,15 +380,6 @@ extension $ChatConversationRouteExtension on ChatConversationRoute {
       context.pushReplacement(location);
 
   void replace(BuildContext context) => context.replace(location);
-}
-
-T? _$convertMapValue<T>(
-  String key,
-  Map<String, String> map,
-  T Function(String) converter,
-) {
-  final value = map[key];
-  return value == null ? null : converter(value);
 }
 
 bool _$boolConverter(String value) {

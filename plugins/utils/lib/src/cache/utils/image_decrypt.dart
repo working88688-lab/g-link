@@ -85,15 +85,69 @@ final mediaIv =
         .toList(growable: false);
 
 FutureOr<Uint8List> imageDecrypt(Uint8List data) async {
+  // 历史实现里默认所有图片图床都是 AES-CBC 密文，需要客户端解密后再交给 Skia。
+  // 但新链路（如头像/封面走 S3 presign 直传）下发的就是裸图字节，
+  // 强行 AES 解密会撞到 WRONG_FINAL_BLOCK_LENGTH。
+  // 这里用 magic bytes 嗅探：识别得出来的明文格式直接透传，识别不出来的
+  // 才走老的 AES 解密分支。这样新旧两条图床并存。
+  if (_isPlainImage(data)) {
+    return data;
+  }
   final key = await AesCbcSecretKey.importRawKey(mediaKey);
   final decrypted = await key.decryptBytes(data, mediaIv);
-
   return decrypted;
+}
 
-  // Encrypter encrypter =
-  //     Encrypter(AES(Key.fromUtf8("f5d965df75336270"), mode: AESMode.cbc));
-  // Encrypted encrypted = Encrypted.fromBase64(base64Encode(data));
-  // List<int> decrypted =
-  //     encrypter.decryptBytes(encrypted, iv: IV.fromUtf8("97b60394abc2fbe1"));
-  // return Uint8List.fromList(decrypted);
+bool _isPlainImage(Uint8List data) {
+  if (data.length < 4) return false;
+  // JPEG: FF D8 FF
+  if (data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) return true;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (data.length >= 8 &&
+      data[0] == 0x89 &&
+      data[1] == 0x50 &&
+      data[2] == 0x4E &&
+      data[3] == 0x47 &&
+      data[4] == 0x0D &&
+      data[5] == 0x0A &&
+      data[6] == 0x1A &&
+      data[7] == 0x0A) {
+    return true;
+  }
+  // GIF87a / GIF89a: 47 49 46 38 (37|39) 61
+  if (data.length >= 6 &&
+      data[0] == 0x47 &&
+      data[1] == 0x49 &&
+      data[2] == 0x46 &&
+      data[3] == 0x38 &&
+      (data[4] == 0x37 || data[4] == 0x39) &&
+      data[5] == 0x61) {
+    return true;
+  }
+  // WebP: 52 49 46 46 ?? ?? ?? ?? 57 45 42 50
+  if (data.length >= 12 &&
+      data[0] == 0x52 &&
+      data[1] == 0x49 &&
+      data[2] == 0x46 &&
+      data[3] == 0x46 &&
+      data[8] == 0x57 &&
+      data[9] == 0x45 &&
+      data[10] == 0x42 &&
+      data[11] == 0x50) {
+    return true;
+  }
+  // BMP: 42 4D
+  if (data[0] == 0x42 && data[1] == 0x4D) return true;
+  // HEIC/HEIF: 00 00 00 ?? 66 74 79 70 (ftyp box)
+  if (data.length >= 12 &&
+      data[0] == 0x00 &&
+      data[1] == 0x00 &&
+      data[2] == 0x00 &&
+      data[4] == 0x66 &&
+      data[5] == 0x74 &&
+      data[6] == 0x79 &&
+      data[7] == 0x70) {
+    return true;
+  }
+  return false;
 }

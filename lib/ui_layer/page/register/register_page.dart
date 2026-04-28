@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/domains/auth.dart';
+import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/auth_notifier.dart';
 import 'package:g_link/ui_layer/page/background_page.dart';
@@ -25,16 +26,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   static const _termsUrl = 'https://api.zywsbgha.cc/terms';
   static const _privacyUrl = 'https://api.zywsbgha.cc/privacy';
-  static const _countryCodes =
-      <({String display, String request, String nameKey})>[
-    (display: '+01', request: '1', nameKey: 'countryNameUsCanada'),
-    (display: '+86', request: '86', nameKey: 'countryNameChina'),
-    (display: '+852', request: '852', nameKey: 'countryNameHongKong'),
-    (display: '+853', request: '853', nameKey: 'countryNameMacao'),
-    (display: '+886', request: '886', nameKey: 'countryNameTaiwan'),
-    (display: '+65', request: '65', nameKey: 'countryNameSingapore'),
-  ];
-
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneCodeController = TextEditingController();
@@ -47,10 +38,12 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _emailPwdVisible = false;
   bool _emailConfirmPwdVisible = false;
   int _selectedCountryCodeIndex = 0;
+  String? _cachedCountryCodeRequest;
   int _phoneCodeCountdown = 0;
   int _emailCodeCountdown = 0;
   Timer? _phoneCodeTimer;
   Timer? _emailCodeTimer;
+  bool _countryCodesLoaded = false;
 
   @override
   void dispose() {
@@ -77,200 +70,218 @@ class _RegisterPageState extends State<RegisterPage> {
         deviceId: '${appDomain.info['oauth_id'] ?? ''}',
         deviceType: '${appDomain.info['oauth_type'] ?? 'ios'}',
       ),
-      child: BackgroundPage(
-        androidStatusBarIcon: Brightness.light,
-        iosStatusBarIcon: Brightness.dark,
-        systemNavigationBarColor: const Color.fromRGBO(3, 7, 21, 1),
-        backgroundGradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            Color.fromRGBO(8, 37, 57, 1),
-            Color.fromRGBO(17, 29, 38, 1),
-            Color.fromRGBO(1, 1, 10, 1),
-            Color.fromRGBO(3, 7, 21, 1),
-          ],
-        ),
-        appBar: MyAppBar(
-          leftWidget: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-            child: Container(
-              margin: EdgeInsets.only(left: 5.w, top: 3.w),
-              padding: EdgeInsets.all(8.w),
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(45, 45, 45, 0.6),
-                borderRadius: BorderRadius.all(Radius.circular(30.w)),
-              ),
-              child: Image.asset(
-                MyImagePaths.appBackIcon,
-                width: 14.w,
-                height: 14.w,
+      child: Builder(
+        builder: (innerContext) {
+          if (!_countryCodesLoaded) {
+            _countryCodesLoaded = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _initCountryCodes(innerContext);
+            });
+          }
+          return BackgroundPage(
+            androidStatusBarIcon: Brightness.light,
+            iosStatusBarIcon: Brightness.dark,
+            systemNavigationBarColor: const Color.fromRGBO(3, 7, 21, 1),
+            backgroundGradient: const LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                Color.fromRGBO(8, 37, 57, 1),
+                Color.fromRGBO(17, 29, 38, 1),
+                Color.fromRGBO(1, 1, 10, 1),
+                Color.fromRGBO(3, 7, 21, 1),
+              ],
+            ),
+            appBar: MyAppBar(
+              leftWidget: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
+                child: Container(
+                  margin: EdgeInsets.only(left: 5.w, top: 3.w),
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(45, 45, 45, 0.6),
+                    borderRadius: BorderRadius.all(Radius.circular(30.w)),
+                  ),
+                  child: Image.asset(
+                    MyImagePaths.appBackIcon,
+                    width: 14.w,
+                    height: 14.w,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        body: DefaultTabController(
-          length: 2,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 20.w),
-                      Image.asset(
-                        MyImagePaths.joinGlink,
-                        width: 262.w,
-                        height: 33.4.w,
-                      ),
-                      SizedBox(height: 6.w),
-                      Padding(
-                        padding: EdgeInsets.only(left: 28.w),
-                        child: Text(
-                          'registerWorldTip'.tr(),
-                          style: MyTheme.white04_12.copyWith(
-                            color: const Color.fromRGBO(255, 255, 255, 1),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13.sp,
+            body: DefaultTabController(
+              length: 2,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 20.w),
+                          Image.asset(
+                            MyImagePaths.joinGlink,
+                            width: 262.w,
+                            height: 33.4.w,
                           ),
-                        ),
-                      ),
-                      SizedBox(height: 20.w),
-                      Container(
-                        margin: EdgeInsets.symmetric(horizontal: 28.w),
-                        padding: EdgeInsets.fromLTRB(16.w, 14.w, 16.w, 16.w),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(19, 20, 23, 0.7),
-                          borderRadius: BorderRadius.all(Radius.circular(12.w)),
-                          border: Border.all(
-                            color: const Color.fromRGBO(34, 35, 40, 0.8),
-                            width: 0.8.w,
+                          SizedBox(height: 6.w),
+                          Padding(
+                            padding: EdgeInsets.only(left: 28.w),
+                            child: Text(
+                              'registerWorldTip'.tr(),
+                              style: MyTheme.white04_12.copyWith(
+                                color: const Color.fromRGBO(255, 255, 255, 1),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13.sp,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: Column(
-                          children: [
-                            TabBar(
-                              indicatorColor: Colors.white,
-                              indicatorWeight: 3,
-                              labelColor: Colors.white,
-                              unselectedLabelColor: const Color(0xFF8E96A8),
-                              labelStyle: TextStyle(
-                                  fontSize: 15.sp, fontWeight: FontWeight.w600),
-                              indicatorSize: TabBarIndicatorSize.label,
-                              tabs: [
-                                Tab(text: 'phoneRegister'.tr()),
-                                Tab(text: 'emailRegister'.tr()),
+                          SizedBox(height: 20.w),
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: 28.w),
+                            padding:
+                                EdgeInsets.fromLTRB(16.w, 14.w, 16.w, 16.w),
+                            decoration: BoxDecoration(
+                              color: const Color.fromRGBO(19, 20, 23, 0.7),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12.w)),
+                              border: Border.all(
+                                color: const Color.fromRGBO(34, 35, 40, 0.8),
+                                width: 0.8.w,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                TabBar(
+                                  indicatorColor: Colors.white,
+                                  indicatorWeight: 3,
+                                  labelColor: Colors.white,
+                                  unselectedLabelColor: const Color(0xFF8E96A8),
+                                  labelStyle: TextStyle(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w600),
+                                  indicatorSize: TabBarIndicatorSize.label,
+                                  tabs: [
+                                    Tab(text: 'phoneRegister'.tr()),
+                                    Tab(text: 'emailRegister'.tr()),
+                                  ],
+                                ),
+                                SizedBox(height: 16.w),
+                                SizedBox(
+                                  height: 370.w,
+                                  child: TabBarView(
+                                    children: [
+                                      _buildRegisterForm(isEmail: false),
+                                      _buildRegisterForm(isEmail: true),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
-                            SizedBox(height: 16.w),
-                            SizedBox(
-                              height: 370.w,
-                              child: TabBarView(
-                                children: [
-                                  _buildRegisterForm(isEmail: false),
-                                  _buildRegisterForm(isEmail: true),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 18.w),
-                      Center(
-                        child: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            Text(
-                              'authAlreadyHaveAccount'.tr(),
-                              style: TextStyle(
-                                color: const Color(0xFFA6ADBC),
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => const LoginRoute().go(context),
-                              child: Text(
-                                'authGoLogin'.tr(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12.w),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 28.w),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                  height: 1, color: const Color(0xFF2E3443)),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16.w),
-                              child: Text(
-                                'commonOr'.tr(),
-                                style: TextStyle(
+                          ),
+                          SizedBox(height: 18.w),
+                          Center(
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  'authAlreadyHaveAccount'.tr(),
+                                  style: TextStyle(
                                     color: const Color(0xFFA6ADBC),
-                                    fontSize: 14.sp),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                  height: 1, color: const Color(0xFF2E3443)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 16.w),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _signInWithGoogle(context),
-                            child: Image.asset(
-                              MyImagePaths.google,
-                              width: 34.w,
-                              height: 34.w,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => const LoginRoute().go(context),
+                                  child: Text(
+                                    'authGoLogin'.tr(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(width: 20.w),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _signInWithApple(context),
-                            child: Image.asset(
-                              MyImagePaths.apple,
-                              width: 34.w,
-                              height: 34.w,
+                          SizedBox(height: 12.w),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 28.w),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                      height: 1,
+                                      color: const Color(0xFF2E3443)),
+                                ),
+                                Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 16.w),
+                                  child: Text(
+                                    'commonOr'.tr(),
+                                    style: TextStyle(
+                                        color: const Color(0xFFA6ADBC),
+                                        fontSize: 14.sp),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                      height: 1,
+                                      color: const Color(0xFF2E3443)),
+                                ),
+                              ],
                             ),
+                          ),
+                          SizedBox(height: 16.w),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _signInWithGoogle(context),
+                                child: Image.asset(
+                                  MyImagePaths.google,
+                                  width: 34.w,
+                                  height: 34.w,
+                                ),
+                              ),
+                              SizedBox(width: 20.w),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _signInWithApple(context),
+                                child: Image.asset(
+                                  MyImagePaths.apple,
+                                  width: 34.w,
+                                  height: 34.w,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -307,7 +318,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10.w),
                       child: Text(
-                        _selectedCountryCode.display,
+                        _selectedCountryCode(context).display,
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16.sp,
@@ -316,7 +327,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: _showCountryCodeSelector,
+                      onTap: () => _showCountryCodeSelector(context),
                       behavior: HitTestBehavior.opaque,
                       child: Icon(Icons.keyboard_arrow_down_rounded,
                           color: Colors.white, size: 18.w),
@@ -772,7 +783,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _startCodeCountdown(isEmail: isEmail);
     final success = await context.read<AuthNotifier>().sendRegisterCode(
           channel: isEmail ? 'email' : 'sms',
-          countryCode: isEmail ? null : _phoneCountryCodeRequest(),
+          countryCode: isEmail ? null : _phoneCountryCodeRequest(context),
           account: account,
         );
     if (!context.mounted) return;
@@ -850,17 +861,23 @@ class _RegisterPageState extends State<RegisterPage> {
       _toast(context, 'authAgreementRequired'.tr());
       return;
     }
-    final success = await context.read<AuthNotifier>().register(
-          type: isEmail ? 'email' : 'phone',
-          account: account,
-          countryCode: isEmail ? null : _phoneCountryCodeRequest(),
-          code: code,
-          password: password,
-          agreementAccepted: _agreePolicy,
-        );
+    final authNotifier = context.read<AuthNotifier>();
+    final appDomain = context.read<AppDomain>();
+    final selectedCountryCode = _phoneCountryCodeRequest(context);
+    final success = await authNotifier.register(
+      type: isEmail ? 'email' : 'phone',
+      account: account,
+      countryCode: isEmail ? null : selectedCountryCode,
+      code: code,
+      password: password,
+      agreementAccepted: _agreePolicy,
+    );
     if (!context.mounted || !success) return;
-    final requireOnboarding =
-        context.read<AuthNotifier>().authData?.requireOnboarding ?? false;
+    if (!isEmail) {
+      await appDomain.cache.upsertAuthPhoneCountryCode(selectedCountryCode);
+      if (!context.mounted) return;
+    }
+    final requireOnboarding = authNotifier.authData?.requireOnboarding ?? false;
     if (requireOnboarding) {
       const GuideRoute().go(context);
       return;
@@ -942,29 +959,52 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  ({String display, String request, String nameKey}) get _selectedCountryCode =>
-      _countryCodes[_selectedCountryCodeIndex];
+  AuthCountryCode _selectedCountryCode(BuildContext context) {
+    final list = context.read<AuthNotifier>().countryCodes;
+    if (list.isEmpty) {
+      final request = _cachedCountryCodeRequest?.trim();
+      if (request != null && request.isNotEmpty) {
+        return AuthCountryCode(
+          display: '+$request',
+          request: request,
+          name: '',
+        );
+      }
+      return const AuthCountryCode(
+          display: '+01', request: '1', name: 'US/Canada');
+    }
+    final index = _selectedCountryCodeIndex.clamp(0, list.length - 1);
+    return list[index];
+  }
 
-  String _phoneCountryCodeRequest() => _selectedCountryCode.request;
+  String _phoneCountryCodeRequest(BuildContext context) =>
+      _selectedCountryCode(context).request;
 
-  Future<void> _showCountryCodeSelector() async {
+  Future<void> _showCountryCodeSelector(BuildContext providerContext) async {
     await showModalBottomSheet<void>(
-      context: context,
+      context: providerContext,
       backgroundColor: const Color(0xFF151A24),
       showDragHandle: true,
       builder: (sheetContext) {
+        final countryCodes = providerContext.read<AuthNotifier>().countryCodes;
+        if (countryCodes.isEmpty) {
+          return const SizedBox.shrink();
+        }
         return SafeArea(
           child: ListView.separated(
             shrinkWrap: true,
-            itemCount: _countryCodes.length,
+            itemCount: countryCodes.length,
             separatorBuilder: (_, __) =>
                 const Divider(height: 1, color: Color(0xFF2E3443)),
             itemBuilder: (_, index) {
-              final item = _countryCodes[index];
+              final item = countryCodes[index];
               final selected = index == _selectedCountryCodeIndex;
               return ListTile(
+                leading: item.flagEmoji.isNotEmpty
+                    ? Text(item.flagEmoji, style: TextStyle(fontSize: 20.sp))
+                    : null,
                 title: Text(
-                  '${item.display}  ${item.nameKey.tr()}',
+                  '${item.display}  ${item.name}',
                   style: TextStyle(
                     color: selected ? Colors.white : const Color(0xFFA6ADBC),
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
@@ -985,5 +1025,21 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       },
     );
+  }
+
+  Future<void> _initCountryCodes(BuildContext innerContext) async {
+    final appDomain = context.read<AppDomain>();
+    final savedCode = await appDomain.cache.readAuthPhoneCountryCode();
+    if (mounted && savedCode != null && savedCode.isNotEmpty) {
+      setState(() => _cachedCountryCodeRequest = savedCode);
+    }
+    final notifier = innerContext.read<AuthNotifier>();
+    await notifier.fetchCountryCodes();
+    if (!mounted) return;
+    if (!mounted || savedCode == null || savedCode.isEmpty) return;
+    final idx = notifier.countryCodes.indexWhere((e) => e.request == savedCode);
+    if (idx >= 0 && idx != _selectedCountryCodeIndex) {
+      setState(() => _selectedCountryCodeIndex = idx);
+    }
   }
 }

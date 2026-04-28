@@ -9,14 +9,23 @@ class AuthService extends BaseService {
   final service = 'v1';
 
   AsyncJson login({
+    required String type,
     required String account,
+    String? countryCode,
+    String? phone,
+    String? email,
     required String password,
     required String deviceId,
     required String deviceType,
   }) =>
       post('/auth/login',
           data: {
+            'type': type,
             'account': account,
+            if (countryCode != null && countryCode.isNotEmpty)
+              'country_code': countryCode,
+            if (phone != null && phone.isNotEmpty) 'phone': phone,
+            if (email != null && email.isNotEmpty) 'email': email,
             'password': password,
             'device_id': deviceId,
             'device_type': deviceType,
@@ -86,4 +95,6 @@ class AuthService extends BaseService {
             'password': password,
           },
           encrypted: false);
+
+  AsyncJson getCountryCodes() => get('/auth/country-codes', encrypted: false);
 }

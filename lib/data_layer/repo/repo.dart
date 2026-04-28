@@ -5,12 +5,9 @@ import 'dart:io';
 import 'package:android_id/android_id.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
-import 'package:g_link/data_layer/data_source/search_service.dart';
 import 'package:g_link/data_layer/data_source/chat_service.dart';
 import 'package:g_link/data_layer/repo/http_interceptor.dart';
-import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/domains/chat.dart';
-import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/domain/model/chat_model.dart';
 import 'package:g_link/data_layer/repo/utils.dart';
 import 'package:g_link/domain/domains/report.dart';
@@ -36,28 +33,31 @@ import 'package:g_link/app_global.dart';
 import 'package:g_link/domain/model/ad_model.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/domain/model/auth_models.dart';
+import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
 import 'package:g_link/data_layer/data_source/home_service.dart';
-import 'package:g_link/data_layer/data_source/user_report_service.dart';
 import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
 import 'package:g_link/data_layer/data_source/auth_service.dart';
+import 'package:g_link/data_layer/data_source/search_service.dart';
+import 'package:g_link/data_layer/data_source/user_report_service.dart';
 
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/enum.dart';
 import 'package:g_link/domain/type_def.dart';
 
 import 'package:g_link/domain/domains/home.dart';
+import 'package:g_link/domain/domains/search.dart';
 
 part 'cache.dart';
 
-part 'mixins/search_mixin.dart';
 part 'mixins/chat_mixin.dart';
 part 'mixins/home_mixin.dart';
 part 'mixins/report_mixin.dart';
 part 'mixins/profile_mixin.dart';
 part 'mixins/auth_mixin.dart';
+part 'mixins/search_mixin.dart';
 
 class AppRepo extends _BaseAppRepo
     with _Home, _Report, _Profile, _Auth, _Chat, _Search {}
@@ -65,11 +65,11 @@ class AppRepo extends _BaseAppRepo
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _reportService = ReportService(_apiDio);
+  late final _userReportService = UserReportService(_apiDio);
   late final _profileService = ProfileService(_apiDio);
   late final _authService = AuthService(_apiDio);
-  late final _searchService = SearchService(_v1Dio);
   late final _chatService = ChatService(_v1Dio);
-  late final _userReportService = UserReportService(_v1Dio);
+  late final _searchService = SearchService(_apiDio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
@@ -81,8 +81,10 @@ abstract class _BaseAppRepo implements AppDomain {
   late final _apiDio = Dio(
     BaseOptions(
       baseUrl: BuildConfig.apiBaseUrl,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
+      // 5s 在跨地域 / 弱网下太激进，个人主页刷新等接口经常被这个超时干掉。
+      // 放宽到 15/20s，仍能在服务端真挂掉时及时报错。
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 20),
       contentType: Headers.formUrlEncodedContentType,
     ),
   );
@@ -99,10 +101,12 @@ abstract class _BaseAppRepo implements AppDomain {
   )..interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          _applyCommonHeaders(options);
           final token = _appInfo.token?.trim();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          _printCurl(options);
           return handler.next(options);
         },
       ),
@@ -114,7 +118,15 @@ abstract class _BaseAppRepo implements AppDomain {
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(seconds: 300),
     ),
-  );
+  )..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _applyCommonHeaders(options);
+          _printCurl(options);
+          return handler.next(options);
+        },
+      ),
+    );
 
   bool _isInitialized = false;
   bool _authRedirecting = false;
@@ -135,6 +147,15 @@ abstract class _BaseAppRepo implements AppDomain {
     _apiDio.interceptors.add(AutoEncryptAndDecryptInterceptor(_appInfo));
     _apiDio.interceptors.add(
       InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _applyCommonHeaders(options);
+          final token = _appInfo.token?.trim();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          _printCurl(options);
+          return handler.next(options);
+        },
         onResponse: (response, handler) async {
           if (_isAuthRequiredResponse(response.data)) {
             await _handleAuthRequired();
@@ -159,6 +180,9 @@ abstract class _BaseAppRepo implements AppDomain {
         _appInfo.removeToken();
         await _cacheManager.deleteAuthToken();
       }
+      // 同步清掉个人资料缓存：避免下个账号登录时 MinePage 先闪一帧上一个用户的
+      // 头像/昵称（缓存是按 key 存的，不带账号区分）。
+      await _cacheManager.deleteMyProfile();
     } catch (_) {}
   }
 
@@ -189,6 +213,56 @@ abstract class _BaseAppRepo implements AppDomain {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       _authRedirecting = false;
     }
+  }
+
+  void _applyCommonHeaders(RequestOptions options) {
+    options.headers['Accept'] = Headers.jsonContentType;
+    options.headers['X-Device-Id'] = '${_appInfo['oauth_id'] ?? ''}';
+    options.headers['X-App-Version'] = '${_appInfo['version'] ?? ''}';
+    options.headers['X-Platform'] = _platformHeaderValue();
+
+    final isUpload = options.data is FormData;
+    if (!isUpload) {
+      options.headers['Content-Type'] = Headers.jsonContentType;
+    }
+  }
+
+  String _platformHeaderValue() {
+    if (kIsWeb) return 'web';
+    if (Platform.isIOS) return 'ios';
+    if (Platform.isAndroid) return 'android';
+    return 'web';
+  }
+
+  void _printCurl(RequestOptions options) {
+    final url = options.uri.toString();
+    final buffer =
+        StringBuffer("curl -X ${options.method.toUpperCase()} '$url'");
+
+    options.headers.forEach((key, value) {
+      if (value == null) return;
+      final headerValue = value.toString().replaceAll("'", r"'\''");
+      buffer.write(" -H '$key: $headerValue'");
+    });
+
+    final data = options.data;
+    if (data != null) {
+      if (data is FormData) {
+        for (final field in data.fields) {
+          final fieldValue = field.value.replaceAll("'", r"'\''");
+          buffer.write(" -F '${field.key}=$fieldValue'");
+        }
+        for (final file in data.files) {
+          buffer.write(" -F '${file.key}=@<file>'");
+        }
+      } else {
+        final body = data is String ? data : jsonEncode(data);
+        final escapedBody = body.replaceAll("'", r"'\''");
+        buffer.write(" --data-raw '$escapedBody'");
+      }
+    }
+
+    debugPrint('[cURL] ${buffer.toString()}');
   }
 
   void _updateToken(String token, String refreshToken) {

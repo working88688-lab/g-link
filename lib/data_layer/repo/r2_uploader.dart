@@ -11,6 +11,31 @@ import 'package:flutter/foundation.dart';
 import 'package:g_link/ui_layer/notifier/home_config_notifier.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:g_link/utils/common_utils.dart';
+
+String _curlFromOptions(RequestOptions options) {
+  final buffer =
+      StringBuffer("curl -X ${options.method.toUpperCase()} '${options.uri}'");
+  options.headers.forEach((key, value) {
+    if (value == null) return;
+    final escaped = value.toString().replaceAll("'", r"'\''");
+    buffer.write(" -H '$key: $escaped'");
+  });
+  final data = options.data;
+  if (data != null) {
+    if (data is FormData) {
+      for (final field in data.fields) {
+        final v = field.value.replaceAll("'", r"'\''");
+        buffer.write(" -F '${field.key}=$v'");
+      }
+    } else {
+      final body = data is String ? data : data.toString();
+      final escapedBody = body.replaceAll("'", r"'\''");
+      buffer.write(" --data-raw '$escapedBody'");
+    }
+  }
+  return buffer.toString();
+}
 
 class R2UploaderUtil {
   R2UploaderUtil({required BuildContext context, this.cancelToken})
@@ -35,7 +60,15 @@ class R2UploaderUtil {
   final String r2Key;
   final String r2CompleteURL;
 
-  late final _r2Dio = Dio();
+  late final _r2Dio = Dio()
+    ..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          CommonUtils.log('[cURL] ${_curlFromOptions(options)}');
+          handler.next(options);
+        },
+      ),
+    );
 
   late final timeStamp = DateTime.now().millisecondsSinceEpoch.toString();
   late final signature =
@@ -147,6 +180,15 @@ class _R2Uploader {
   final ValueChanged<int>? uploadedSizeChanged;
   final CancelToken? cancelToken;
   final _completer = Completer<List<Map>>();
+  final Dio _sliceDio = Dio()
+    ..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          CommonUtils.log('[cURL] ${_curlFromOptions(options)}');
+          handler.next(options);
+        },
+      ),
+    );
 
   bool _isRunning = false;
 
@@ -173,7 +215,7 @@ class _R2Uploader {
     final sliceSize = end - start;
 
     try {
-      final Response response = await Dio().put(
+      final Response response = await _sliceDio.put(
         task.url,
         data: xFile.openRead(start, end),
         cancelToken: cancelToken,
