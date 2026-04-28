@@ -10,6 +10,7 @@ import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'widgets/mine_settings_drawer.dart';
 
 class MinePage extends StatefulWidget {
   const MinePage({super.key});
@@ -77,6 +78,7 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
       ],
       child: Scaffold(
         backgroundColor: Colors.white,
+        endDrawer: const MineSettingsDrawer(),
         body: VisibilityDetector(
           key: _visibilityKey,
           onVisibilityChanged: (info) {
@@ -89,75 +91,75 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
             _wasVisible = visible;
           },
           child: Consumer<ProfileNotifier>(builder: (context, notifier, _) {
-          final profile =
-              context.select<ProfileNotifier, UserProfile?>((n) => n.profile) ??
-                  const UserProfile(
-                    uid: 0,
-                    username: '',
-                    nickname: '',
-                    avatarUrl: '',
-                    coverUrl: '',
-                    bio: '',
-                    location: '',
-                    professionTags: <String>[],
-                    isSelf: true,
-                    followingCount: 0,
-                    followingCountDisplay: '0',
-                    followerCount: 0,
-                    followerCountDisplay: '0',
-                    likeCount: 0,
-                    likeCountDisplay: '0',
-                    postCount: 0,
-                    postCountDisplay: '0',
-                    videoCount: 0,
-                    videoCountDisplay: '0',
-                  );
-          return Stack(
-            children: [
-              Column(
-                children: [
-                  _buildHeaderProfileSection(context, profile, notifier),
-                  Expanded(
-                    child: DefaultTabController(
-                      length: 3,
-                      initialIndex: notifier.tabIndex,
-                      child: Column(
-                        children: [
-                          _buildTabs(notifier),
-                          Expanded(
-                            child: TabBarView(
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: [
-                                _buildMediaTab(
-                                  notifier,
-                                  tabIndex: 0,
-                                  initialLoading: notifier.loadingProfile &&
-                                      notifier.profile == null,
-                                ),
-                                _buildMediaTab(
-                                  notifier,
-                                  tabIndex: 1,
-                                  initialLoading: notifier.loadingProfile &&
-                                      notifier.profile == null,
-                                ),
-                                _buildMediaTab(
-                                  notifier,
-                                  tabIndex: 2,
-                                  initialLoading: notifier.loadingProfile &&
-                                      notifier.profile == null,
-                                ),
-                              ],
+            final profile = context
+                    .select<ProfileNotifier, UserProfile?>((n) => n.profile) ??
+                const UserProfile(
+                  uid: 0,
+                  username: '',
+                  nickname: '',
+                  avatarUrl: '',
+                  coverUrl: '',
+                  bio: '',
+                  location: '',
+                  professionTags: <String>[],
+                  isSelf: true,
+                  followingCount: 0,
+                  followingCountDisplay: '0',
+                  followerCount: 0,
+                  followerCountDisplay: '0',
+                  likeCount: 0,
+                  likeCountDisplay: '0',
+                  postCount: 0,
+                  postCountDisplay: '0',
+                  videoCount: 0,
+                  videoCountDisplay: '0',
+                );
+            return Stack(
+              children: [
+                Column(
+                  children: [
+                    _buildHeaderProfileSection(context, profile, notifier),
+                    Expanded(
+                      child: DefaultTabController(
+                        length: 3,
+                        initialIndex: notifier.tabIndex,
+                        child: Column(
+                          children: [
+                            _buildTabs(notifier),
+                            Expanded(
+                              child: TabBarView(
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: [
+                                  _buildMediaTab(
+                                    notifier,
+                                    tabIndex: 0,
+                                    initialLoading: notifier.loadingProfile &&
+                                        notifier.profile == null,
+                                  ),
+                                  _buildMediaTab(
+                                    notifier,
+                                    tabIndex: 1,
+                                    initialLoading: notifier.loadingProfile &&
+                                        notifier.profile == null,
+                                  ),
+                                  _buildMediaTab(
+                                    notifier,
+                                    tabIndex: 2,
+                                    initialLoading: notifier.loadingProfile &&
+                                        notifier.profile == null,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        }),
+                  ],
+                ),
+              ],
+            );
+          }),
         ),
       ),
     );
@@ -225,7 +227,10 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _navSquare(MyImagePaths.appBackIcon),
-                _navSquare(MyImagePaths.settings),
+                GestureDetector(
+                  onTap: () => Scaffold.of(context).openEndDrawer(),
+                  child: _navSquare(MyImagePaths.settings),
+                ),
               ],
             ),
           ),
@@ -243,7 +248,12 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
         color: Colors.black.withValues(alpha: 0.30),
         borderRadius: BorderRadius.circular(8.w),
       ),
-      child: Image.asset(icon, color: Colors.white, width: 19.w, height: 19.w,),
+      child: Image.asset(
+        icon,
+        color: Colors.white,
+        width: 19.w,
+        height: 19.w,
+      ),
     );
   }
 
