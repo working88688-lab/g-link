@@ -125,7 +125,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       ].join('·');
       developer.log(
         '[edit-profile-loc] composed="$composed" '
-        '(country="${addr.country}", city="${addr.city}", source=${addr.source})',
+            '(country="${addr.country}", city="${addr.city}", source=${addr.source})',
         name: 'edit-profile-loc',
       );
       if (composed.isEmpty) {
@@ -234,7 +234,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       final placemarks = await gc.placemarkFromCoordinates(lat, lon);
       developer.log(
         '[edit-profile-loc] platform geocoder placemarks.length='
-        '${placemarks.length}',
+            '${placemarks.length}',
         name: 'edit-profile-loc',
       );
       if (placemarks.isNotEmpty) {
@@ -252,7 +252,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     } catch (e) {
       developer.log(
         '[edit-profile-loc] platform geocoder failed, falling back to '
-        'nominatim: $e',
+            'nominatim: $e',
         name: 'edit-profile-loc',
       );
     }
@@ -262,10 +262,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   /// OpenStreetMap Nominatim 反查；遵守其使用条款必须设 User-Agent。
   /// `accept-language` 让结果跟着 app 当前语言走，国际化场景下保持一致。
   Future<_AddressResult?> _reverseGeocodeViaNominatim(
-    double lat,
-    double lon,
-    String localeId,
-  ) async {
+      double lat,
+      double lon,
+      String localeId,
+      ) async {
     final acceptLanguage = localeId.replaceAll('_', '-');
     final uri = Uri.https('nominatim.openstreetmap.org', '/reverse', {
       'lat': lat.toString(),
@@ -419,7 +419,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
             child: _pillDarkButton(
               title: '更换封面',
               loading: context.select<EditProfileNotifier, bool>(
-                (n) => n.uploadingCover,
+                    (n) => n.uploadingCover,
               ),
               onTap: () => _onPickCover(notifier),
             ),
@@ -443,9 +443,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                     child: _avatarUrl.isNotEmpty
                         ? MyImage.network(_avatarUrl, fit: BoxFit.cover)
                         : MyImage.asset(
-                            MyImagePaths.defaultHeader,
-                            fit: BoxFit.cover,
-                          ),
+                      MyImagePaths.defaultHeader,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     left: 2.w,
@@ -466,21 +466,21 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                           builder: (_, loading, __) {
                             return loading
                                 ? SizedBox(
-                                    width: 14.w,
-                                    height: 14.w,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 1.8,
-                                      color: Colors.white,
-                                    ),
-                                  )
+                              width: 14.w,
+                              height: 14.w,
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 1.8,
+                                color: Colors.white,
+                              ),
+                            )
                                 : Text(
-                                    '更换头像',
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  );
+                              '更换头像',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
                           }),
                     ),
                   ),
@@ -550,18 +550,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 padding: EdgeInsets.only(right: 6.w),
                 child: _locating
                     ? SizedBox(
-                        width: 18.w,
-                        height: 18.w,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.6,
-                          color: const Color(0xFF627189),
-                        ),
-                      )
+                  width: 18.w,
+                  height: 18.w,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.6,
+                    color: const Color(0xFF627189),
+                  ),
+                )
                     : Icon(
-                        Icons.location_on_rounded,
-                        color: const Color(0xFF627189),
-                        size: 18.w,
-                      ),
+                  Icons.location_on_rounded,
+                  color: const Color(0xFF627189),
+                  size: 18.w,
+                ),
               ),
             ),
           ),
@@ -783,29 +783,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         ),
         child: loading
             ? SizedBox(
-                width: 14.w,
-                height: 14.w,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 1.8,
-                  color: Colors.white,
-                ),
-              )
+          width: 14.w,
+          height: 14.w,
+          child: const CircularProgressIndicator(
+            strokeWidth: 1.8,
+            color: Colors.white,
+          ),
+        )
             : Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
 
   Future<void> _onSave(
-    BuildContext context,
-    EditProfileNotifier notifier,
-  ) async {
+      BuildContext context,
+      EditProfileNotifier notifier,
+      ) async {
     final navigator = Navigator.of(context);
     final ok = await notifier.submit(
       nickname: _nicknameCtrl.text,
