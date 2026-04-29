@@ -27,6 +27,7 @@ class AppRouterPaths {
   /// 我的
   static const mine = '/mine';
   static const mineEditProfile = '/mine/edit_profile';
+  static const mineRecommendFollow = '/mine/recommend_follow';
 
   /// 引导页
   static const guide = '/guide';

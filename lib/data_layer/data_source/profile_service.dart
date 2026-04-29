@@ -145,6 +145,17 @@ class ProfileService extends BaseService {
         queryParameters: {'limit': limit},
         encrypted: false,
       );
+
+  AsyncJson followUser({required int uid}) => post(
+        '/users/$uid/follow',
+        data: const <String, dynamic>{},
+        encrypted: false,
+      );
+
+  AsyncJson unfollowUser({required int uid}) => delete(
+        '/users/$uid/follow',
+        encrypted: false,
+      );
   AsyncJson submitOnboardingInterests({
     required List<int> tagIds,
   }) =>

@@ -12,6 +12,7 @@ List<RouteBase> get $appRoutes => [
       $registerRoute,
       $forgotPasswordRoute,
       $statefulShellRoute,
+      $recommendFollowListRoute,
       $editProfileRoute,
       $guideRoute,
       $complaintRoute,
@@ -247,6 +248,46 @@ extension $MineRouteExtension on MineRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
+RouteBase get $recommendFollowListRoute => GoRouteData.$route(
+      path: '/mine/recommend_follow',
+      parentNavigatorKey: RecommendFollowListRoute.$parentNavigatorKey,
+      factory: $RecommendFollowListRouteExtension._fromState,
+    );
+
+extension $RecommendFollowListRouteExtension on RecommendFollowListRoute {
+  static RecommendFollowListRoute _fromState(GoRouterState state) =>
+      RecommendFollowListRoute(
+        limit:
+            _$convertMapValue('limit', state.uri.queryParameters, int.parse) ??
+                10,
+      );
+
+  String get location => GoRouteData.$location(
+        '/mine/recommend_follow',
+        queryParams: {
+          if (limit != 10) 'limit': limit.toString(),
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+T? _$convertMapValue<T>(
+  String key,
+  Map<String, String> map,
+  T Function(String) converter,
+) {
+  final value = map[key];
+  return value == null ? null : converter(value);
+}
+
 RouteBase get $editProfileRoute => GoRouteData.$route(
       path: '/mine/edit_profile',
       parentNavigatorKey: EditProfileRoute.$parentNavigatorKey,
@@ -336,15 +377,6 @@ extension $ComplaintRouteExtension on ComplaintRoute {
       context.pushReplacement(location);
 
   void replace(BuildContext context) => context.replace(location);
-}
-
-T? _$convertMapValue<T>(
-  String key,
-  Map<String, String> map,
-  T Function(String) converter,
-) {
-  final value = map[key];
-  return value == null ? null : converter(value);
 }
 
 RouteBase get $chatConversationRoute => GoRouteData.$route(

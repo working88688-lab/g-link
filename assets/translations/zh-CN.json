@@ -205,6 +205,9 @@
 
   "searchHistoryTitle": "历史记录",
   "searchHistoryClear": "清空",
+  "searchHotTitle": "热门搜索",
+  "homeRefreshRecommend": "换一批",
+  "homeRecommendFollow": "推荐关注",
   "searchSectionContacts": "联系人",
   "searchSectionChatRecords": "聊天记录",
 

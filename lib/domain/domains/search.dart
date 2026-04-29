@@ -6,4 +6,6 @@ abstract class SearchDomain {
     String? cursor,
     int limit = 20,
   });
+
+  Future<SearchHomeData> getSearchHome();
 }
