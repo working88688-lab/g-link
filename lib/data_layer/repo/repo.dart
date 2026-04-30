@@ -213,7 +213,7 @@ abstract class _BaseAppRepo implements AppDomain {
     _tokenValidStreamController.sink.add(MyTokenStatus.invalid);
     MyToast.showText(text: '需要登录');
     try {
-      AppRouter.router.go(AppRouterPaths.login);
+      // AppRouter.router.go(AppRouterPaths.login);
     } finally {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       _authRedirecting = false;

@@ -253,7 +253,9 @@
   "securityPublic": "Public",
   "securityDataSection": "Data & Security",
   "securityChangePassword": "Change Password",
-  "securityDeleteAccount": "Delete Account",
+  "securityChangePasswordDesc": "Your account password is used for sign-in verification",
+  "securityDeleteAccount": "Apply for account deletion",
+  "securityDeleteAccountDesc": "After the deletion request is submitted, the account will enter a 7-day cooling-off period. During this time, you can log in at any time to cancel the deletion. After 7 days, the account and all data will be permanently deleted and cannot be recovered",
 
   "blocklistTitle": "Blocklist",
   "blocklistUnblock": "Unblock",
