@@ -32,6 +32,9 @@ class AppRouterPaths {
   /// 引导页
   static const guide = '/guide';
 
+  /// 反馈提交
+  static const feedbackSubmit = '/feedback_submit';
+
   /// 投诉用户
   static const complaint = '/complaint';
 

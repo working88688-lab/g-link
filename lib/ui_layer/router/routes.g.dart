@@ -15,6 +15,7 @@ List<RouteBase> get $appRoutes => [
       $recommendFollowListRoute,
       $editProfileRoute,
       $guideRoute,
+      $feedbackSubmitRoute,
       $complaintRoute,
       $chatConversationRoute,
       $userSearchRoute,
@@ -336,6 +337,30 @@ extension $GuideRouteExtension on GuideRoute {
 
   String get location => GoRouteData.$location(
         '/guide',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $feedbackSubmitRoute => GoRouteData.$route(
+      path: '/feedback_submit',
+      parentNavigatorKey: FeedbackSubmitRoute.$parentNavigatorKey,
+      factory: $FeedbackSubmitRouteExtension._fromState,
+    );
+
+extension $FeedbackSubmitRouteExtension on FeedbackSubmitRoute {
+  static FeedbackSubmitRoute _fromState(GoRouterState state) =>
+      const FeedbackSubmitRoute();
+
+  String get location => GoRouteData.$location(
+        '/feedback_submit',
       );
 
   void go(BuildContext context) => context.go(location);
