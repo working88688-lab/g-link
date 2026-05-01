@@ -1,0 +1,47 @@
+variables:
+  GIT_STRATEGY: none
+
+stages:
+  - deploy
+deploy_dev:
+  stage: deploy
+  tags:
+    - prod-ec2-apk
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual
+      allow_failure: false
+  environment:
+    name: production
+  script:
+    - cd /opt/project_dev/g-link
+    - git fetch --all
+    - git reset --hard origin/dev
+deploy_test:
+  stage: deploy
+  tags:
+    - prod-ec2-apk
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "test"'
+      when: manual
+      allow_failure: false
+  environment:
+    name: production
+  script:
+    - cd /opt/project_test/g-link
+    - git fetch --all
+    - git reset --hard origin/test    
+deploy_prod:
+  stage: deploy
+  tags:
+    - prod-ec2-apk
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "release"'
+      when: manual
+      allow_failure: false
+  environment:
+    name: production
+  script:
+    - cd /opt/project_prod/g-link
+    - git fetch --all
+    - git reset --hard origin/release
