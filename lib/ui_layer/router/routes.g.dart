@@ -16,6 +16,8 @@ List<RouteBase> get $appRoutes => [
       $editProfileRoute,
       $guideRoute,
       $feedbackSubmitRoute,
+      $notificationRoute,
+      $systemNotificationDetailRoute,
       $complaintRoute,
       $chatConversationRoute,
       $userSearchRoute,
@@ -361,6 +363,60 @@ extension $FeedbackSubmitRouteExtension on FeedbackSubmitRoute {
 
   String get location => GoRouteData.$location(
         '/feedback_submit',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $notificationRoute => GoRouteData.$route(
+      path: '/notification',
+      parentNavigatorKey: NotificationRoute.$parentNavigatorKey,
+      factory: $NotificationRouteExtension._fromState,
+    );
+
+extension $NotificationRouteExtension on NotificationRoute {
+  static NotificationRoute _fromState(GoRouterState state) =>
+      const NotificationRoute();
+
+  String get location => GoRouteData.$location(
+        '/notification',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $systemNotificationDetailRoute => GoRouteData.$route(
+      path: '/systemNotificationDetail',
+      parentNavigatorKey: SystemNotificationDetailRoute.$parentNavigatorKey,
+      factory: $SystemNotificationDetailRouteExtension._fromState,
+    );
+
+extension $SystemNotificationDetailRouteExtension
+    on SystemNotificationDetailRoute {
+  static SystemNotificationDetailRoute _fromState(GoRouterState state) =>
+      SystemNotificationDetailRoute(
+        title: state.uri.queryParameters['title']!,
+      );
+
+  String get location => GoRouteData.$location(
+        '/systemNotificationDetail',
+        queryParams: {
+          'title': title,
+        },
       );
 
   void go(BuildContext context) => context.go(location);
