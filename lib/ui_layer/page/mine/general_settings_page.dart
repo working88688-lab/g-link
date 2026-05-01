@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
+import 'package:g_link/ui_layer/widgets/app_bottom_sheet.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 // ──────────────────────────────────────────
 // 页面
@@ -37,76 +40,166 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: _buildAppBar(context),
       body: ListView(
+        padding: EdgeInsets.all(16.w),
         children: [
           // 语言与地区
-          _sectionHeader('generalLanguageSection'.tr()),
-          _buildCard(children: [
-            _arrowItem(
+          MineSetingsWidgets.sectionHeader('generalLanguageSection'.tr()),
+          MineSetingsWidgets.buildCard(children: [
+            MineSetingsWidgets.arrowItem(
               label: 'generalLanguage'.tr(),
-              value: 'generalLangZhCN'.tr(),
+              trailingText: 'generalLangZhCN'.tr(),
               onTap: () {},
             ),
           ]),
           // 播放
-          _sectionHeader('generalPlaySection'.tr()),
-          _buildCard(children: [
-            _toggleItem(
+          MineSetingsWidgets.sectionHeader('generalPlaySection'.tr()),
+          MineSetingsWidgets.buildCard(children: [
+            MineSetingsWidgets.toggleItem(
               label: 'generalAutoPlayWifi'.tr(),
               value: _autoPlayWifi,
               onChanged: (v) => setState(() => _autoPlayWifi = v),
             ),
-            _divider(),
-            _arrowItem(
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.arrowItem(
               label: 'generalVideoQuality'.tr(),
-              value: 'generalVideoQualityAuto'.tr(),
+              trailingText: 'generalVideoQualityAuto'.tr(),
               onTap: () {},
             ),
           ]),
           // 通知
-          _sectionHeader('generalNotificationSection'.tr()),
-          _buildCard(children: [
-            _toggleItem(
+          MineSetingsWidgets.sectionHeader('generalNotificationSection'.tr()),
+          MineSetingsWidgets.buildCard(children: [
+            MineSetingsWidgets.toggleItem(
               label: 'generalPushNotification'.tr(),
               value: _pushNotification,
               onChanged: (v) => setState(() => _pushNotification = v),
             ),
-            _divider(),
-            _toggleItem(
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
               label: 'generalInteractionMsg'.tr(),
               value: _interactionMsg,
+              prefix: SizedBox(
+                width: 20.w,
+              ),
               onChanged: (v) => setState(() => _interactionMsg = v),
             ),
-            _divider(),
-            _toggleItem(
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
               label: 'generalSystemAnnounce'.tr(),
               value: _systemAnnounce,
+              prefix: SizedBox(
+                width: 20.w,
+              ),
               onChanged: (v) => setState(() => _systemAnnounce = v),
             ),
-            _divider(),
-            _toggleItem(
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
               label: 'generalNewFollower'.tr(),
               value: _newFollower,
+              prefix: SizedBox(
+                width: 20.w,
+              ),
               onChanged: (v) => setState(() => _newFollower = v),
             ),
-            _divider(),
-            _toggleItem(
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
               label: 'generalChatMsg'.tr(),
               value: _chatMsg,
+              prefix: SizedBox(
+                width: 20.w,
+              ),
               onChanged: (v) => setState(() => _chatMsg = v),
             ),
           ]),
+          // 清除缓存
+          MineSetingsWidgets.sectionHeader('generalCacheSection'.tr()),
+          _buildCacheCard(),
           // 关于
-          _sectionHeader('generalAboutSection'.tr()),
-          _buildCard(children: [
-            _arrowItem(
+          MineSetingsWidgets.sectionHeader('generalAboutSection'.tr()),
+          MineSetingsWidgets.buildCard(children: [
+            MineSetingsWidgets.arrowItem(
               label: 'generalVersionCheck'.tr(),
-              value: 'v1.0.0',
-              onTap: () {},
+              trailingText: 'v1.0.0',
+              onTap: () {
+                AppBottomSheet.show(
+                    context: context,
+                    showHandle: false,
+                    child: Padding(
+                        padding: EdgeInsets.only(bottom: 20.w, left: 16.w, right: 16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Align(
+                              child: Text(
+                                "generalFoundNewVersion".tr(
+                                  namedArgs: {'version': 'v1.1.0'},
+                                ),
+                                style:
+                                    TextStyle(fontSize: 18.sp, color: Color(0xFF1A1F2C), fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 20.w,
+                            ),
+                            Text(
+                              "· 短视频播放体验优化\n· 修复若干已知问题\n· 新增离线缓存管理功能",
+                              style: TextStyle(color: Color(0xFF62748E), fontSize: 14.sp),
+                            ),
+                            SizedBox(
+                              height: 35.w,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                    child: GestureDetector(
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    height: 46.w,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: const Color(0xFFE3E7ED)),
+                                      borderRadius: BorderRadius.circular(100.w),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'updateDialogLater'.tr(),
+                                        style: TextStyle(
+                                          color: const Color(0xFF1A1F2C),
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )),
+                                SizedBox(
+                                  width: 7.w,
+                                ),
+                                Expanded(
+                                    child: GestureDetector(
+                                  onTap: () => Navigator.of(context).pop(),
+                                  child: Container(
+                                    height: 46.w,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0F172B),
+                                      borderRadius: BorderRadius.circular(100.w),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'updateDialogGoUpdate'.tr(),
+                                        style: TextStyle(
+                                          color: const Color(0xFFF8F9FE),
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ))
+                              ],
+                            ),
+                          ],
+                        )));
+              },
             ),
           ]),
-          // 清除缓存
-          _sectionHeader('generalCacheSection'.tr()),
-          _buildCacheCard(),
           SizedBox(height: 24.w),
         ],
       ),
@@ -142,235 +235,118 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 20.w, 16.w, 8.w),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: const Color(0xFF45556C),
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard({required List<Widget> children}) {
-    return Container(
-      color: Colors.white,
-      child: Column(children: children),
-    );
-  }
-
-  Widget _toggleItem({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.w),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: const Color(0xFF1A1F2C),
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          Transform.scale(
-            scale: 0.85,
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: Colors.white,
-              activeTrackColor: const Color(0xFF0F172B),
-              inactiveTrackColor: const Color(0xFFE3E7EC),
-              inactiveThumbColor: const Color(0xFFF8F9FE),
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _arrowItem({
-    required String label,
-    String? value,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.w),
-        child: Row(
+  Widget _buildCacheCard() {
+    final usageRatio = _totalCacheMB / _totalSpaceMB;
+    return MineSetingsWidgets.buildCard(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.w),
+      children: [
+        // 总空间文字
+        Row(
           children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: const Color(0xFF1A1F2C),
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w400,
-                ),
+            Text(
+              '${_totalCacheMB}MB',
+              style: TextStyle(
+                color: const Color(0xFF000000),
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            if (value != null)
-              Text(
-                value,
-                style: TextStyle(
-                  color: const Color(0xFF62748E),
-                  fontSize: 14.sp,
-                ),
+            SizedBox(width: 3.w),
+            Text(
+              '/${"generalTotalCache".tr()}',
+              style: TextStyle(
+                color: const Color(0xFF90A1B9),
+                fontSize: 11.sp,
               ),
-            SizedBox(width: 4.w),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20.w,
-              color: const Color(0xFFB0BAC8),
+            ),
+            Spacer(),
+            Text(
+              'generalTotalSpace'.tr(namedArgs: {'size': '${_totalSpaceMB}MB'}),
+              style: TextStyle(
+                color: const Color(0xFF90A1B9),
+                fontSize: 11.sp,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _divider() {
-    return Container(
-      height: 1,
-      margin: EdgeInsets.only(left: 16.w),
-      color: const Color(0xFFEDF0F5),
-    );
-  }
-
-  Widget _buildCacheCard() {
-    final usageRatio = _totalCacheMB / _totalSpaceMB;
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 总空间文字
-          Row(
+        SizedBox(height: 6.w),
+        // 进度条
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20.w),
+          child: LinearProgressIndicator(
+            value: usageRatio,
+            borderRadius: BorderRadius.circular(20.w),
+            minHeight: 6.w,
+            backgroundColor: Color(0xFF0F172B).withAlpha(5),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF1A1F2C)),
+          ),
+        ),
+        SizedBox(height: 16.w),
+        // 明细
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 11.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FE),
+            borderRadius: BorderRadius.circular(6.w),
+          ),
+          child: Row(
             children: [
-              Text(
-                '${_totalCacheMB}MB',
-                style: TextStyle(
-                  color: const Color(0xFF000000),
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                '/',
-                style: TextStyle(
-                  color: const Color(0xFF90A1B9),
-                  fontSize: 14.sp,
-                ),
-              ),
-              SizedBox(width: 4.w),
-              Text(
-                'generalTotalSpace'
-                    .tr(namedArgs: {'size': '${_totalSpaceMB}MB'}),
-                style: TextStyle(
-                  color: const Color(0xFF90A1B9),
-                  fontSize: 13.sp,
-                ),
-              ),
+              _cacheDetailRow('generalVideoCache'.tr(), '${_videoCacheMB}MB'),
+              MineSetingsWidgets.dividerVertical(),
+              _cacheDetailRow('generalImageCache'.tr(), '${_imageCacheMB}MB'),
+              _cacheDetailRow('generalTempFiles'.tr(), '${_tempFilesMB}MB'),
             ],
           ),
-          SizedBox(height: 10.w),
-          // 进度条
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.w),
-            child: LinearProgressIndicator(
-              value: usageRatio,
-              minHeight: 8.w,
-              backgroundColor: const Color(0xFFF8F9FE),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(Color(0xFF0F172B)),
-            ),
-          ),
-          SizedBox(height: 12.w),
-          // 明细
-          Container(
-            padding: EdgeInsets.all(12.w),
+        ),
+        SizedBox(height: 16.w),
+        // 清除全部按钮
+        GestureDetector(
+          onTap: _clearAllCache,
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 12.w),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FE),
-              borderRadius: BorderRadius.circular(8.w),
+              color: const Color(0xFF1A1F2C),
+              borderRadius: BorderRadius.circular(100.w),
             ),
-            child: Column(
-              children: [
-                _cacheDetailRow(Icons.videocam_outlined,
-                    'generalVideoCache'.tr(), '${_videoCacheMB}MB'),
-                _divider(),
-                _cacheDetailRow(Icons.image_outlined, 'generalImageCache'.tr(),
-                    '${_imageCacheMB}MB'),
-                _divider(),
-                _cacheDetailRow(Icons.insert_drive_file_outlined,
-                    'generalTempFiles'.tr(), '${_tempFilesMB}MB'),
-              ],
-            ),
-          ),
-          SizedBox(height: 16.w),
-          // 清除全部按钮
-          GestureDetector(
-            onTap: _clearAllCache,
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 14.w),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2C),
-                borderRadius: BorderRadius.circular(12.w),
-              ),
-              child: Center(
-                child: Text(
-                  'generalClearAll'.tr(),
-                  style: TextStyle(
-                    color: const Color(0xFFF8F9FE),
-                    fontSize: 15.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
+            child: Center(
+              child: Text(
+                'generalClearAll'.tr(),
+                style: TextStyle(
+                  color: const Color(0xFFF8F9FE),
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _cacheDetailRow(IconData icon, String label, String size) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.w),
-      child: Row(
-        children: [
-          Icon(icon, size: 16.w, color: const Color(0xFF90A1B9)),
-          SizedBox(width: 6.w),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(color: const Color(0xFF90A1B9), fontSize: 13.sp),
-            ),
+  Widget _cacheDetailRow(String label, String size) {
+    return Expanded(
+        child: Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          size,
+          style: TextStyle(
+            color: const Color(0xFF1A1F2C),
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
           ),
-          Text(
-            size,
-            style: TextStyle(
-              color: const Color(0xFF1A1F2C),
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+        SizedBox(
+          height: 2.w,
+        ),
+        Text(
+          label,
+          style: TextStyle(color: const Color(0xFF90A1B9), fontSize: 11.sp),
+        ),
+      ],
+    ));
   }
 
   void _clearAllCache() {
