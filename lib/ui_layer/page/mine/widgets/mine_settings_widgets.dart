@@ -21,7 +21,7 @@ class MineSetingsWidgets {
     );
   }
 
-  static Widget buildCard({required List<Widget> children, EdgeInsetsGeometry? padding}) {
+  static Widget buildCard({required Widget children, EdgeInsetsGeometry? padding}) {
     return Container(
       margin: EdgeInsets.only(bottom: 16.w),
       decoration: BoxDecoration(
@@ -29,7 +29,7 @@ class MineSetingsWidgets {
         borderRadius: BorderRadius.circular(8.w),
       ),
       padding: padding ?? EdgeInsets.symmetric(horizontal: 0.w, vertical: 0.w),
-      child: Column(children: children),
+      child: children,
     );
   }
 

@@ -46,6 +46,7 @@ class MyImagePaths {
   static const iconChatUnpin = './assets/images/icon_chat_unpin.png';
   static const iconCheck = './assets/images/icon_check.png';
   static const iconClearScreen = './assets/images/icon_clear_screen.png';
+  static const iconClose = './assets/images/icon_close.png';
   static const iconCollection = './assets/images/icon_collection.png';
   static const iconComment = './assets/images/icon_comment.png';
   static const iconDescLocate = './assets/images/icon_desc_locate.png';
@@ -68,6 +69,7 @@ class MyImagePaths {
   static const iconNotInterested = './assets/images/icon_not_interested.png';
   static const iconOmmentUnlike = './assets/images/icon_omment_unlike.png';
   static const iconPlay = './assets/images/icon_play.png';
+  static const iconPlus = './assets/images/icon_plus.png';
   static const iconReport = './assets/images/icon_report.png';
   static const iconSearch = './assets/images/icon_search.png';
   static const iconSearch2 = './assets/images/icon_search2.png';

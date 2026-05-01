@@ -44,37 +44,35 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
         padding: EdgeInsets.all(16.w),
         children: [
           MineSetingsWidgets.sectionHeader('securityVisibilitySection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.visibilityItem(
               label: 'securityPrivateAccount'.tr(),
               selected: _postVisibility == _VisibilityOption.privateOnly,
-              onTap: () => setState(
-                  () => _postVisibility = _VisibilityOption.privateOnly),
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.privateOnly),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securityFollowersOnly'.tr(),
               selected: _postVisibility == _VisibilityOption.followersOnly,
-              onTap: () => setState(
-                  () => _postVisibility = _VisibilityOption.followersOnly),
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.followersOnly),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securitySelectedPeopleOnly'.tr(),
               selected: _postVisibility == _VisibilityOption.selectedPeople,
-              onTap: () => setState(
-                  () => _postVisibility = _VisibilityOption.selectedPeople),
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.selectedPeople),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securityPublic'.tr(),
               selected: _postVisibility == _VisibilityOption.publicAll,
-              onTap: () =>
-                  setState(() => _postVisibility = _VisibilityOption.publicAll),
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.publicAll),
             ),
-          ]),
+          ])),
           MineSetingsWidgets.sectionHeader('securityAccountSection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: "securityAllowSearch".tr(),
               value: _allowSearch,
@@ -100,12 +98,11 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.arrowItem(
-                label: "securityBlocklist".tr(),
-                trailingText: "securityFollowingOnly".tr(),
-                onTap: () {}),
+                label: "securityBlocklist".tr(), trailingText: "securityFollowingOnly".tr(), onTap: () {}),
             MineSetingsWidgets.divider(),
-          ]),
-          MineSetingsWidgets.buildCard(children: [
+          ])),
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.toggleItem(
               icon: MyImagePaths.iconMention,
               label: "securityMsgMutualFollow".tr(),
@@ -119,13 +116,12 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
               value: _allowMentions,
               onChanged: (v) => setState(() => _allowMentions = v),
             ),
-          ]),
+          ])),
           MineSetingsWidgets.sectionHeader('securityDataSection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.arrowItem(
-                icon: MyImagePaths.iconKey,
-                label: "securityChangePassword".tr(),
-                onTap: () {}),
+                icon: MyImagePaths.iconKey, label: "securityChangePassword".tr(), onTap: () {}),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.arrowItem(
                 icon: MyImagePaths.iconLogOff,
@@ -138,7 +134,7 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
                       content: "securityDeleteAccountDesc".tr(),
                       onConfirm: () {});
                 }),
-          ]),
+          ])),
           SizedBox(height: 24.w),
         ],
       ),
@@ -173,5 +169,4 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
       ),
     );
   }
-
 }

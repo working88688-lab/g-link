@@ -44,16 +44,18 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         children: [
           // 语言与地区
           MineSetingsWidgets.sectionHeader('generalLanguageSection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.arrowItem(
               label: 'generalLanguage'.tr(),
               trailingText: 'generalLangZhCN'.tr(),
               onTap: () {},
             ),
-          ]),
+          ])),
           // 播放
           MineSetingsWidgets.sectionHeader('generalPlaySection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: 'generalAutoPlayWifi'.tr(),
               value: _autoPlayWifi,
@@ -65,10 +67,11 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               trailingText: 'generalVideoQualityAuto'.tr(),
               onTap: () {},
             ),
-          ]),
+          ])),
           // 通知
           MineSetingsWidgets.sectionHeader('generalNotificationSection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: 'generalPushNotification'.tr(),
               value: _pushNotification,
@@ -110,13 +113,14 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               ),
               onChanged: (v) => setState(() => _chatMsg = v),
             ),
-          ]),
+          ])),
           // 清除缓存
           MineSetingsWidgets.sectionHeader('generalCacheSection'.tr()),
           _buildCacheCard(),
           // 关于
           MineSetingsWidgets.sectionHeader('generalAboutSection'.tr()),
-          MineSetingsWidgets.buildCard(children: [
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
             MineSetingsWidgets.arrowItem(
               label: 'generalVersionCheck'.tr(),
               trailingText: 'v1.0.0',
@@ -199,7 +203,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                         )));
               },
             ),
-          ]),
+          ])),
           SizedBox(height: 24.w),
         ],
       ),
@@ -239,7 +243,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     final usageRatio = _totalCacheMB / _totalSpaceMB;
     return MineSetingsWidgets.buildCard(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.w),
-      children: [
+      children: Column(children: [
         // 总空间文字
         Row(
           children: [
@@ -321,7 +325,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
             ),
           ),
         ),
-      ],
+      ]),
     );
   }
 

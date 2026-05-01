@@ -1,6 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 // ──────────────────────────────────────────
 // 页面
@@ -54,24 +57,11 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
         children: [
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(vertical: 12.w),
+              padding: EdgeInsets.all(16.w),
               children: [
                 _buildInterestsSection(),
                 SizedBox(height: 12.w),
                 _buildBlockKeywordsSection(),
-                SizedBox(height: 16.w),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: Text(
-                    'contentPrefFooter'.tr(),
-                    style: TextStyle(
-                      color: const Color(0xFF62748E),
-                      fontSize: 12.sp,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                SizedBox(height: 24.w),
               ],
             ),
           ),
@@ -111,178 +101,185 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
   }
 
   Widget _buildInterestsSection() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'contentPrefInterestTitle'.tr(),
-            style: TextStyle(
-              color: const Color(0xFF000000),
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 4.w),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'contentPrefInterestDesc'
-                      .tr(namedArgs: {'max': '$_maxInterests'}),
-                  style: TextStyle(
-                    color: const Color(0xFF45556C),
-                    fontSize: 12.sp,
-                  ),
+    return MineSetingsWidgets.buildCard(
+        children: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'contentPrefInterestTitle'.tr(),
+                      style: TextStyle(
+                        color: const Color(0xFF000000),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Spacer(),
+                    Text(
+                      'contentPrefSelectedCount'.tr(namedArgs: {'count': '${_selectedInterests.length}'}),
+                      style: TextStyle(
+                        color: const Color(0xFF45556C),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )
+                  ],
                 ),
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                'contentPrefSelectedCount'
-                    .tr(namedArgs: {'count': '${_selectedInterests.length}'}),
-                style: TextStyle(
-                  color: const Color(0xFF45556C),
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'contentPrefInterestDesc'.tr(namedArgs: {'max': '$_maxInterests'}),
+                        style: TextStyle(
+                          color: const Color(0xFF45556C),
+                          fontSize: 12.sp,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.w),
-          Wrap(
-            spacing: 8.w,
-            runSpacing: 8.w,
-            children: _allInterests.map((tag) {
-              final selected = _selectedInterests.contains(tag);
-              return _TagChip(
-                label: tag,
-                selected: selected,
-                onTap: () => _toggleInterest(tag),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
+                SizedBox(height: 19.w),
+                Wrap(
+                  spacing: 12.w,
+                  runSpacing: 12.w,
+                  children: _allInterests.map((tag) {
+                    final selected = _selectedInterests.contains(tag);
+                    return _TagChip(
+                      label: tag,
+                      selected: selected,
+                      onTap: () => _toggleInterest(tag),
+                    );
+                  }).toList(),
+                ),
+              ],
+            )));
   }
 
   Widget _buildBlockKeywordsSection() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'contentPrefBlockTitle'.tr(),
-            style: TextStyle(
-              color: const Color(0xFF000000),
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 4.w),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return MineSetingsWidgets.buildCard(
+      children: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  'contentPrefBlockDesc'.tr(),
-                  style: TextStyle(
-                    color: const Color(0xFF45556C),
-                    fontSize: 12.sp,
+              Row(
+                children: [
+                  Text(
+                    'contentPrefBlockTitle'.tr(),
+                    style: TextStyle(
+                      color: const Color(0xFF000000),
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
+                  Spacer(),
+                  Text(
+                    'contentPrefBlockCount'.tr(namedArgs: {'count': '${_blockedKeywords.length}'}),
+                    style: TextStyle(
+                      color: const Color(0xFF45556C),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 8.w),
               Text(
-                'contentPrefBlockCount'
-                    .tr(namedArgs: {'count': '${_blockedKeywords.length}'}),
+                'contentPrefBlockDesc'.tr(),
                 style: TextStyle(
                   color: const Color(0xFF45556C),
                   fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 12.w),
-          Wrap(
-            spacing: 8.w,
-            runSpacing: 8.w,
-            children: [
-              // 现有关键词
-              ..._blockedKeywords.map(
-                (kw) => _TagChip(
-                  label: kw,
-                  selected: false,
-                  showClose: true,
-                  onTap: () {},
-                  onClose: () => setState(() => _blockedKeywords.remove(kw)),
-                ),
-              ),
-              // 添加按钮
-              GestureDetector(
-                onTap: _showAddKeywordSheet,
-                child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.w),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FE),
-                    borderRadius: BorderRadius.circular(20.w),
+              SizedBox(height: 19.w),
+              Wrap(
+                spacing: 12.w,
+                runSpacing: 12.w,
+                children: [
+                  // 现有关键词
+                  ..._blockedKeywords.map(
+                    (kw) => _TagChip(
+                      label: kw,
+                      selected: false,
+                      showClose: true,
+                      onTap: () {},
+                      onClose: () => setState(() => _blockedKeywords.remove(kw)),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_rounded,
-                          size: 16.w, color: const Color(0xFF1A1F2C)),
-                      SizedBox(width: 4.w),
-                      Text(
-                        'contentPrefAddKeyword'.tr(),
-                        style: TextStyle(
-                          color: const Color(0xFF1A1F2C),
-                          fontSize: 13.sp,
-                        ),
+                  // 添加按钮
+                  GestureDetector(
+                    onTap: _showAddKeywordSheet,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.w),
+                      decoration: BoxDecoration(
+                        color:  const Color(0xFFF8F9FE),
+                        borderRadius: BorderRadius.circular(18.w),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          MyImage.asset(
+                            MyImagePaths.iconPlus,
+                            width: 20.w,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'contentPrefAddKeyword'.tr(),
+                            style: TextStyle(
+                              color: const Color(0xFF1A1F2C),
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
-          ),
-        ],
-      ),
+          )),
     );
   }
 
   Widget _buildSubmitButton() {
     return SafeArea(
       child: Container(
-        color: Colors.white,
-        padding: EdgeInsets.fromLTRB(16.w, 12.w, 16.w, 8.w),
-        child: GestureDetector(
-          onTap: _submit,
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 14.w),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1F2C),
-              borderRadius: BorderRadius.circular(12.w),
+        padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 16.w),
+        child: Column(
+          children: [
+            Text(
+              'contentPrefFooter'.tr(),
+              style: TextStyle(
+                color: const Color(0xFF62748E),
+                fontSize: 12.sp,
+              ),
+              textAlign: TextAlign.center,
             ),
-            child: Center(
-              child: Text(
-                'feedbackSubmitted'.tr(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
+            SizedBox(height: 10.w),
+            GestureDetector(
+              onTap: _submit,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 15.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1F2C),
+                  borderRadius: BorderRadius.circular(29.w),
+                ),
+                child: Center(
+                  child: Text(
+                    'complaintSubmit'.tr(),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.sp,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            )
+          ],
         ),
       ),
     );
@@ -321,14 +318,12 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                     autofocus: true,
                     decoration: InputDecoration(
                       hintText: 'contentPrefAddKeyword'.tr(),
-                      hintStyle: TextStyle(
-                          color: const Color(0xFF90A1B9), fontSize: 14.sp),
+                      hintStyle: TextStyle(color: const Color(0xFF90A1B9), fontSize: 14.sp),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8.w),
                         borderSide: BorderSide(color: const Color(0xFFE3E7EC)),
                       ),
-                      contentPadding: EdgeInsets.symmetric(
-                          horizontal: 12.w, vertical: 10.w),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
                     ),
                   ),
                 ),
@@ -379,32 +374,29 @@ class _TagChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.w),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.w),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFF1A1F2C) : const Color(0xFFF8F9FE),
-          borderRadius: BorderRadius.circular(20.w),
+          borderRadius: BorderRadius.circular(18.w),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               label,
               style: TextStyle(
-                color: selected
-                    ? const Color(0xFFF8F9FE)
-                    : const Color(0xFF1A1F2C),
-                fontSize: 13.sp,
-                fontWeight: FontWeight.w500,
+                color: selected ? const Color(0xFFF8F9FE) : const Color(0xFF1A1F2C),
+                fontSize: 12.sp,
               ),
             ),
             if (showClose) ...[
               SizedBox(width: 4.w),
               GestureDetector(
                 onTap: onClose,
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 14.w,
-                  color: const Color(0xFF62748E),
+                child: MyImage.asset(
+                  MyImagePaths.iconClose,
+                  width: 16.w,
                 ),
               ),
             ],
