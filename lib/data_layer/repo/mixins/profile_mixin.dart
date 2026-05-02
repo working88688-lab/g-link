@@ -165,7 +165,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     required Uint8List bytes,
     required String fileExt,
     required int fileSize,
-    required String scene,
+    required ImageUploadScene scene,
   }) async {
     try {
       final url = await _profileService.uploadImageByPresign(

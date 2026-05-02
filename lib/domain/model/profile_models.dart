@@ -404,6 +404,32 @@ class AppSettings {
   }
 }
 
+enum ImageUploadScene {
+  post,
+  postCover,
+  avatar,
+  cover,
+  videoCover,
+  chat,
+  message,
+  reportEvidence,
+  feedbackScreenshot,
+}
+
+extension ImageUploadSceneX on ImageUploadScene {
+  String get value => switch (this) {
+        ImageUploadScene.post => 'post',
+        ImageUploadScene.postCover => 'post_cover',
+        ImageUploadScene.avatar => 'avatar',
+        ImageUploadScene.cover => 'cover',
+        ImageUploadScene.videoCover => 'video_cover',
+        ImageUploadScene.chat => 'chat',
+        ImageUploadScene.message => 'message',
+        ImageUploadScene.reportEvidence => 'report_evidence',
+        ImageUploadScene.feedbackScreenshot => 'feedback_screenshot',
+      };
+}
+
 class UploadedImagePayload {
   const UploadedImagePayload({
     required this.objectKey,

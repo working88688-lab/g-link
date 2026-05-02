@@ -27,8 +27,11 @@ abstract class ChatDomain {
   });
 
   /// 搜索消息和联系人
-  Future<MessageSearchResult> searchMessages(
-      {required String q, int limit = 10});
+  Future<MessageSearchResult> searchMessages({
+    required String q,
+    int? chatId,
+    int limit = 10,
+  });
 
   /// 标记会话消息为已读。
   Future<void> markChatRead(int chatId);

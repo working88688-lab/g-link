@@ -216,12 +216,12 @@ class ProfileService extends BaseService {
     required Uint8List bytes,
     required String fileExt,
     required int fileSize,
-    required String scene,
+    required ImageUploadScene scene,
   }) async {
     final presignRes = await _requestPresignWithRetry(
       fileExt: fileExt,
       fileSize: fileSize,
-      scene: scene,
+      scene: scene.value,
     );
     final data = Json.from(presignRes['data'] ?? {});
     final uploadUrl = '${data['upload_url'] ?? ''}';

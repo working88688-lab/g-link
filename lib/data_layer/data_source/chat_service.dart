@@ -12,9 +12,7 @@ class ChatService {
 
     final res = await _dio.get('/api/v1/chats', queryParameters: params);
     final data = res.data['data'] as Map<String, dynamic>;
-    final items = (data['lists'] as List<dynamic>)
-        .map((e) => ChatItem.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final items = (data['lists'] as List<dynamic>).map((e) => ChatItem.fromJson(e as Map<String, dynamic>)).toList();
     return (
       items: items,
       nextCursor: data['next_cursor'] as String?,
@@ -25,9 +23,7 @@ class ChatService {
   Future<ChatItem> createOrGetChat({required int peerUid}) async {
     final res = await _dio.post('/api/v1/chats/with/$peerUid');
     final root = res.data;
-    final data = root is Map<String, dynamic>
-        ? (root['data'] as Map<String, dynamic>? ?? root)
-        : <String, dynamic>{};
+    final data = root is Map<String, dynamic> ? (root['data'] as Map<String, dynamic>? ?? root) : <String, dynamic>{};
     return ChatItem.fromJson(data);
   }
 
@@ -41,9 +37,7 @@ class ChatService {
     if (cursor != null && cursor.isNotEmpty) params['cursor'] = cursor;
     final res = await _dio.get('/api/v1/chats/$chatId/messages', queryParameters: params);
     final root = res.data;
-    final data = root is Map<String, dynamic>
-        ? (root['data'] as Map<String, dynamic>? ?? root)
-        : <String, dynamic>{};
+    final data = root is Map<String, dynamic> ? (root['data'] as Map<String, dynamic>? ?? root) : <String, dynamic>{};
     final items = (data['lists'] as List<dynamic>? ?? const [])
         .map((e) => ChatMessageItem.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -75,19 +69,14 @@ class ChatService {
       },
     );
     final root = res.data;
-    final data = root is Map<String, dynamic>
-        ? (root['data'] as Map<String, dynamic>? ?? root)
-        : <String, dynamic>{};
+    final data = root is Map<String, dynamic> ? (root['data'] as Map<String, dynamic>? ?? root) : <String, dynamic>{};
     return ChatMessageItem.fromJson(data);
   }
 
-  Future<MessageSearchResult> searchMessages({
-    required String q,
-    int limit = 10,
-  }) async {
+  Future<MessageSearchResult> searchMessages({required String q, int limit = 10, int? chatId = null}) async {
     final res = await _dio.get(
       '/api/v1/messages/search',
-      queryParameters: {'q': q, 'limit': limit},
+      queryParameters: {'q': q, 'limit': limit, if (chatId != null) 'chat_id': chatId},
     );
     final data = res.data['data'] as Map<String, dynamic>;
     final contacts = (data['contacts'] as List<dynamic>? ?? [])

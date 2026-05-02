@@ -128,23 +128,25 @@ enum ChatMessageType {
 
 extension ChatMessageTypeX on ChatMessageType {
   bool get isText => this == ChatMessageType.text;
+
   bool get isImage => this == ChatMessageType.image;
+
   bool get isVideo => this == ChatMessageType.video;
 }
 
 class ChatMessageItem {
-  const ChatMessageItem({
-    required this.id,
-    required this.chatId,
-    required this.senderUid,
-    required this.msgType,
-    required this.content,
-    required this.replyToMsgId,
-    required this.status,
-    required this.createdAt,
-    required this.mediaUrl,
-    required this.mediaMeta,
-  });
+  ChatMessageItem(
+      {required this.id,
+      required this.chatId,
+      required this.senderUid,
+      required this.msgType,
+      required this.content,
+      required this.replyToMsgId,
+      required this.status,
+      required this.createdAt,
+      required this.mediaUrl,
+      required this.mediaMeta,
+      required this.isMine});
 
   final int id;
   final int chatId;
@@ -156,6 +158,7 @@ class ChatMessageItem {
   final String createdAt;
   final String mediaUrl;
   final Map<String, dynamic> mediaMeta;
+  bool isMine;
 
   factory ChatMessageItem.fromJson(Map<String, dynamic> json) {
     final mediaMeta = json['media_meta'];
@@ -170,6 +173,7 @@ class ChatMessageItem {
       createdAt: '${json['created_at'] ?? ''}',
       mediaUrl: '${json['media_url'] ?? ''}',
       mediaMeta: mediaMeta is Map<String, dynamic> ? mediaMeta : const {},
+      isMine: (json['is_mine'] as bool?) ?? false,
     );
   }
 }

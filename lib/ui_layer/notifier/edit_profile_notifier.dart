@@ -103,14 +103,14 @@ class EditProfileNotifier extends ChangeNotifier {
   }
 
   Future<UploadedImagePayload?> uploadAvatar(XFile file) =>
-      _uploadImage(file: file, scene: 'avatar', isAvatar: true);
+      _uploadImage(file: file, scene: ImageUploadScene.avatar, isAvatar: true);
 
   Future<UploadedImagePayload?> uploadCover(XFile file) =>
-      _uploadImage(file: file, scene: 'cover', isAvatar: false);
+      _uploadImage(file: file, scene: ImageUploadScene.cover, isAvatar: false);
 
   Future<UploadedImagePayload?> _uploadImage({
     required XFile file,
-    required String scene,
+    required ImageUploadScene scene,
     required bool isAvatar,
   }) async {
     if (isAvatar && uploadingAvatar) return null;

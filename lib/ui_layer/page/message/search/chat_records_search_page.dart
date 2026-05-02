@@ -1,5 +1,9 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/model/chat_model.dart';
+import 'package:provider/provider.dart';
 import 'models/search_models.dart';
 import 'widgets/chat_record_tile.dart';
 
@@ -11,7 +15,9 @@ import 'widgets/chat_record_tile.dart';
 enum _Sub { results, detail }
 
 class ChatRecordsSearchPage extends StatefulWidget {
-  const ChatRecordsSearchPage({super.key});
+  const ChatRecordsSearchPage({super.key, required this.chatId});
+
+  final int chatId;
 
   @override
   State<ChatRecordsSearchPage> createState() => _ChatRecordsSearchPageState();
@@ -45,20 +51,30 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
   }
 
   // ── 查询 ──────────────────────────────
-  // TODO: 替换为真实 API 调用
   Future<void> _search(String keyword) async {
     if (keyword.isEmpty || !mounted) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted || _query != keyword) return;
-    setState(() {
-      _isLoading = false;
-      _chatRecords = [
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧', extraCount: 5),
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧'),
-        const ChatRecordItem(name: '优秀大帅哥', preview: '太优秀了吧'),
-      ];
-    });
+    try {
+      final result = await context.read<ChatDomain>().searchMessages(
+            q: keyword,
+            chatId: widget.chatId,
+          );
+      if (!mounted || _query != keyword) return;
+      setState(() {
+        _isLoading = false;
+        _chatRecords = [
+          ...result.messages.map(
+            (m) => ChatRecordItem(
+              name: result.contacts.isNotEmpty ? result.contacts.first.nickname : 'chat',
+              preview: m.content,
+            ),
+          ),
+        ];
+      });
+    } catch (_) {
+      if (!mounted || _query != keyword) return;
+      setState(() => _isLoading = false);
+    }
   }
 
   void _onChanged(String val) {

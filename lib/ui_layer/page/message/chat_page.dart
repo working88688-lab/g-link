@@ -2,41 +2,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/chat_model.dart';
+import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../../domain/domains/profile.dart';
 import '../../../ui_layer/widgets/app_confirm_dialog.dart';
 import '../../image_paths.dart';
 import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
-
-// ──────────────────────────────────────────
-// 数据模型
-// ──────────────────────────────────────────
-enum MsgType { text, image, video }
-
-class _ChatMsg {
-  final String id;
-  final String content;
-  final MsgType type;
-  final bool isMine;
-  final String time;
-  final bool isRead;
-
-  // 仅 video 使用
-  final String? duration;
-
-  const _ChatMsg({
-    required this.id,
-    required this.content,
-    required this.type,
-    required this.isMine,
-    required this.time,
-    this.isRead = true,
-    this.duration,
-  });
-}
 
 // ──────────────────────────────────────────
 // 页面
@@ -151,11 +126,11 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       final result = await context.read<ChatDomain>().fetchChatMessages(
-            chatId: session.chatId,
-            cursor: refresh ? null : _nextCursor,
-            direction: 'before',
-            limit: 30,
-          );
+        chatId: session.chatId,
+        cursor: refresh ? null : _nextCursor,
+        direction: 'after',
+        limit: 30,
+      );
       if (!mounted) return;
       setState(() {
         _messages.addAll(result.items);
@@ -174,9 +149,87 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _scrollToBottom() async {
-    await WidgetsBinding.instance.endOfFrame;
-    if (!_scrollCtrl.hasClients) return;
+    // await WidgetsBinding.instance.endOfFr if (!_scrollCtrl.hasClients) return;
     _scrollCtrl.jumpTo(_scrollCtrl.position.minScrollExtent);
+  }
+
+  Future<UploadedImagePayload?> _uploadChatImage({required ImageSource source}) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 1920,
+      );
+      if (picked == null) return null;
+
+      final bytes = await picked.readAsBytes();
+      final session = _session;
+      if (session == null) return null;
+
+      final ext = picked.name.contains('.') ? picked.name
+          .split('.')
+          .last : 'jpg';
+      final payload = await context.read<ProfileDomain>().uploadImageByPresign(
+        bytes: bytes,
+        fileExt: ext,
+        fileSize: bytes.length,
+        scene: ImageUploadScene.chat,
+      );
+      return payload.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _sendImageMessage(ImageSource source) async {
+    final session = _session;
+    if (session == null) return;
+    final uploaded = await _uploadChatImage(source: source);
+    if (uploaded == null || uploaded.downloadUrl.isEmpty) return;
+
+    final draft = ChatMessageItem(
+      id: DateTime
+          .now()
+          .microsecondsSinceEpoch,
+      chatId: session.chatId,
+      senderUid: _currentUserId ?? 0,
+      msgType: ChatMessageType.image,
+      content: '',
+      replyToMsgId: null,
+      status: 'sending',
+      createdAt: _formatTime(DateTime.now()),
+      mediaUrl: uploaded.downloadUrl,
+      mediaMeta: const {},
+      isMine: true,
+    );
+
+    setState(() {
+      _messages.add(draft);
+      _showPanel = false;
+    });
+    await _scrollToBottom();
+
+    try {
+      final resp = await context.read<ChatDomain>().sendMessage(
+        chatId: session.chatId,
+        msgType: ChatMessageType.image,
+        mediaUrl: uploaded.downloadUrl,
+        clientMsgId: draft.id.toString(),
+      );
+      if (!mounted) return;
+      setState(() {
+        final idx = _messages.indexWhere((e) => e.id == draft.id.toString());
+        if (idx >= 0 && resp.id != 0) {
+          _messages[idx] = resp;
+        }
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _sessionError = err.toString();
+      });
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -188,7 +241,9 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       final draft = ChatMessageItem(
-        id: DateTime.now().microsecondsSinceEpoch,
+        id: DateTime
+            .now()
+            .microsecondsSinceEpoch,
         chatId: session.chatId,
         senderUid: _currentUserId ?? 0,
         msgType: ChatMessageType.text,
@@ -198,24 +253,19 @@ class _ChatPageState extends State<ChatPage> {
         createdAt: _formatTime(DateTime.now()),
         mediaUrl: '',
         mediaMeta: const {},
+        isMine: true,
       );
       setState(() {
         _messages.add(draft);
       });
       await _scrollToBottom();
-      final sent = await context.read<ChatDomain>().sendMessage(
-            chatId: session.chatId,
-            msgType: ChatMessageType.text,
-            content: text,
-            clientMsgId: draft.id.toString(),
-          );
+      await context.read<ChatDomain>().sendMessage(
+        chatId: session.chatId,
+        msgType: ChatMessageType.text,
+        content: text,
+        clientMsgId: draft.id.toString(),
+      );
       if (!mounted) return;
-      // setState(() {
-      //   final idx = _messages.indexWhere((e) => e.id == draft.id);
-      //   if (idx != -1) {
-      //     _messages[idx] = sent;
-      //   }
-      // });
       await _scrollToBottom();
     } catch (err) {
       if (!mounted) return;
@@ -300,7 +350,7 @@ class _ChatPageState extends State<ChatPage> {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              displayName??"",
+              displayName ?? "",
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -315,7 +365,7 @@ class _ChatPageState extends State<ChatPage> {
                 value: 'search',
                 icon: MyImagePaths.iconChatSearch,
                 label: 'chatMenuSearch'.tr(),
-                onTap: () => const ChatRecordsSearchRoute().push(context),
+                onTap: () => ChatRecordsSearchRoute(chatId: _session?.chatId ?? 0).push(context),
               ),
               if (_session?.isPinned == true)
                 OverlayMenuItem(
@@ -336,24 +386,24 @@ class _ChatPageState extends State<ChatPage> {
                 onTap: _session == null
                     ? null
                     : () {
-                        AppConfirmDialog.show(
-                          context: context,
-                          title: 'chatMenuClearChat'.tr(),
-                          content: 'chatClearConfirmContent'.tr(),
-                          confirmText: 'commonConfirm'.tr(),
-                          cancelText: 'commonCancel'.tr(),
-                          onConfirm: () async {
-                            if (_session == null) return;
-                            await context.read<ChatDomain>().clearChatMessages(_session!.chatId);
-                            if (!mounted) return;
-                            setState(() {
-                              _messages.clear();
-                              _nextCursor = null;
-                              _hasMore = false;
-                            });
-                          },
-                        );
-                      },
+                  AppConfirmDialog.show(
+                    context: context,
+                    title: 'chatMenuClearChat'.tr(),
+                    content: 'chatClearConfirmContent'.tr(),
+                    confirmText: 'commonConfirm'.tr(),
+                    cancelText: 'commonCancel'.tr(),
+                    onConfirm: () async {
+                      if (_session == null) return;
+                      await context.read<ChatDomain>().clearChatMessages(_session!.chatId);
+                      if (!mounted) return;
+                      setState(() {
+                        _messages.clear();
+                        _nextCursor = null;
+                        _hasMore = false;
+                      });
+                    },
+                  );
+                },
               ),
               OverlayMenuItem(
                 value: 'report',
@@ -389,9 +439,9 @@ class _ChatPageState extends State<ChatPage> {
           child: url.isEmpty
               ? Icon(Icons.person, size: size * 0.7, color: Colors.white)
               : ClipRRect(
-                  borderRadius: BorderRadius.circular(size),
-                  child: Image.network(url, fit: BoxFit.cover),
-                ),
+            borderRadius: BorderRadius.circular(size),
+            child: Image.network(url, fit: BoxFit.cover),
+          ),
         ),
       ],
     );
@@ -423,17 +473,17 @@ class _ChatPageState extends State<ChatPage> {
                 child: Center(
                   child: _isLoadingMore
                       ? SizedBox(
-                          width: 18.w,
-                          height: 18.w,
-                          child: const CircularProgressIndicator(
-                            color: Color(0xFF00C67E),
-                            strokeWidth: 2,
-                          ),
-                        )
+                    width: 18.w,
+                    height: 18.w,
+                    child: const CircularProgressIndicator(
+                      color: Color(0xFF00C67E),
+                      strokeWidth: 2,
+                    ),
+                  )
                       : Text(
-                          '下拉加载更早消息',
-                          style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
-                        ),
+                    '下拉加载更早消息',
+                    style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
+                  ),
                 ),
               );
             }
@@ -469,67 +519,55 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildMessageBubble(ChatMessageItem msg) {
     final isMine = msg.senderUid == (_currentUserId ?? -1);
-    final type = switch (msg.msgType) {
-      ChatMessageType.image => MsgType.image,
-      ChatMessageType.video => MsgType.video,
-      _ => MsgType.text,
-    };
 
-    return _buildBubble(_ChatMsg(
-      id: '${msg.id}',
-      content: msg.content,
-      type: type,
-      isMine: isMine,
-      time: msg.createdAt,
-    ));
+    return _buildBubble(msg);
   }
 
-  Widget _buildBubble(_ChatMsg msg) {
+  Widget _buildBubble(ChatMessageItem msg) {
+    msg.isMine = msg.senderUid == (_currentUserId ?? -1);
+
     return Padding(
       padding: EdgeInsets.only(bottom: 18.w),
       child: Row(
         mainAxisAlignment: msg.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: msg.isMine
-            ? [
-                // _buildTimeLabel(msg),
-                // SizedBox(width: 8.w),
-                _buildBubbleContent(msg),
-              ]
-            : [
-                // _buildAvatar(size: 36.w),
-                // SizedBox(width: 8.w),
-                _buildBubbleContent(msg),
-                // SizedBox(width: 8.w),
-                // _buildTimeLabel(msg),
-              ],
+        children: [
+          // _buildTimeLabel(msg),
+          // SizedBox(width: 8.w),
+          _buildBubbleContent(msg),
+        ],
       ),
     );
   }
 
-  Widget _buildTimeLabel(_ChatMsg msg) {
-    if (msg.time.isEmpty) return const SizedBox.shrink();
+  Widget _buildTimeLabel(ChatMessageItem msg) {
+    if (msg.createdAt.isEmpty) return const SizedBox.shrink();
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (msg.isMine && msg.isRead) Icon(Icons.done_all, size: 14.sp, color: const Color(0xFF00C67E)),
+        // if (isMine && msg.) Icon(Icons.done_all, size: 14.sp, color: const Color(0xFF00C67E)),
         SizedBox(height: 2.w),
         Text(
-          msg.time,
+          msg.createdAt,
           style: TextStyle(fontSize: 11.sp, color: const Color(0xFFAAAAAA)),
         ),
       ],
     );
   }
 
-  Widget _buildBubbleContent(_ChatMsg msg) {
-    switch (msg.type) {
-      case MsgType.text:
+  Widget _buildBubbleContent(ChatMessageItem msg) {
+    switch (msg.msgType) {
+      case ChatMessageType.text:
         return _TextBubble(text: msg.content, isMine: msg.isMine);
-      case MsgType.image:
-        return _ImageBubble(isMine: msg.isMine);
-      case MsgType.video:
-        return _VideoBubble(duration: msg.duration ?? '', isMine: msg.isMine);
+      case ChatMessageType.image:
+        return _ImageBubble(
+          isMine: msg.isMine,
+          imageUrl: msg.mediaUrl ?? "",
+        );
+      case ChatMessageType.video:
+        return _VideoBubble(duration: '', isMine: msg.isMine);
+      case ChatMessageType.unknown:
+        return SizedBox.shrink();
     }
   }
 
@@ -570,7 +608,11 @@ class _ChatPageState extends State<ChatPage> {
                 controller: _inputCtrl,
                 focusNode: _focusNode,
                 style: TextStyle(fontSize: 12.sp, color: const Color(0xFF0F172B)),
-                onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
+                onChanged: (v) =>
+                    setState(() =>
+                    _hasText = v
+                        .trim()
+                        .isNotEmpty),
                 onSubmitted: (_) {
                   _sendMessage();
                   _focusNode.requestFocus();
@@ -603,36 +645,30 @@ class _ChatPageState extends State<ChatPage> {
             onTap: _hasText
                 ? _sendMessage
                 : () {
-                    FocusScope.of(context).unfocus();
-                    setState(() => _showPanel = !_showPanel);
-                    if (!_showPanel) return;
-                    // 等面板展开动画完成后再滚到底（maxScrollExtent 已更新）
-                    Future.delayed(const Duration(milliseconds: 260), () {
-                      if (_scrollCtrl.hasClients) {
-                        _scrollCtrl.animateTo(
-                          _scrollCtrl.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOut,
-                        );
-                      }
-                    });
-                  },
+              FocusScope.of(context).unfocus();
+              setState(() => _showPanel = !_showPanel);
+              if (!_showPanel) return;
+              // 等面板展开动画完成后再滚到底（maxScrollExtent 已更新）
+              Future.delayed(const Duration(milliseconds: 260), () {
+                _scrollToBottom();
+              });
+            },
             child: _hasText
                 ? Container(
-                    width: 36.w,
-                    height: 36.w,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F172B),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.send_rounded, size: 18.sp, color: Colors.white),
-                  )
+              width: 36.w,
+              height: 36.w,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172B),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.send_rounded, size: 18.sp, color: Colors.white),
+            )
                 : Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFD1D1D6), width: 1.5.w),
-                      shape: BoxShape.circle,
-                    ),
-                    child: MyImage.asset(MyImagePaths.iconChatPlus, width: 22.w, height: 22.w)),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFD1D1D6), width: 1.5.w),
+                  shape: BoxShape.circle,
+                ),
+                child: MyImage.asset(MyImagePaths.iconChatPlus, width: 22.w, height: 22.w)),
           ),
         ],
       ),
@@ -659,8 +695,14 @@ class _ChatPageState extends State<ChatPage> {
               mainAxisSpacing: 25.w,
               childAspectRatio: 46 / 67,
               children: [
-                _PanelItem(icon: MyImagePaths.iconChatAlbum, label: 'chatPanelAlbum'.tr()),
-                _PanelItem(icon: MyImagePaths.iconChatCamera, label: 'chatPanelCamera'.tr()),
+                GestureDetector(
+                  onTap: () => _sendImageMessage(ImageSource.gallery),
+                  child: _PanelItem(icon: MyImagePaths.iconChatAlbum, label: 'chatPanelAlbum'.tr()),
+                ),
+                GestureDetector(
+                  onTap: () => _sendImageMessage(ImageSource.camera),
+                  child: _PanelItem(icon: MyImagePaths.iconChatCamera, label: 'chatPanelCamera'.tr()),
+                ),
               ],
             ),
           ),
@@ -744,7 +786,7 @@ class _TextBubble extends StatelessWidget {
             ),
           ),
           if (isMine)
-            // 图标贴在右下角
+          // 图标贴在右下角
             Positioned(
               right: 0,
               bottom: 0,
@@ -762,18 +804,18 @@ class _TextBubble extends StatelessWidget {
 
 class _ImageBubble extends StatelessWidget {
   final bool isMine;
+  final String imageUrl;
 
-  const _ImageBubble({required this.isMine});
+  const _ImageBubble({required this.isMine, required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.all(Radius.circular(6.r)),
-      child: Container(
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
         width: 150.w,
-        height: 200.w,
-        color: const Color(0xFFD1D1D6),
-        child: Icon(Icons.image_outlined, size: 48.sp, color: Colors.white),
       ),
     );
   }

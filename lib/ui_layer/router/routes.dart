@@ -386,15 +386,17 @@ class GlobalSearchRoute extends GoRouteData {
 
 @TypedGoRoute<ChatRecordsSearchRoute>(path: AppRouterPaths.chatRecordsSearch)
 class ChatRecordsSearchRoute extends GoRouteData {
-  const ChatRecordsSearchRoute();
+  const ChatRecordsSearchRoute({this.chatId = 0});
 
   static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
+  final int chatId;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
-      child: const ChatRecordsSearchPage(),
+      child: ChatRecordsSearchPage(chatId: chatId),
     );
   }
 }

@@ -6,8 +6,7 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
       _chatService.fetchChats(cursor: cursor, limit: limit);
 
   @override
-  Future<ChatItem> createOrGetChat({required int peerUid}) =>
-      _chatService.createOrGetChat(peerUid: peerUid);
+  Future<ChatItem> createOrGetChat({required int peerUid}) => _chatService.createOrGetChat(peerUid: peerUid);
 
   @override
   Future<ChatMessagesResult> fetchChatMessages({
@@ -32,7 +31,8 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
     Map<String, dynamic>? mediaMeta,
     int? replyMsgId,
     String? clientMsgId,
-  }) => _chatService.sendMessage(
+  }) =>
+      _chatService.sendMessage(
         chatId: chatId,
         msgType: msgType,
         content: content,
@@ -43,25 +43,21 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
       );
 
   @override
-  Future<MessageSearchResult> searchMessages(
-          {required String q, int limit = 10}) =>
-      _chatService.searchMessages(q: q, limit: limit);
+  Future<MessageSearchResult> searchMessages({required String q, int limit = 10, int? chatId = null}) =>
+      _chatService.searchMessages(q: q, limit: limit,chatId: chatId);
 
   @override
   Future<void> markChatRead(int chatId) => _chatService.markChatRead(chatId);
 
   @override
-  Future<void> clearChatMessages(int chatId) =>
-      _chatService.clearChatMessages(chatId);
+  Future<void> clearChatMessages(int chatId) => _chatService.clearChatMessages(chatId);
 
   @override
   Future<void> deleteChat(int chatId) => _chatService.deleteChat(chatId);
 
   @override
-  Future<void> togglePin(int chatId, {required bool isPinned}) =>
-      _chatService.togglePin(chatId, isPinned: isPinned);
+  Future<void> togglePin(int chatId, {required bool isPinned}) => _chatService.togglePin(chatId, isPinned: isPinned);
 
   @override
-  Future<void> toggleMute(int chatId, {required bool isMuted}) =>
-      _chatService.toggleMute(chatId, isMuted: isMuted);
+  Future<void> toggleMute(int chatId, {required bool isMuted}) => _chatService.toggleMute(chatId, isMuted: isMuted);
 }

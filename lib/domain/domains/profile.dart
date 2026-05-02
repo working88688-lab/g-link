@@ -78,7 +78,7 @@ abstract class ProfileDomain {
     required Uint8List bytes,
     required String fileExt,
     required int fileSize,
-    required String scene,
+    required ImageUploadScene scene,
   });
   AsyncResult submitOnboardingInterests({
     required List<int> tagIds,
