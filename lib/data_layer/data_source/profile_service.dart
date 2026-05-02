@@ -138,6 +138,28 @@ class ProfileService extends BaseService {
         encrypted: false,
       );
 
+  AsyncJson getMySettings() => get('/settings', encrypted: false);
+  AsyncJson updatePrivacySettings({
+    String? whoCanFollow,
+    String? whoCanMessage,
+    String? whoCanMention,
+    bool? showFollowingList,
+    bool? showFollowerList,
+    bool? showLikeCount,
+  }) =>
+      patch(
+        '/settings/privacy',
+        data: {
+          if (whoCanFollow != null) 'who_can_follow': whoCanFollow,
+          if (whoCanMessage != null) 'who_can_message': whoCanMessage,
+          if (whoCanMention != null) 'who_can_mention': whoCanMention,
+          if (showFollowingList != null) 'show_following_list': showFollowingList,
+          if (showFollowerList != null) 'show_follower_list': showFollowerList,
+          if (showLikeCount != null) 'show_like_count': showLikeCount,
+        },
+        encrypted: false,
+      );
+
   AsyncJson getInterests() => get('/interests', encrypted: false);
 
   AsyncJson getRecommendedUsers({int limit = 20}) => get(

@@ -36,6 +36,17 @@ abstract class ProfileDomain {
     int? limit,
   });
 
+  AsyncResult<AppSettings> getMySettings();
+
+  AsyncResult<AppSettings> updatePrivacySettings({
+    String? whoCanFollow,
+    String? whoCanMessage,
+    String? whoCanMention,
+    bool? showFollowingList,
+    bool? showFollowerList,
+    bool? showLikeCount,
+  });
+
   AsyncResult<List<InterestTag>> getInterestTags();
 
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});

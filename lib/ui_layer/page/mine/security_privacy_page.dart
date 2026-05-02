@@ -1,19 +1,15 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
 import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
 import 'package:g_link/ui_layer/widgets/custom_switch.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 import 'blocklist_page.dart';
-
-// ──────────────────────────────────────────
-// 枚举
-// ──────────────────────────────────────────
-enum _MentionOption { all, following, nobody }
-
-enum _VisibilityOption { publicAll, followersOnly, privateOnly, selectedPeople }
 
 // ──────────────────────────────────────────
 // 页面
@@ -26,14 +22,93 @@ class SecurityPrivacyPage extends StatefulWidget {
 }
 
 class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
-  // 账号隐私
-  bool _allowSearch = true;
-  bool _allowLikeList = true;
-  _VisibilityOption _postVisibility = _VisibilityOption.publicAll;
-  bool _allowMutualFollowMessage = true;
-  bool _allowMentions = true;
-  bool _allowComments = true;
-  bool _allowFollowList = true;
+  bool _loading = true;
+  AppSettings? _settings;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSettings());
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final result = await context.read<ProfileDomain>().getMySettings();
+      final settings = result.data;
+      if (!mounted || settings == null) return;
+      setState(() {
+        _loading = false;
+        _settings = settings;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveSettings({
+    String? whoCanFollow,
+    String? whoCanMessage,
+    String? whoCanMention,
+    bool? showFollowingList,
+    bool? showFollowerList,
+    bool? showLikeCount,
+  }) async {
+    final current = _settings ??
+        AppSettings(
+          privacy: const PrivacySettings(
+            whoCanFollow: 'all',
+            whoCanMessage: 'following',
+            whoCanMention: 'all',
+            showFollowingList: true,
+            showFollowerList: true,
+            showLikeCount: true,
+          ),
+          notification: const NotificationSettings(
+            notifyFollow: true,
+            notifyLike: true,
+            notifyComment: true,
+            notifyMention: true,
+            notifySystem: true,
+            pushEnabled: true,
+          ),
+          contentPref: const ContentPrefSettings(
+            safeMode: false,
+            autoPlayVideo: true,
+            preferredLang: 'zh_CN',
+          ),
+          general: const GeneralSettings(
+            darkMode: 'auto',
+            locale: 'zh_CN',
+            notificationSound: true,
+          ),
+        );
+    final next = AppSettings(
+      privacy: current.privacy.copyWith(
+        whoCanFollow: whoCanFollow,
+        whoCanMessage: whoCanMessage,
+        whoCanMention: whoCanMention,
+        showFollowingList: showFollowingList,
+        showFollowerList: showFollowerList,
+        showLikeCount: showLikeCount,
+      ),
+      notification: current.notification,
+      contentPref: current.contentPref,
+      general: current.general,
+    );
+    setState(() => _settings = next);
+
+    var r = await context.read<ProfileDomain>().updatePrivacySettings(
+          whoCanFollow: next.privacy.whoCanFollow,
+          whoCanMessage: next.privacy.whoCanMessage,
+          whoCanMention: next.privacy.whoCanMention,
+          showFollowingList: next.privacy.showFollowingList,
+          showFollowerList: next.privacy.showFollowerList,
+          showLikeCount: next.privacy.showLikeCount,
+        );
+    if (!mounted) return;
+    setState(() => _settings = r!.data);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,26 +123,26 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
               children: Column(children: [
             MineSetingsWidgets.visibilityItem(
               label: 'securityPrivateAccount'.tr(),
-              selected: _postVisibility == _VisibilityOption.privateOnly,
-              onTap: () => setState(() => _postVisibility = _VisibilityOption.privateOnly),
+              selected: _settings?.privacy.whoCanFollow == 'approved',
+              onTap: () => _saveSettings(whoCanFollow: 'approved'),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securityFollowersOnly'.tr(),
-              selected: _postVisibility == _VisibilityOption.followersOnly,
-              onTap: () => setState(() => _postVisibility = _VisibilityOption.followersOnly),
+              selected: _settings?.privacy.whoCanFollow == 'followers_only',
+              onTap: () => _saveSettings(whoCanFollow: 'followers_only'),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securitySelectedPeopleOnly'.tr(),
-              selected: _postVisibility == _VisibilityOption.selectedPeople,
-              onTap: () => setState(() => _postVisibility = _VisibilityOption.selectedPeople),
+              selected: false,
+              onTap: () => _saveSettings(whoCanFollow: 'approved'),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.visibilityItem(
               label: 'securityPublic'.tr(),
-              selected: _postVisibility == _VisibilityOption.publicAll,
-              onTap: () => setState(() => _postVisibility = _VisibilityOption.publicAll),
+              selected: _settings?.privacy.whoCanFollow == 'all',
+              onTap: () => _saveSettings(whoCanFollow: 'all'),
             ),
           ])),
           MineSetingsWidgets.sectionHeader('securityAccountSection'.tr()),
@@ -75,26 +150,26 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
               children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: "securityAllowSearch".tr(),
-              value: _allowSearch,
-              onChanged: (v) => setState(() => _allowSearch = v),
+              value: _settings?.privacy.showFollowerList ?? true,
+              onChanged: (v) => _saveSettings(showFollowerList: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: "securityAllowLikeList".tr(),
-              value: _allowLikeList,
-              onChanged: (v) => setState(() => _allowLikeList = v),
+              value: _settings?.privacy.showLikeCount ?? true,
+              onChanged: (v) => _saveSettings(showLikeCount: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: "securityAllowComments".tr(),
-              value: _allowComments,
-              onChanged: (v) => setState(() => _allowComments = v),
+              value: _settings?.privacy.showFollowingList ?? true,
+              onChanged: (v) => _saveSettings(showFollowingList: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: "securityAllowFollowList".tr(),
-              value: _allowFollowList,
-              onChanged: (v) => setState(() => _allowFollowList = v),
+              value: _settings?.privacy.showFollowingList ?? true,
+              onChanged: (v) => _saveSettings(showFollowingList: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.arrowItem(
@@ -106,15 +181,15 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
             MineSetingsWidgets.toggleItem(
               icon: MyImagePaths.iconMention,
               label: "securityMsgMutualFollow".tr(),
-              value: _allowMutualFollowMessage,
-              onChanged: (v) => setState(() => _allowMutualFollowMessage = v),
+              value: _settings?.privacy.whoCanMessage == 'following',
+              onChanged: (v) => _saveSettings(whoCanMessage: v ? 'following' : 'none'),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               icon: MyImagePaths.iconSpMessage,
               label: "securityMentions".tr(),
-              value: _allowMentions,
-              onChanged: (v) => setState(() => _allowMentions = v),
+              value: _settings?.privacy.whoCanMention == 'all',
+              onChanged: (v) => _saveSettings(whoCanMention: v ? 'all' : 'following'),
             ),
           ])),
           MineSetingsWidgets.sectionHeader('securityDataSection'.tr()),

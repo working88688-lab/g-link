@@ -229,6 +229,167 @@ class ReportTypeItem {
   }
 }
 
+class PrivacySettings {
+  const PrivacySettings({
+    required this.whoCanFollow,
+    required this.whoCanMessage,
+    required this.whoCanMention,
+    required this.showFollowingList,
+    required this.showFollowerList,
+    required this.showLikeCount,
+  });
+
+  final String whoCanFollow;
+  final String whoCanMessage;
+  final String whoCanMention;
+  final bool showFollowingList;
+  final bool showFollowerList;
+  final bool showLikeCount;
+
+  factory PrivacySettings.fromJson(Json json) {
+    return PrivacySettings(
+      whoCanFollow: '${json['who_can_follow'] ?? ''}',
+      whoCanMessage: '${json['who_can_message'] ?? ''}',
+      whoCanMention: '${json['who_can_mention'] ?? ''}',
+      showFollowingList: json['show_following_list'] == true,
+      showFollowerList: json['show_follower_list'] == true,
+      showLikeCount: json['show_like_count'] == true,
+    );
+  }
+
+  PrivacySettings copyWith({
+    String? whoCanFollow,
+    String? whoCanMessage,
+    String? whoCanMention,
+    bool? showFollowingList,
+    bool? showFollowerList,
+    bool? showLikeCount,
+  }) {
+    return PrivacySettings(
+      whoCanFollow: whoCanFollow ?? this.whoCanFollow,
+      whoCanMessage: whoCanMessage ?? this.whoCanMessage,
+      whoCanMention: whoCanMention ?? this.whoCanMention,
+      showFollowingList: showFollowingList ?? this.showFollowingList,
+      showFollowerList: showFollowerList ?? this.showFollowerList,
+      showLikeCount: showLikeCount ?? this.showLikeCount,
+    );
+  }
+
+  Json toJson() => <String, dynamic>{
+        'who_can_follow': whoCanFollow,
+        'who_can_message': whoCanMessage,
+        'who_can_mention': whoCanMention,
+        'show_following_list': showFollowingList,
+        'show_follower_list': showFollowerList,
+        'show_like_count': showLikeCount,
+      };
+}
+
+class NotificationSettings {
+  const NotificationSettings({
+    required this.notifyFollow,
+    required this.notifyLike,
+    required this.notifyComment,
+    required this.notifyMention,
+    required this.notifySystem,
+    required this.pushEnabled,
+  });
+
+  final bool notifyFollow;
+  final bool notifyLike;
+  final bool notifyComment;
+  final bool notifyMention;
+  final bool notifySystem;
+  final bool pushEnabled;
+
+  factory NotificationSettings.fromJson(Json json) => NotificationSettings(
+        notifyFollow: json['notify_follow'] == true,
+        notifyLike: json['notify_like'] == true,
+        notifyComment: json['notify_comment'] == true,
+        notifyMention: json['notify_mention'] == true,
+        notifySystem: json['notify_system'] == true,
+        pushEnabled: json['push_enabled'] == true,
+      );
+
+  NotificationSettings copyWith({
+    bool? notifyFollow,
+    bool? notifyLike,
+    bool? notifyComment,
+    bool? notifyMention,
+    bool? notifySystem,
+    bool? pushEnabled,
+  }) {
+    return NotificationSettings(
+      notifyFollow: notifyFollow ?? this.notifyFollow,
+      notifyLike: notifyLike ?? this.notifyLike,
+      notifyComment: notifyComment ?? this.notifyComment,
+      notifyMention: notifyMention ?? this.notifyMention,
+      notifySystem: notifySystem ?? this.notifySystem,
+      pushEnabled: pushEnabled ?? this.pushEnabled,
+    );
+  }
+}
+
+class ContentPrefSettings {
+  const ContentPrefSettings({
+    required this.safeMode,
+    required this.autoPlayVideo,
+    required this.preferredLang,
+  });
+
+  final bool safeMode;
+  final bool autoPlayVideo;
+  final String preferredLang;
+
+  factory ContentPrefSettings.fromJson(Json json) => ContentPrefSettings(
+        safeMode: json['safe_mode'] == true,
+        autoPlayVideo: json['auto_play_video'] == true,
+        preferredLang: '${json['preferred_lang'] ?? ''}',
+      );
+}
+
+class GeneralSettings {
+  const GeneralSettings({
+    required this.darkMode,
+    required this.locale,
+    required this.notificationSound,
+  });
+
+  final String darkMode;
+  final String locale;
+  final bool notificationSound;
+
+  factory GeneralSettings.fromJson(Json json) => GeneralSettings(
+        darkMode: '${json['dark_mode'] ?? ''}',
+        locale: '${json['locale'] ?? ''}',
+        notificationSound: json['notification_sound'] == true,
+      );
+}
+
+class AppSettings {
+  const AppSettings({
+    required this.privacy,
+    required this.notification,
+    required this.contentPref,
+    required this.general,
+  });
+
+  final PrivacySettings privacy;
+  final NotificationSettings notification;
+  final ContentPrefSettings contentPref;
+  final GeneralSettings general;
+
+  factory AppSettings.fromJson(Json json) {
+    final data = Json.from(json['data'] ?? json);
+    return AppSettings(
+      privacy: PrivacySettings.fromJson(Json.from(data['privacy'] ?? {})),
+      notification: NotificationSettings.fromJson(Json.from(data['notification'] ?? {})),
+      contentPref: ContentPrefSettings.fromJson(Json.from(data['content_pref'] ?? {})),
+      general: GeneralSettings.fromJson(Json.from(data['general'] ?? {})),
+    );
+  }
+}
+
 class UploadedImagePayload {
   const UploadedImagePayload({
     required this.objectKey,
