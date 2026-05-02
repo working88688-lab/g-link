@@ -23,6 +23,8 @@ class HomeFeedNotifier extends ChangeNotifier {
         _profileDomain = profileDomain {
     _followStatusSubscription =
         eventBus.on<FollowStatusChangedEvent>().listen(_onFollowStatusChanged);
+    _postPublishedSubscription =
+        eventBus.on<PostPublishedEvent>().listen(_onPostPublished);
   }
 
   final FeedDomain _feedDomain;
@@ -77,6 +79,7 @@ class HomeFeedNotifier extends ChangeNotifier {
   // 点赞请求 inflight 防抖（同一 postId 不重复并发）
   final Set<int> _likeInflight = <int>{};
   StreamSubscription<FollowStatusChangedEvent>? _followStatusSubscription;
+  StreamSubscription<PostPublishedEvent>? _postPublishedSubscription;
 
   // ───── getters ─────
   List<FeedPost> postsOf(HomeFeedTab tab) => List.unmodifiable(_posts[tab] ?? const []);
@@ -217,6 +220,11 @@ class HomeFeedNotifier extends ChangeNotifier {
     _safeNotify();
   }
 
+  void _onPostPublished(PostPublishedEvent _) {
+    unawaited(refresh(HomeFeedTab.recommend));
+    unawaited(refresh(HomeFeedTab.following));
+  }
+
   /// 点赞 / 取消点赞。乐观更新本地点赞状态与计数，失败回滚。
   Future<bool> toggleLike(int postId) async {
     if (_likeInflight.contains(postId)) return false;
@@ -328,6 +336,7 @@ class HomeFeedNotifier extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _followStatusSubscription?.cancel();
+    _postPublishedSubscription?.cancel();
     super.dispose();
   }
 }

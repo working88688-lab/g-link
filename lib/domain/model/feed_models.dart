@@ -180,6 +180,46 @@ class LikeResult {
   }
 }
 
+/// 发布帖子 `location` 字段（OpenAPI `POST /api/v1/posts`）。
+class PublishLocationInput {
+  const PublishLocationInput({
+    required this.name,
+    this.address,
+    this.latitude,
+    this.longitude,
+  });
+
+  final String name;
+  final String? address;
+  final double? latitude;
+  final double? longitude;
+
+  Json toJson() => {
+        'name': name,
+        if (address != null && address!.trim().isNotEmpty) 'address': address,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+      };
+}
+
+/// 发布帖子接口 `POST /api/v1/posts` 成功后的 `data` 摘要。
+class PublishPostResult {
+  const PublishPostResult({
+    required this.postId,
+    this.shareUrl,
+  });
+
+  final int postId;
+  final String? shareUrl;
+
+  factory PublishPostResult.fromJson(Json json) {
+    return PublishPostResult(
+      postId: int.tryParse('${json['post_id'] ?? 0}') ?? 0,
+      shareUrl: json['share_url'] != null ? '${json['share_url']}' : null,
+    );
+  }
+}
+
 /// 关注/取消关注响应：包含双向关系快照，便于一次同步多个 UI 状态。
 class FollowResult {
   const FollowResult({

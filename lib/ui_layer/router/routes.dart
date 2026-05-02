@@ -122,13 +122,6 @@ class ForgotPasswordRoute extends GoRouteData {
     ),
     TypedStatefulShellBranch(
       routes: [
-        TypedGoRoute<PublishRoute>(
-          path: AppRouterPaths.publish,
-        ),
-      ],
-    ),
-    TypedStatefulShellBranch(
-      routes: [
         TypedGoRoute<MessageRoute>(
           path: AppRouterPaths.message,
         ),
@@ -166,11 +159,20 @@ class ShortVideoRoute extends GoRouteData {
   Widget build(BuildContext context, GoRouterState state) => const ShortVideoPage();
 }
 
+@TypedGoRoute<PublishRoute>(path: AppRouterPaths.publish)
 class PublishRoute extends GoRouteData {
   const PublishRoute();
 
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
   @override
-  Widget build(BuildContext context, GoRouterState state) => const PublishPage();
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const PublishPage(),
+    );
+  }
 }
 
 class MessageRoute extends GoRouteData {
