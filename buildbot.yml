@@ -1,0 +1,56 @@
+# ============================================================
+# buildbot.yml — 放在每个项目根目录下
+# 构建机器人会自动读取此文件匹配构建环境和参数
+# ============================================================
+
+# 项目名（仅注释用，实际由目录名决定）
+name: g-link
+
+# ── 构建环境 ──────────────────────────────────────────────
+# platform: android 时使用 JDK，flutter 时同时使用 JDK + FVM
+jdk_version: "17"         # 支持: 11 / 17 / 21
+fvm_version: "3.38.3"     # 仅 flutter 项目需要；留空则用系统 flutter
+android_sdk_root: "/data/android-sdk"      # sdk环境变量 例: /home/ec2-user/Android/Sdk
+
+# ── 分支配置 ──────────────────────────────────────────────
+channels:
+
+  # 生产分支
+  prod:
+    build_type: release
+    # Android 原生：Gradle 任务名
+    gradle_task: assembleRelease
+    # Flutter：flavor 名（无 flavor 则留空）
+    flavor: production
+    # APK 产物相对路径（相对项目根目录）
+    # Android:
+    # output_apk: /data/apks/g-link/apk/app-release.apk
+    # Flutter:
+    output_apk: /data/apks/g-link/flutter-apk/app-release.apk
+    # 额外构建参数（数组）
+    extra_args: []
+
+  # 开发分支
+  dev:
+    build_type: debug
+    gradle_task: assembleDebug
+    flavor: development
+    # output_apk:  /data/apks/g-link/apk/app-debug.apk
+    output_apk: /data/apks/g-link/flutter-apk/app-debug.apk
+    extra_args: []
+  # 测试分支
+  test:
+    build_type: debug
+    gradle_task: assembleDebug
+    flavor: development
+    # output_apk:  /data/apks/g-link/apk/app-debug.apk
+    output_apk: /data/apks/g-link/flutter-apk/app-test.apk
+    extra_args: []
+  # 预发布分支
+  staging:
+    build_type: release
+    gradle_task: assembleRelease
+    flavor: staging
+    # output_apk: /data/apks/g-link/apk/app-release.apk
+    output_apk: /data/apks/g-link/flutter-apk/app-debug.apk
+    extra_args: ["--no-shrink"]
