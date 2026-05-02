@@ -47,6 +47,15 @@ abstract class ProfileDomain {
     bool? showLikeCount,
   });
 
+  AsyncResult<AppSettings> updateNotificationSettings({
+    bool? notifyFollow,
+    bool? notifyLike,
+    bool? notifyComment,
+    bool? notifyMention,
+    bool? notifySystem,
+    bool? pushEnabled,
+  });
+
   AsyncResult<List<InterestTag>> getInterestTags();
 
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});

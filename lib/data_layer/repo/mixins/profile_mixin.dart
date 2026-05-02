@@ -98,6 +98,27 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
           .guard;
 
   @override
+  AsyncResult<AppSettings> updateNotificationSettings({
+    bool? notifyFollow,
+    bool? notifyLike,
+    bool? notifyComment,
+    bool? notifyMention,
+    bool? notifySystem,
+    bool? pushEnabled,
+  }) =>
+      _profileService
+          .updateNotificationSettings(
+            notifyFollow: notifyFollow,
+            notifyLike: notifyLike,
+            notifyComment: notifyComment,
+            notifyMention: notifyMention,
+            notifySystem: notifySystem,
+            pushEnabled: pushEnabled,
+          )
+          .deserializeJsonBy((json) => AppSettings.fromJson(Json.from(json)))
+          .guard;
+
+  @override
   AsyncResult<List<InterestTag>> getInterestTags() => _profileService.getInterests().deserializeJsonBy((json) {
         final list = List<Json>.from((json['list'] ?? []) as List);
         return list.map(InterestTag.fromJson).toList();

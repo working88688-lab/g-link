@@ -160,6 +160,27 @@ class ProfileService extends BaseService {
         encrypted: false,
       );
 
+  AsyncJson updateNotificationSettings({
+    bool? notifyFollow,
+    bool? notifyLike,
+    bool? notifyComment,
+    bool? notifyMention,
+    bool? notifySystem,
+    bool? pushEnabled,
+  }) =>
+      patch(
+        '/settings/notification',
+        data: {
+          if (notifyFollow != null) 'notify_follow': notifyFollow,
+          if (notifyLike != null) 'notify_like': notifyLike,
+          if (notifyComment != null) 'notify_comment': notifyComment,
+          if (notifyMention != null) 'notify_mention': notifyMention,
+          if (notifySystem != null) 'notify_system': notifySystem,
+          if (pushEnabled != null) 'push_enabled': pushEnabled,
+        },
+        encrypted: false,
+      );
+
   AsyncJson getInterests() => get('/interests', encrypted: false);
 
   AsyncJson getRecommendedUsers({int limit = 20}) => get(

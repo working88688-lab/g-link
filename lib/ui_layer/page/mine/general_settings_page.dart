@@ -1,9 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/app_global.dart';
+import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
 import 'package:g_link/ui_layer/widgets/app_bottom_sheet.dart';
-import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 
 // ──────────────────────────────────────────
 // 页面
@@ -16,15 +19,7 @@ class GeneralSettingsPage extends StatefulWidget {
 }
 
 class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
-  // 播放
-  bool _autoPlayWifi = true;
-
-  // 通知
-  bool _pushNotification = true;
-  bool _interactionMsg = true;
-  bool _systemAnnounce = true;
-  bool _newFollower = true;
-  bool _chatMsg = true;
+  AppSettings? _settings = AppGlobal.appSettings;
 
   // 缓存（仅示意数据）
   static const _videoCacheMB = 132;
@@ -33,6 +28,82 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
 
   int get _totalCacheMB => _videoCacheMB + _imageCacheMB + _tempFilesMB;
   static const _totalSpaceMB = 800;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSettings());
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final result = await context.read<ProfileDomain>().getMySettings();
+      if (!mounted || result.data == null) return;
+      setState(() => _settings = result.data);
+    } catch (_) {}
+  }
+
+  Future<void> _updateNotificationSettings({
+    bool? notifyFollow,
+    bool? notifyLike,
+    bool? notifyComment,
+    bool? notifyMention,
+    bool? notifySystem,
+    bool? pushEnabled,
+  }) async {
+    final current = _settings ??
+        AppSettings(
+          privacy: const PrivacySettings(
+            whoCanFollow: 'all',
+            whoCanMessage: 'all',
+            whoCanMention: 'all',
+            showFollowingList: true,
+            showFollowerList: true,
+            showLikeCount: true,
+          ),
+          notification: const NotificationSettings(
+            notifyFollow: true,
+            notifyLike: true,
+            notifyComment: true,
+            notifyMention: true,
+            notifySystem: true,
+            pushEnabled: true,
+          ),
+          contentPref: const ContentPrefSettings(
+            safeMode: false,
+            autoPlayVideo: true,
+            preferredLang: 'zh_CN',
+          ),
+          general: const GeneralSettings(
+            darkMode: 'auto',
+            locale: 'zh_CN',
+            notificationSound: true,
+          ),
+        );
+
+    final next = current.copyWith(
+      notification: current.notification.copyWith(
+        notifyFollow: notifyFollow,
+        notifyLike: notifyLike,
+        notifyComment: notifyComment,
+        notifyMention: notifyMention,
+        notifySystem: notifySystem,
+        pushEnabled: pushEnabled,
+      ),
+    );
+    setState(() => _settings = next);
+    var r = await context.read<ProfileDomain>().updateNotificationSettings(
+          notifyFollow: next.notification.notifyFollow,
+          notifyLike: next.notification.notifyLike,
+          notifyComment: next.notification.notifyComment,
+          notifyMention: next.notification.notifyMention,
+          notifySystem: next.notification.notifySystem,
+          pushEnabled: next.notification.pushEnabled,
+        );
+    if (!mounted) return;
+    setState(() => _settings = r!.data);
+    AppGlobal.appSettings = r!.data;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +129,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: 'generalAutoPlayWifi'.tr(),
-              value: _autoPlayWifi,
-              onChanged: (v) => setState(() => _autoPlayWifi = v),
+              value: _settings?.contentPref.autoPlayVideo ?? true,
+              onChanged: (v) {},
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.arrowItem(
@@ -74,44 +145,44 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               children: Column(children: [
             MineSetingsWidgets.toggleItem(
               label: 'generalPushNotification'.tr(),
-              value: _pushNotification,
-              onChanged: (v) => setState(() => _pushNotification = v),
+              value: _settings?.notification.pushEnabled ?? true,
+              onChanged: (v) => _updateNotificationSettings(pushEnabled: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: 'generalInteractionMsg'.tr(),
-              value: _interactionMsg,
+              value: _settings?.notification.notifyMention ?? true,
               prefix: SizedBox(
                 width: 20.w,
               ),
-              onChanged: (v) => setState(() => _interactionMsg = v),
+              onChanged: (v) => _updateNotificationSettings(notifyMention: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: 'generalSystemAnnounce'.tr(),
-              value: _systemAnnounce,
+              value: _settings?.notification.notifySystem ?? true,
               prefix: SizedBox(
                 width: 20.w,
               ),
-              onChanged: (v) => setState(() => _systemAnnounce = v),
+              onChanged: (v) => _updateNotificationSettings(notifySystem: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: 'generalNewFollower'.tr(),
-              value: _newFollower,
+              value: _settings?.notification.notifyFollow ?? true,
               prefix: SizedBox(
                 width: 20.w,
               ),
-              onChanged: (v) => setState(() => _newFollower = v),
+              onChanged: (v) => _updateNotificationSettings(notifyFollow: v),
             ),
             MineSetingsWidgets.divider(),
             MineSetingsWidgets.toggleItem(
               label: 'generalChatMsg'.tr(),
-              value: _chatMsg,
+              value: _settings?.notification.notifyComment ?? true,
               prefix: SizedBox(
                 width: 20.w,
               ),
-              onChanged: (v) => setState(() => _chatMsg = v),
+              onChanged: (v) => _updateNotificationSettings(notifyComment: v),
             ),
           ])),
           // 清除缓存

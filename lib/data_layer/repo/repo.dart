@@ -56,15 +56,20 @@ import 'package:g_link/domain/domains/search.dart';
 part 'cache.dart';
 
 part 'mixins/chat_mixin.dart';
+
 part 'mixins/feed_mixin.dart';
+
 part 'mixins/home_mixin.dart';
+
 part 'mixins/report_mixin.dart';
+
 part 'mixins/profile_mixin.dart';
+
 part 'mixins/auth_mixin.dart';
+
 part 'mixins/search_mixin.dart';
 
-class AppRepo extends _BaseAppRepo
-    with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search {}
+class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
@@ -80,8 +85,7 @@ abstract class _BaseAppRepo implements AppDomain {
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
 
   @override
-  late final tokenStatusStream =
-      _tokenValidStreamController.stream.asBroadcastStream();
+  late final tokenStatusStream = _tokenValidStreamController.stream.asBroadcastStream();
 
   late final _apiDio = Dio(
     BaseOptions(
@@ -241,8 +245,7 @@ abstract class _BaseAppRepo implements AppDomain {
 
   void _printCurl(RequestOptions options) {
     final url = options.uri.toString();
-    final buffer =
-        StringBuffer("curl -X ${options.method.toUpperCase()} '$url'");
+    final buffer = StringBuffer("curl -X ${options.method.toUpperCase()} '$url'");
 
     options.headers.forEach((key, value) {
       if (value == null) return;
@@ -270,12 +273,23 @@ abstract class _BaseAppRepo implements AppDomain {
     debugPrint('[cURL] ${buffer.toString()}');
   }
 
+  Future<void> _preloadAppSettings() async {
+    try {
+      AppGlobal.appSettings = await _profileService
+          .getMySettings()
+          .deserializeJsonBy((json) => AppSettings.fromJson(Json.from(json)))
+          .guard
+          .then((r) => r.data);
+    } catch (_) {}
+  }
+
   void _updateToken(String token, String refreshToken) {
     _appInfo.token = token;
     _appInfo.refreshToken = refreshToken;
     _cacheManager.upsertAuthToken(token);
     _cacheManager.upsertRefreshToken(refreshToken);
     _tokenValidStreamController.sink.add(MyTokenStatus.valid);
+    _preloadAppSettings();
   }
 
   Future<Json> _getAppInfo() async {
@@ -328,8 +342,7 @@ abstract class _BaseAppRepo implements AppDomain {
     deviceId ??= await _cacheManager.readOauthId();
 
     if (deviceId == null) {
-      deviceId =
-          '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
+      deviceId = '${RepoUtils.randomId(16)}_${DateTime.now().millisecondsSinceEpoch}';
       await _cacheManager.upsertOauthId(deviceId);
     }
     return RepoUtils.gvMD5(deviceId);
@@ -458,8 +471,7 @@ abstract class _BaseAppRepo implements AppDomain {
     CancelToken? cancelToken,
     ProgressCallback? progressCallback,
   }) async {
-    final result =
-        await R2UploaderUtil(context: context, cancelToken: cancelToken).upload(
+    final result = await R2UploaderUtil(context: context, cancelToken: cancelToken).upload(
       xFile: xFile,
       progressCallback: progressCallback,
     );
@@ -485,6 +497,7 @@ extension _MapHelper on Map {
   void removeToken() => remove(_tokenKey);
 
   String? get token => this[_tokenKey];
+
   set token(String? value) {
     if (value == null) {
       remove(_tokenKey);
@@ -498,6 +511,7 @@ extension _MapHelper on Map {
   void removeRefreshToken() => remove(_refreshTokenKey);
 
   String? get refreshToken => this[_refreshTokenKey];
+
   set refreshToken(String? value) {
     if (value == null) {
       remove(_refreshTokenKey);

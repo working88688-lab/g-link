@@ -388,6 +388,20 @@ class AppSettings {
       general: GeneralSettings.fromJson(Json.from(data['general'] ?? {})),
     );
   }
+
+  AppSettings copyWith({
+    PrivacySettings? privacy,
+    NotificationSettings? notification,
+    ContentPrefSettings? contentPref,
+    GeneralSettings? general,
+  }) {
+    return AppSettings(
+      privacy: privacy ?? this.privacy,
+      notification: notification ?? this.notification,
+      contentPref: contentPref ?? this.contentPref,
+      general: general ?? this.general,
+    );
+  }
 }
 
 class UploadedImagePayload {

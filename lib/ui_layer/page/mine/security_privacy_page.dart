@@ -9,6 +9,7 @@ import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
 import 'package:g_link/ui_layer/widgets/custom_switch.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
+import '../../../app_global.dart';
 import 'blocklist_page.dart';
 
 // ──────────────────────────────────────────
@@ -23,7 +24,7 @@ class SecurityPrivacyPage extends StatefulWidget {
 
 class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
   bool _loading = true;
-  AppSettings? _settings;
+  AppSettings? _settings = AppGlobal.appSettings;
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
         );
     if (!mounted) return;
     setState(() => _settings = r!.data);
+    AppGlobal.appSettings = r.data;
   }
 
   @override

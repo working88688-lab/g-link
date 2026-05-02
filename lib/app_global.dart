@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'domain/model/home_data_model.dart';
+import 'domain/model/profile_models.dart';
 
 class AppGlobal {
   static String m3u8Encrypt = '0';
@@ -18,4 +19,6 @@ class AppGlobal {
   static String affXCode = '';
 
   static String officeSite = '';
+
+  static AppSettings? appSettings;
 }
