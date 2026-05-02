@@ -1,6 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
+import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
+import 'package:g_link/ui_layer/widgets/custom_switch.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'blocklist_page.dart';
 
 // ──────────────────────────────────────────
@@ -22,17 +27,13 @@ class SecurityPrivacyPage extends StatefulWidget {
 
 class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
   // 账号隐私
-  bool _privateAccount = false;
   bool _allowSearch = true;
-  _MentionOption _mentionOption = _MentionOption.following;
   bool _allowLikeList = true;
-  bool _msgMutualFollow = false;
   _VisibilityOption _postVisibility = _VisibilityOption.publicAll;
+  bool _allowMutualFollowMessage = true;
+  bool _allowMentions = true;
   bool _allowComments = true;
   bool _allowFollowList = true;
-
-  // 黑名单数量（示例）
-  final int _blocklistCount = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -40,96 +41,100 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: _buildAppBar(context),
       body: ListView(
+        padding: EdgeInsets.all(16.w),
         children: [
-          _sectionHeader('securityAccountSection'.tr()),
-          _buildCard(children: [
-            _toggleItem(
+          MineSetingsWidgets.sectionHeader('securityVisibilitySection'.tr()),
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
+            MineSetingsWidgets.visibilityItem(
               label: 'securityPrivateAccount'.tr(),
-              value: _privateAccount,
-              onChanged: (v) => setState(() => _privateAccount = v),
+              selected: _postVisibility == _VisibilityOption.privateOnly,
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.privateOnly),
             ),
-            _divider(),
-            _toggleItem(
-              label: 'securityAllowSearch'.tr(),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.visibilityItem(
+              label: 'securityFollowersOnly'.tr(),
+              selected: _postVisibility == _VisibilityOption.followersOnly,
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.followersOnly),
+            ),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.visibilityItem(
+              label: 'securitySelectedPeopleOnly'.tr(),
+              selected: _postVisibility == _VisibilityOption.selectedPeople,
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.selectedPeople),
+            ),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.visibilityItem(
+              label: 'securityPublic'.tr(),
+              selected: _postVisibility == _VisibilityOption.publicAll,
+              onTap: () => setState(() => _postVisibility = _VisibilityOption.publicAll),
+            ),
+          ])),
+          MineSetingsWidgets.sectionHeader('securityAccountSection'.tr()),
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
+            MineSetingsWidgets.toggleItem(
+              label: "securityAllowSearch".tr(),
               value: _allowSearch,
               onChanged: (v) => setState(() => _allowSearch = v),
             ),
-            _divider(),
-            _arrowItem(
-              label: 'securityMentions'.tr(),
-              value: _mentionOptionLabel(_mentionOption),
-              onTap: () => _showMentionSheet(),
-            ),
-            _divider(),
-            _toggleItem(
-              label: 'securityFollowersOnly'.tr(),
-              value: _postVisibility == _VisibilityOption.followersOnly,
-              onChanged: (v) => setState(() => _postVisibility = v
-                  ? _VisibilityOption.followersOnly
-                  : _VisibilityOption.publicAll),
-            ),
-            _divider(),
-            _toggleItem(
-              label: 'securityAllowLikeList'.tr(),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
+              label: "securityAllowLikeList".tr(),
               value: _allowLikeList,
               onChanged: (v) => setState(() => _allowLikeList = v),
             ),
-            _divider(),
-            _toggleItem(
-              label: 'securityMsgMutualFollow'.tr(),
-              value: _msgMutualFollow,
-              onChanged: (v) => setState(() => _msgMutualFollow = v),
-            ),
-            _divider(),
-            _toggleItem(
-              label: 'securityAllowComments'.tr(),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
+              label: "securityAllowComments".tr(),
               value: _allowComments,
               onChanged: (v) => setState(() => _allowComments = v),
             ),
-            _divider(),
-            _toggleItem(
-              label: 'securityAllowFollowList'.tr(),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
+              label: "securityAllowFollowList".tr(),
               value: _allowFollowList,
               onChanged: (v) => setState(() => _allowFollowList = v),
             ),
-            _divider(),
-            _arrowItem(
-              label: 'securityBlocklist'.tr(),
-              value: 'securityBlocklistCount'
-                  .tr(namedArgs: {'count': '$_blocklistCount'}),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const BlocklistPage()),
-              ),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.arrowItem(
+                label: "securityBlocklist".tr(), trailingText: "securityFollowingOnly".tr(), onTap: () {}),
+            MineSetingsWidgets.divider(),
+          ])),
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
+            MineSetingsWidgets.toggleItem(
+              icon: MyImagePaths.iconMention,
+              label: "securityMsgMutualFollow".tr(),
+              value: _allowMutualFollowMessage,
+              onChanged: (v) => setState(() => _allowMutualFollowMessage = v),
             ),
-          ]),
-          _sectionHeader('securityDataSection'.tr()),
-          _buildCard(children: [
-            _arrowItem(
-              label: 'securityChangePassword'.tr(),
-              onTap: () {},
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.toggleItem(
+              icon: MyImagePaths.iconSpMessage,
+              label: "securityMentions".tr(),
+              value: _allowMentions,
+              onChanged: (v) => setState(() => _allowMentions = v),
             ),
-            _divider(),
-            InkWell(
-              onTap: () => _confirmDeleteAccount(),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.w),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'securityDeleteAccount'.tr(),
-                        style: TextStyle(
-                          color: const Color(0xFFFF2056),
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ]),
+          ])),
+          MineSetingsWidgets.sectionHeader('securityDataSection'.tr()),
+          MineSetingsWidgets.buildCard(
+              children: Column(children: [
+            MineSetingsWidgets.arrowItem(
+                icon: MyImagePaths.iconKey, label: "securityChangePassword".tr(), onTap: () {}),
+            MineSetingsWidgets.divider(),
+            MineSetingsWidgets.arrowItem(
+                icon: MyImagePaths.iconLogOff,
+                labelColor: Color(0xFFFF2056),
+                label: "securityDeleteAccount".tr(),
+                onTap: () {
+                  AppConfirmDialog.show(
+                      context: context,
+                      title: "securityDeleteAccount".tr(),
+                      content: "securityDeleteAccountDesc".tr(),
+                      onConfirm: () {});
+                }),
+          ])),
           SizedBox(height: 24.w),
         ],
       ),
@@ -161,172 +166,6 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(height: 1, color: const Color(0xFFEDF0F5)),
-      ),
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 20.w, 16.w, 8.w),
-      child: Text(
-        title,
-        style: TextStyle(
-          color: const Color(0xFF45556C),
-          fontSize: 13.sp,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard({required List<Widget> children}) {
-    return Container(
-      color: Colors.white,
-      child: Column(children: children),
-    );
-  }
-
-  Widget _toggleItem({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.w),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: const Color(0xFF0F172B),
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          Transform.scale(
-            scale: 0.85,
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-              activeColor: const Color(0xFF1A1F2C),
-              activeTrackColor: const Color(0xFF0F172B),
-              inactiveTrackColor: const Color(0xFFE3E7EC),
-              inactiveThumbColor: const Color(0xFFF8F9FE),
-              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _arrowItem({
-    required String label,
-    String? value,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.w),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: const Color(0xFF0F172B),
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-            if (value != null)
-              Text(
-                value,
-                style: TextStyle(
-                  color: const Color(0xFF62748E),
-                  fontSize: 14.sp,
-                ),
-              ),
-            SizedBox(width: 4.w),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 20.w,
-              color: const Color(0xFFB0BAC8),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _divider() {
-    return Container(
-      height: 1,
-      margin: EdgeInsets.only(left: 16.w),
-      color: const Color(0xFFEDF0F5),
-    );
-  }
-
-  String _mentionOptionLabel(_MentionOption opt) {
-    switch (opt) {
-      case _MentionOption.all:
-        return 'securityPublic'.tr();
-      case _MentionOption.following:
-        return 'securityFollowingOnly'.tr();
-      case _MentionOption.nobody:
-        return 'securityPrivateAccount'.tr();
-    }
-  }
-
-  void _showMentionSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.w)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _MentionOption.values.map((opt) {
-            return RadioListTile<_MentionOption>(
-              title: Text(_mentionOptionLabel(opt)),
-              value: opt,
-              groupValue: _mentionOption,
-              activeColor: const Color(0xFF1A1F2C),
-              onChanged: (v) {
-                setState(() => _mentionOption = v!);
-                Navigator.of(ctx).pop();
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _confirmDeleteAccount() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('securityDeleteAccount'.tr()),
-        content: Text('updateDialogContent'.tr()),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('commonCancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'commonConfirm'.tr(),
-              style: const TextStyle(color: Color(0xFFFF2056)),
-            ),
-          ),
-        ],
       ),
     );
   }

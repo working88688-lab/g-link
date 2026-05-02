@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import '../history_favorites_page.dart';
 import '../offline_cache_page.dart';
@@ -45,8 +46,7 @@ class MineSettingsDrawer extends StatelessWidget {
                             label: 'mineDrawerHistory'.tr(),
                             onTap: () => _push(
                               context,
-                              const HistoryFavoritesPage(
-                                  mode: HistoryFavoritesMode.history),
+                              const HistoryFavoritesPage(mode: HistoryFavoritesMode.history),
                             ),
                           ),
                           _buildItem(
@@ -55,16 +55,14 @@ class MineSettingsDrawer extends StatelessWidget {
                             label: 'mineMenuCollections'.tr(),
                             onTap: () => _push(
                               context,
-                              const HistoryFavoritesPage(
-                                  mode: HistoryFavoritesMode.favorites),
+                              const HistoryFavoritesPage(mode: HistoryFavoritesMode.favorites),
                             ),
                           ),
                           _buildItem(
                             context,
                             icon: MyImagePaths.iconSettingCache,
                             label: 'mineDrawerOfflineCache'.tr(),
-                            onTap: () =>
-                                _push(context, const OfflineCachePage()),
+                            onTap: () => _push(context, const OfflineCachePage()),
                           ),
                           _buildItem(
                             context,
@@ -92,29 +90,25 @@ class MineSettingsDrawer extends StatelessWidget {
                             context,
                             icon: MyImagePaths.iconSettingPrivacySecurity,
                             label: 'mineDrawerPrivacySecurity'.tr(),
-                            onTap: () =>
-                                _push(context, const SecurityPrivacyPage()),
+                            onTap: () => _push(context, const SecurityPrivacyPage()),
                           ),
                           _buildItem(
                             context,
                             icon: MyImagePaths.iconSettingGeneralSettings,
                             label: 'mineDrawerGeneralSettings'.tr(),
-                            onTap: () =>
-                                _push(context, const GeneralSettingsPage()),
+                            onTap: () => _push(context, const GeneralSettingsPage()),
                           ),
                           _buildItem(
                             context,
                             icon: MyImagePaths.iconSettingPreference,
                             label: 'mineDrawerContentPref'.tr(),
-                            onTap: () =>
-                                _push(context, const ContentPreferencePage()),
+                            onTap: () => _push(context, const ContentPreferencePage()),
                           ),
                           _buildItem(
                             context,
                             icon: MyImagePaths.iconSettingHelp,
                             label: 'mineMenuHelp'.tr(),
-                            onTap: () =>
-                                _push(context, const HelpFeedbackPage()),
+                            onTap: () => _push(context, const HelpFeedbackPage()),
                           ),
                           _buildItem(
                             context,
@@ -122,6 +116,12 @@ class MineSettingsDrawer extends StatelessWidget {
                             label: 'mineDrawerLogout'.tr(),
                             onTap: () {},
                           ),
+                          GestureDetector(
+                            onTap: () {
+                              NotificationRoute().push(context);
+                            },
+                            child: Text("通知"),
+                          )
                         ],
                       ),
                     )
@@ -161,8 +161,7 @@ class MineSettingsDrawer extends StatelessWidget {
         onTap();
       },
       child: Padding(
-        padding:
-            EdgeInsets.only(left: 12.w, right: 5.w, top: 10.w, bottom: 10.w),
+        padding: EdgeInsets.only(left: 12.w, right: 5.w, top: 10.w, bottom: 10.w),
         child: Row(
           children: [
             MyImage.asset(

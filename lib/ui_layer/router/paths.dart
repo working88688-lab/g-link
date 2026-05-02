@@ -32,6 +32,9 @@ class AppRouterPaths {
   /// 引导页
   static const guide = '/guide';
 
+  /// 反馈提交
+  static const feedbackSubmit = '/feedback_submit';
+
   /// 投诉用户
   static const complaint = '/complaint';
 
@@ -177,6 +180,9 @@ class AppRouterPaths {
   /// 我的 - 帮助
   static const mineHelp = '/mineHelp';
 
+  /// 我的 - 通知
+  static const notification = '/notification';
+
   /// 我的 - 官方交流群
   static const mineOfficialGroup = '/mineOfficialGroup';
 
@@ -185,6 +191,9 @@ class AppRouterPaths {
 
   /// 我的 - 系统消息
   static const mineSystemMessage = '/mineSystemMessage';
+
+  /// 我的 - 系统通知详情
+  static const systemNotificationDetail = '/systemNotificationDetail';
 
   /// 我的 - 消息中心
   static const mineMessageCenter = '/mineMessageCenter';

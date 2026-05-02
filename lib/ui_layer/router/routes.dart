@@ -12,6 +12,9 @@ import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home/home_page.dart';
 import 'package:g_link/ui_layer/page/mine/mine_page.dart';
+import 'package:g_link/ui_layer/page/mine/feedback_submit_page.dart';
+import 'package:g_link/ui_layer/page/mine/notification_detail_page.dart';
+import 'package:g_link/ui_layer/page/mine/notification_page.dart';
 import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
 import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
 import 'package:g_link/ui_layer/page/message_page_v2.dart';
@@ -25,9 +28,6 @@ import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../page/message/message_page.dart';
-import '../page/mine/mine_page.dart';
-import '../page/mine/profile_edit_page.dart';
 import 'router.dart';
 import 'paths.dart';
 
@@ -250,6 +250,54 @@ class GuideRoute extends GoRouteData {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: const GuidePage(),
+    );
+  }
+}
+
+@TypedGoRoute<FeedbackSubmitRoute>(path: AppRouterPaths.feedbackSubmit)
+class FeedbackSubmitRoute extends GoRouteData {
+  const FeedbackSubmitRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const FeedbackSubmitPage(),
+    );
+  }
+}
+
+@TypedGoRoute<NotificationRoute>(path: AppRouterPaths.notification)
+class NotificationRoute extends GoRouteData {
+  const NotificationRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const NotificationPage(),
+    );
+  }
+}
+
+@TypedGoRoute<SystemNotificationDetailRoute>(path: AppRouterPaths.systemNotificationDetail)
+class SystemNotificationDetailRoute extends GoRouteData {
+  const SystemNotificationDetailRoute({required this.title});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
+  final String title;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: NotificationDetailPage(title: title),
     );
   }
 }
