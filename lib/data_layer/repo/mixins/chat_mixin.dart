@@ -48,6 +48,13 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
       _chatService.searchMessages(q: q, limit: limit);
 
   @override
+  Future<void> markChatRead(int chatId) => _chatService.markChatRead(chatId);
+
+  @override
+  Future<void> clearChatMessages(int chatId) =>
+      _chatService.clearChatMessages(chatId);
+
+  @override
   Future<void> deleteChat(int chatId) => _chatService.deleteChat(chatId);
 
   @override

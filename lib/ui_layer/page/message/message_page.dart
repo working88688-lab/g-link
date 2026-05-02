@@ -8,6 +8,7 @@ import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
+import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
 import 'widgets/recommend_users_widget.dart';
 import '../../widgets/overlay_menu_button.dart';
 
@@ -197,7 +198,7 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   void _pin(int id) {
-    final idx = _items.indexWhere((e) => e.id == id);
+    final idx = _items.indexWhere((e) => e.chatId == id);
     if (idx < 0) return;
     final item = _items[idx];
     final newPinned = !item.isPinned;
@@ -211,7 +212,7 @@ class _MessagePageState extends State<MessagePage> {
       // 失败回滚
       if (!mounted) return;
       setState(() {
-        final rollbackIdx = _items.indexWhere((e) => e.id == id);
+        final rollbackIdx = _items.indexWhere((e) => e.chatId == id);
         if (rollbackIdx < 0) return;
         _items[rollbackIdx] = _items[rollbackIdx].copyWith(isPinned: item.isPinned);
       });
@@ -219,7 +220,7 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   void _mute(int id) {
-    final idx = _items.indexWhere((e) => e.id == id);
+    final idx = _items.indexWhere((e) => e.chatId == id);
     if (idx < 0) return;
     final item = _items[idx];
     final newMuted = !item.isMuted;
@@ -229,24 +230,35 @@ class _MessagePageState extends State<MessagePage> {
       // 失败回滚
       if (!mounted) return;
       setState(() {
-        final rollbackIdx = _items.indexWhere((e) => e.id == id);
+        final rollbackIdx = _items.indexWhere((e) => e.chatId == id);
         if (rollbackIdx < 0) return;
         _items[rollbackIdx] = _items[rollbackIdx].copyWith(isMuted: item.isMuted);
       });
     });
   }
 
-  void _delete(int id) {
-    final idx = _items.indexWhere((e) => e.id == id);
+  Future<void> _delete(int id) async {
+    final idx = _items.indexWhere((e) => e.chatId == id);
     if (idx < 0) return;
     final item = _items[idx];
-    // 乐观更新 UI
-    setState(() => _items.removeWhere((e) => e.id == id));
-    context.read<AppDomain>().deleteChat(item.chatId).catchError((_) {
-      // 失败回滚
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (_) => AppConfirmDialog(
+            title: 'chatDeleteConfirmTitle'.tr(),
+            content: 'chatDeleteConfirmContent'.tr(),
+            cancelText: 'commonCancel'.tr(),
+            confirmText: 'commonConfirm'.tr(),
+          ),
+        ) ??
+        false;
+    if (!ok) return;
+    setState(() => _items.removeWhere((e) => e.chatId == id));
+    try {
+      await context.read<AppDomain>().deleteChat(item.chatId);
+    } catch (_) {
       if (!mounted) return;
       setState(() => _items.insert(idx, item));
-    });
+    }
   }
 
   @override
@@ -406,9 +418,9 @@ class _MessagePageState extends State<MessagePage> {
               avatarUrl: item.avatarUrl,
               uid: item.id,
             ).push(context),
-            onPin: () => _pin(item.id),
-            onMute: () => _mute(item.id),
-            onDelete: () => _delete(item.id),
+            onPin: () => _pin(item.chatId),
+            onMute: () => _mute(item.chatId),
+            onDelete: () => _delete(item.chatId),
           );
         },
       ),

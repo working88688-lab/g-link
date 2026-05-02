@@ -30,6 +30,12 @@ abstract class ChatDomain {
   Future<MessageSearchResult> searchMessages(
       {required String q, int limit = 10});
 
+  /// 标记会话消息为已读。
+  Future<void> markChatRead(int chatId);
+
+  /// 清空某个会话的所有可见消息。
+  Future<void> clearChatMessages(int chatId);
+
   /// 删除会话（仅对当前用户生效）
   Future<void> deleteChat(int chatId);
 

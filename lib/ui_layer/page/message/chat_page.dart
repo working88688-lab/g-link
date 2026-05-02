@@ -6,6 +6,7 @@ import 'package:g_link/domain/model/chat_model.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:provider/provider.dart';
 import '../../../domain/domains/profile.dart';
+import '../../../ui_layer/widgets/app_confirm_dialog.dart';
 import '../../image_paths.dart';
 import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
@@ -71,6 +72,10 @@ class _ChatPageState extends State<ChatPage> {
   final List<ChatMessageItem> _messages = [];
   int? _currentUserId;
 
+  String? get nikeName => widget.name.isNotEmpty ? widget.name : _session?.name;
+
+  String? get avatarUrl => _session?.avatarUrl.isNotEmpty == true ? _session!.avatarUrl : widget.avatarUrl;
+
   @override
   void initState() {
     super.initState();
@@ -118,6 +123,7 @@ class _ChatPageState extends State<ChatPage> {
         _isLoadingSession = false;
       });
       await _loadMessages(refresh: true);
+      await context.read<ChatDomain>().markChatRead(session.chatId);
     } catch (err) {
       if (!mounted) return;
       setState(() {
@@ -170,7 +176,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _scrollToBottom() async {
     await WidgetsBinding.instance.endOfFrame;
     if (!_scrollCtrl.hasClients) return;
-    _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+    _scrollCtrl.jumpTo(_scrollCtrl.position.minScrollExtent);
   }
 
   Future<void> _sendMessage() async {
@@ -239,7 +245,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildBody() {
-    if (_isLoadingSession||_currentUserId==null) {
+    if (_isLoadingSession || _currentUserId == null) {
       return const Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,
@@ -261,8 +267,8 @@ class _ChatPageState extends State<ChatPage> {
 
   // ── 顶部栏 ───────────────────────────────
   Widget _buildTopBar() {
-    final displayName = widget.name;
-    final displayAvatar = _session?.avatarUrl.isNotEmpty == true ? _session!.avatarUrl : widget.avatarUrl;
+    final displayName = nikeName;
+    final displayAvatar = avatarUrl;
     return Container(
       height: 56.w,
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -294,7 +300,7 @@ class _ChatPageState extends State<ChatPage> {
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              displayName,
+              displayName??"",
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -306,19 +312,56 @@ class _ChatPageState extends State<ChatPage> {
           OverlayMenuButton(
             items: [
               OverlayMenuItem(
-                  value: 'search',
-                  icon: MyImagePaths.iconChatSearch,
-                  label: 'chatMenuSearch'.tr(),
-                  onTap: () => const ChatRecordsSearchRoute().push(context)),
-              OverlayMenuItem(value: 'unpin', icon: MyImagePaths.iconChatUnpin, label: 'chatActionUnpin'.tr()),
-              OverlayMenuItem(value: 'unmute', icon: MyImagePaths.iconChatUnmute, label: 'chatActionUnmute'.tr()),
-              OverlayMenuItem(value: 'clear', icon: MyImagePaths.iconChatClearRecord, label: 'chatMenuClearChat'.tr()),
+                value: 'search',
+                icon: MyImagePaths.iconChatSearch,
+                label: 'chatMenuSearch'.tr(),
+                onTap: () => const ChatRecordsSearchRoute().push(context),
+              ),
+              if (_session?.isPinned == true)
+                OverlayMenuItem(
+                  value: 'unpin',
+                  icon: MyImagePaths.iconChatUnpin,
+                  label: 'chatActionUnpin'.tr(),
+                ),
+              if (_session?.isMuted == true)
+                OverlayMenuItem(
+                  value: 'unmute',
+                  icon: MyImagePaths.iconChatUnmute,
+                  label: 'chatActionUnmute'.tr(),
+                ),
               OverlayMenuItem(
-                  value: 'report',
-                  icon: MyImagePaths.iconChatReport,
-                  label: 'chatMenuReport'.tr(),
-                  color: const Color(0xFFFF2056),
-                  onTap: () => const ComplaintRoute().push(context)),
+                value: 'clear',
+                icon: MyImagePaths.iconChatClearRecord,
+                label: 'chatMenuClearChat'.tr(),
+                onTap: _session == null
+                    ? null
+                    : () {
+                        AppConfirmDialog.show(
+                          context: context,
+                          title: 'chatMenuClearChat'.tr(),
+                          content: 'chatClearConfirmContent'.tr(),
+                          confirmText: 'commonConfirm'.tr(),
+                          cancelText: 'commonCancel'.tr(),
+                          onConfirm: () async {
+                            if (_session == null) return;
+                            await context.read<ChatDomain>().clearChatMessages(_session!.chatId);
+                            if (!mounted) return;
+                            setState(() {
+                              _messages.clear();
+                              _nextCursor = null;
+                              _hasMore = false;
+                            });
+                          },
+                        );
+                      },
+              ),
+              OverlayMenuItem(
+                value: 'report',
+                icon: MyImagePaths.iconChatReport,
+                label: 'chatMenuReport'.tr(),
+                color: const Color(0xFFFF2056),
+                onTap: () => const ComplaintRoute().push(context),
+              ),
             ],
             child: MyImage.asset(
               MyImagePaths.iconChatMore,

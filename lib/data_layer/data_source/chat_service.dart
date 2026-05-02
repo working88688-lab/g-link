@@ -99,6 +99,14 @@ class ChatService {
     return (contacts: contacts, messages: messages);
   }
 
+  Future<void> markChatRead(int chatId) async {
+    await _dio.post('/api/v1/chats/$chatId/mark-read');
+  }
+
+  Future<void> clearChatMessages(int chatId) async {
+    await _dio.delete('/api/v1/chats/$chatId/messages');
+  }
+
   Future<void> deleteChat(int chatId) async {
     await _dio.delete('/api/v1/chats/$chatId');
   }

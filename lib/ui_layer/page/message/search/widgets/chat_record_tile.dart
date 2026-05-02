@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/ui_layer/page/message/search/models/search_models.dart';
 
+import '../../../../router/routes.dart';
+
 /// 聊天记录搜索结果 — 列表项
 /// - 有 [extraCount] 时显示 "N 条相关聊天记录"，可点击钻取详情
 /// - 无 [extraCount] 时直接高亮显示消息预览
@@ -20,7 +22,17 @@ class ChatRecordTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: (){
+        if(onTap != null) {
+          onTap!();
+          return;
+        }
+        ChatConversationRoute(
+          name: item.name,
+          avatarUrl:"",// item.avatarUrl,
+          uid: item.senderUid!,
+        ).push(context);
+      },
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 10.w),
         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF1A1F2C).withOpacity(.05)))),

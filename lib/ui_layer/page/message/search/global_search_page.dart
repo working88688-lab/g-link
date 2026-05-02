@@ -5,6 +5,7 @@ import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
+import '../../../router/routes.dart';
 import 'models/search_models.dart';
 import 'widgets/chat_record_tile.dart';
 
@@ -67,8 +68,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
 
   void _addHistory(String kw) {
     if (kw.isEmpty) return;
-    final list =
-        [kw, ..._history.where((e) => e != kw)].take(_maxHistory).toList();
+    final list = [kw, ..._history.where((e) => e != kw)].take(_maxHistory).toList();
     setState(() {
       _history
         ..clear()
@@ -79,10 +79,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
 
   void _removeHistory(String tag) {
     setState(() => _history.remove(tag));
-    context
-        .read<AppDomain>()
-        .cache
-        .upsertSearchHistory(searchHistory: List.of(_history));
+    context.read<AppDomain>().cache.upsertSearchHistory(searchHistory: List.of(_history));
   }
 
   void _clearHistory() {
@@ -95,15 +92,11 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     if (keyword.isEmpty || !mounted) return;
     setState(() => _isLoading = true);
     try {
-      final result =
-          await context.read<AppDomain>().searchMessages(q: keyword, limit: 10);
+      final result = await context.read<AppDomain>().searchMessages(q: keyword, limit: 10);
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoading = false;
-        _contacts = result.contacts
-            .map((c) =>
-                ContactItem(c.nickname, uid: c.uid, avatarUrl: c.avatarUrl))
-            .toList();
+        _contacts = result.contacts.map((c) => ContactItem(c.nickname, uid: c.uid, avatarUrl: c.avatarUrl)).toList();
         _chatRecords = result.messages
             .map((m) => ChatRecordItem(
                   msgId: m.msgId,
@@ -111,6 +104,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
                   name: '',
                   preview: m.content,
                   createdAt: m.createdAt,
+                  senderUid: m.senderUid,
                 ))
             .toList();
       });
@@ -195,6 +189,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
             _ctrl.text = tag;
             _addHistory(tag);
             _onChanged(tag);
+            _onSubmitted(tag);
           },
           onRemove: _removeHistory,
           onClear: _clearHistory,
@@ -212,10 +207,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           children: [
             _ContactsSection(query: _query, items: _contacts),
-            _ChatRecordsSection(
-                query: _query,
-                items: _chatRecords,
-                onEnterContact: _enterChatDetail),
+            _ChatRecordsSection(query: _query, items: _chatRecords, onEnterContact: _enterChatDetail),
             SizedBox(height: 24.w),
           ],
         );
@@ -258,18 +250,12 @@ class _HistoryView extends StatelessWidget {
           Row(
             children: [
               Text('searchHistoryTitle'.tr(),
-                  style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF0F172B))),
+                  style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500, color: const Color(0xFF0F172B))),
               const Spacer(),
               GestureDetector(
                 onTap: onClear,
                 child: Text('searchHistoryClear'.tr(),
-                    style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF62748E))),
+                    style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500, color: const Color(0xFF62748E))),
               ),
             ],
           ),
@@ -296,8 +282,7 @@ class _HistoryChip extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
-  const _HistoryChip(
-      {required this.label, required this.onTap, required this.onRemove});
+  const _HistoryChip({required this.label, required this.onTap, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -316,10 +301,7 @@ class _HistoryChip extends StatelessWidget {
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: 200.w),
               child: Text(label,
-                  style: TextStyle(
-                      height: 0,
-                      fontSize: 12.sp,
-                      color: const Color(0xFF1A1F2C)),
+                  style: TextStyle(height: 0, fontSize: 12.sp, color: const Color(0xFF1A1F2C)),
                   overflow: TextOverflow.ellipsis),
             ),
             SizedBox(width: 4.w),
@@ -351,40 +333,43 @@ class _ContactsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SearchSectionHeader(title: 'searchSectionContacts'.tr()),
-        ...items.map((c) => _ContactTile(name: c.name, keyword: query)),
+        ...items.map((c) => _ContactTile(
+              user: c,
+              keyword: query,
+            )),
       ],
     );
   }
 }
 
 class _ContactTile extends StatelessWidget {
-  final String name;
   final String keyword;
+  final ContactItem user;
 
-  const _ContactTile({required this.name, required this.keyword});
+  const _ContactTile({required this.keyword, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10.w),
-      decoration: BoxDecoration(
-          border: Border(
-              bottom: BorderSide(
-                  color: const Color(0xFF1A1F2C).withOpacity(0.05)))),
-      child: Row(
-        children: [
-          searchAvatar(),
-          SizedBox(width: 8.w),
-          highlight(name, keyword,
-              base: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF1A1F2C)),
-              hl: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF00C67E))),
-        ],
+    return GestureDetector(
+      onTap: () {
+        ChatConversationRoute(
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+          uid: user.uid,
+        ).push(context);
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10.w),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: const Color(0xFF1A1F2C).withOpacity(0.05)))),
+        child: Row(
+          children: [
+            searchAvatar(avatarUrl: user.avatarUrl),
+            SizedBox(width: 8.w),
+            highlight(user.name, keyword,
+                base: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1A1F2C)),
+                hl: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF00C67E))),
+          ],
+        ),
       ),
     );
   }
@@ -399,8 +384,7 @@ class _ChatRecordsSection extends StatelessWidget {
   final List<ChatRecordItem> items;
   final ValueChanged<String>? onEnterContact;
 
-  const _ChatRecordsSection(
-      {required this.query, required this.items, this.onEnterContact});
+  const _ChatRecordsSection({required this.query, required this.items, this.onEnterContact});
 
   @override
   Widget build(BuildContext context) {
@@ -412,9 +396,7 @@ class _ChatRecordsSection extends StatelessWidget {
         ...items.map((r) => ChatRecordTile(
               item: r,
               keyword: query,
-              onTap: r.extraCount != null
-                  ? () => onEnterContact?.call(r.name)
-                  : null,
+              onTap: r.extraCount != null ? () => onEnterContact?.call(r.name) : null,
             )),
       ],
     );
@@ -430,8 +412,7 @@ class _ChatDetailSection extends StatefulWidget {
   final String query;
   final VoidCallback? onBack;
 
-  const _ChatDetailSection(
-      {required this.contactName, required this.query, this.onBack});
+  const _ChatDetailSection({required this.contactName, required this.query, this.onBack});
 
   @override
   State<_ChatDetailSection> createState() => _ChatDetailSectionState();
@@ -475,8 +456,7 @@ class _ChatDetailSectionState extends State<_ChatDetailSection> {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       children: [
         SizedBox(height: 8.w),
-        ..._records
-            .map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
+        ..._records.map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
         SizedBox(height: 24.w),
       ],
     );

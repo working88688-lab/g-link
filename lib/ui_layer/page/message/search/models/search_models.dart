@@ -33,6 +33,7 @@ class ChatRecordItem {
   final String preview;
   final String createdAt;
   final int? extraCount;
+  final int? senderUid;
 
   const ChatRecordItem({
     this.msgId = 0,
@@ -41,6 +42,7 @@ class ChatRecordItem {
     required this.preview,
     this.createdAt = '',
     this.extraCount,
+    this.senderUid
   });
 }
 
@@ -98,15 +100,23 @@ Widget highlight(
   return RichText(text: TextSpan(children: spans));
 }
 
-Widget searchAvatar({double? size}) => Container(
-      width: size ?? 32.w,
-      height: size ?? 32.w,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size ?? 32.w),
-        color: const Color(0xFFD1D1D6),
-      ),
-      child: Icon(Icons.person, size: 22.sp, color: Colors.white),
-    );
+Widget searchAvatar({double? size, String? avatarUrl}) {
+  final s = size ?? 32.w;
+  return Container(
+    width: s,
+    height: s,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(s),
+      color: const Color(0xFFD1D1D6),
+    ),
+    child: (avatarUrl == null || avatarUrl.isEmpty)
+        ? Icon(Icons.person, size: 22.sp, color: Colors.white)
+        : ClipRRect(
+            borderRadius: BorderRadius.circular(s),
+            child: Image.network(avatarUrl, fit: BoxFit.cover),
+          ),
+  );
+}
 
 class SearchSectionHeader extends StatelessWidget {
   final String title;

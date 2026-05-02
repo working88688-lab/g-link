@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -17,8 +18,8 @@ class AppConfirmDialog extends StatelessWidget {
     super.key,
     required this.title,
     this.content,
-    this.cancelText = '取消',
-    this.confirmText = '确定',
+    this.cancelText,
+    this.confirmText,
     this.cancelTextColor = const Color(0xFF1A1F2C),
     this.confirmTextColor = const Color(0xFFFF2056),
     this.showCancel = true,
@@ -28,8 +29,8 @@ class AppConfirmDialog extends StatelessWidget {
 
   final String title;
   final String? content;
-  final String cancelText;
-  final String confirmText;
+  final String? cancelText;
+  final String? confirmText;
   final Color cancelTextColor;
   final Color confirmTextColor;
   final bool showCancel;
@@ -41,8 +42,8 @@ class AppConfirmDialog extends StatelessWidget {
     required BuildContext context,
     required String title,
     String? content,
-    String cancelText = '取消',
-    String confirmText = '确定',
+    String? cancelText,
+    String? confirmText,
     Color cancelTextColor = const Color(0xFF1A1F2C),
     Color confirmTextColor = const Color(0xFFFF2056),
     bool showCancel = true,
@@ -127,7 +128,7 @@ class AppConfirmDialog extends StatelessWidget {
                       // 取消
                       Expanded(
                         child: _ActionButton(
-                          text: cancelText,
+                          text: cancelText ?? 'commonCancel'.tr(),
                           textColor: cancelTextColor,
                           onTap: () {
                             Navigator.of(context).pop();
@@ -140,7 +141,7 @@ class AppConfirmDialog extends StatelessWidget {
                       // 确认
                       Expanded(
                         child: _ActionButton(
-                          text: confirmText,
+                          text: confirmText ?? 'commonConfirm'.tr(),
                           textColor: confirmTextColor,
                           onTap: () {
                             Navigator.of(context).pop();
@@ -151,7 +152,7 @@ class AppConfirmDialog extends StatelessWidget {
                     ],
                   )
                 : _ActionButton(
-                    text: confirmText,
+                    text: confirmText ?? 'commonConfirm'.tr(),
                     textColor: confirmTextColor,
                     onTap: () {
                       Navigator.of(context).pop();
