@@ -8,6 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/data_layer/repo/repo.dart';
 import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/domains/chat.dart';
 import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/domain/domains/profile.dart';
@@ -63,6 +64,7 @@ void main() async {
         Provider<ReportDomain>(lazy: false, create: (_) => appRepo),
         Provider<AuthDomain>(lazy: false, create: (_) => appRepo),
         Provider<SearchDomain>(lazy: false, create: (_) => appRepo),
+        Provider<ChatDomain>(lazy: false, create: (_) => appRepo),
         ChangeNotifierProvider(create: (_) => HomeConfigNotifier(appRepo)),
         ChangeNotifierProvider(create: (_) => UserNotifier(appRepo)),
         ChangeNotifierProvider(create: (_) => GuidePageNotifier()),
@@ -126,7 +128,7 @@ class _MyAppState extends State<MyApp> {
         highlightColor: Colors.transparent,
         textSelectionTheme: TextSelectionThemeData(
           cursorColor: MyTheme.cyanColor00edfd,
-          selectionColor: MyTheme.cyanColor00edfd.withOpacity(0.5),
+          selectionColor: MyTheme.cyanColor00edfd.withValues(alpha: 0.5),
           selectionHandleColor: MyTheme.cyanColor00edfd,
         ),
         inputDecorationTheme: InputDecorationTheme(

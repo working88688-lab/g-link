@@ -17,7 +17,7 @@ import '../../widgets/overlay_menu_button.dart';
 enum ReadStatus { unread, sent, delivered }
 
 class _MsgItem {
-  final String id;
+  final int id;
   final int chatId;
   final String name;
   final String avatarUrl;
@@ -64,7 +64,7 @@ class _MsgItem {
 
   factory _MsgItem.fromChatItem(ChatItem c) {
     return _MsgItem(
-      id: c.id.toString(),
+      id: c.id,
       chatId: c.chatId,
       name: c.name,
       avatarUrl: c.avatarUrl,
@@ -118,10 +118,15 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> {
   final _searchCtrl = TextEditingController();
-  final _openIdNotifier = ValueNotifier<String?>(null);
+  final _openIdNotifier = ValueNotifier<int?>(null);
+  final _scrollCtrl = ScrollController();
 
   List<_MsgItem> _items = [];
   bool _isLoading = true;
+  bool _isRefreshing = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  String? _nextCursor;
 
   late final _menuItems = [
     OverlayMenuItem(
@@ -135,26 +140,63 @@ class _MessagePageState extends State<MessagePage> {
   @override
   void initState() {
     super.initState();
-    _loadChats();
+    _scrollCtrl.addListener(_onScroll);
+    _loadChats(refresh: true);
   }
 
-  Future<void> _loadChats() async {
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    if (_isLoadingMore || !_hasMore) return;
+    if (_scrollCtrl.position.extentAfter < 220) {
+      _loadChats(loadMore: true);
+    }
+  }
+
+  Future<void> _loadChats({bool refresh = false, bool loadMore = false}) async {
+    if (refresh) {
+      setState(() {
+        _isLoading = true;
+        _isRefreshing = true;
+        _nextCursor = null;
+        _hasMore = false;
+      });
+    } else if (loadMore) {
+      if (_isLoadingMore || !_hasMore) return;
+      setState(() {
+        _isLoadingMore = true;
+      });
+    }
+
     try {
-      final result = await context.read<AppDomain>().fetchChats();
+      final result = await context.read<AppDomain>().fetchChats(
+            cursor: loadMore ? _nextCursor : null,
+          );
       if (!mounted) return;
       setState(() {
-        _items = result.items.map(_MsgItem.fromChatItem).toList();
+        if (refresh) {
+          _items = result.items.map(_MsgItem.fromChatItem).toList();
+        } else if (loadMore) {
+          _items = [..._items, ...result.items.map(_MsgItem.fromChatItem)];
+        } else {
+          _items = result.items.map(_MsgItem.fromChatItem).toList();
+        }
+        _nextCursor = result.nextCursor;
+        _hasMore = result.hasMore;
         _isLoading = false;
+        _isRefreshing = false;
+        _isLoadingMore = false;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
+        _isRefreshing = false;
+        _isLoadingMore = false;
       });
     }
   }
 
-  void _pin(String id) {
+  void _pin(int id) {
     final idx = _items.indexWhere((e) => e.id == id);
     if (idx < 0) return;
     final item = _items[idx];
@@ -165,44 +207,36 @@ class _MessagePageState extends State<MessagePage> {
       _items.removeAt(idx);
       _items.insert(0, updated);
     });
-    context
-        .read<AppDomain>()
-        .togglePin(item.chatId, isPinned: item.isPinned)
-        .catchError((_) {
+    context.read<AppDomain>().togglePin(item.chatId, isPinned: item.isPinned).catchError((_) {
       // 失败回滚
       if (!mounted) return;
       setState(() {
         final rollbackIdx = _items.indexWhere((e) => e.id == id);
         if (rollbackIdx < 0) return;
-        _items[rollbackIdx] =
-            _items[rollbackIdx].copyWith(isPinned: item.isPinned);
+        _items[rollbackIdx] = _items[rollbackIdx].copyWith(isPinned: item.isPinned);
       });
     });
   }
 
-  void _mute(String id) {
+  void _mute(int id) {
     final idx = _items.indexWhere((e) => e.id == id);
     if (idx < 0) return;
     final item = _items[idx];
     final newMuted = !item.isMuted;
     // 乐观更新 UI
     setState(() => _items[idx] = item.copyWith(isMuted: newMuted));
-    context
-        .read<AppDomain>()
-        .toggleMute(item.chatId, isMuted: item.isMuted)
-        .catchError((_) {
+    context.read<AppDomain>().toggleMute(item.chatId, isMuted: item.isMuted).catchError((_) {
       // 失败回滚
       if (!mounted) return;
       setState(() {
         final rollbackIdx = _items.indexWhere((e) => e.id == id);
         if (rollbackIdx < 0) return;
-        _items[rollbackIdx] =
-            _items[rollbackIdx].copyWith(isMuted: item.isMuted);
+        _items[rollbackIdx] = _items[rollbackIdx].copyWith(isMuted: item.isMuted);
       });
     });
   }
 
-  void _delete(String id) {
+  void _delete(int id) {
     final idx = _items.indexWhere((e) => e.id == id);
     if (idx < 0) return;
     final item = _items[idx];
@@ -217,6 +251,8 @@ class _MessagePageState extends State<MessagePage> {
 
   @override
   void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
     _searchCtrl.dispose();
     _openIdNotifier.dispose();
     super.dispose();
@@ -281,8 +317,7 @@ class _MessagePageState extends State<MessagePage> {
     return GestureDetector(
       onTap: () => const GlobalSearchRoute().push(context),
       child: Padding(
-        padding:
-            EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
+        padding: EdgeInsets.only(left: 16.w, right: 16.w, top: 12.w, bottom: 5.w),
         child: Container(
           height: 46.w,
           decoration: BoxDecoration(
@@ -298,10 +333,7 @@ class _MessagePageState extends State<MessagePage> {
                 contentPadding: EdgeInsets.symmetric(vertical: 11.w),
                 prefixIcon: Stack(
                   alignment: Alignment.center,
-                  children: [
-                    MyImage.asset(MyImagePaths.iconSearch,
-                        width: 24.w, height: 24.w)
-                  ],
+                  children: [MyImage.asset(MyImagePaths.iconSearch, width: 24.w, height: 24.w)],
                 ),
                 hintText: 'messageSearchHint'.tr(),
                 hintStyle: TextStyle(
@@ -342,23 +374,43 @@ class _MessagePageState extends State<MessagePage> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_items.isEmpty) return _buildEmpty();
-    // return _buildEmpty();
-    return ListView.builder(
-      padding: EdgeInsets.only(top: 8.w),
-      itemCount: _items.length,
-      itemBuilder: (ctx, i) => _SwipeableTile(
-        key: ValueKey(_items[i].id),
-        item: _items[i],
-        openIdNotifier: _openIdNotifier,
-        onInteract: () {},
-        onTap: () => ChatConversationRoute(
-          name: _items[i].name,
-          avatarUrl: _items[i].avatarUrl,
-          isOnline: _items[i].isOnline,
-        ).push(context),
-        onPin: () => _pin(_items[i].id),
-        onMute: () => _mute(_items[i].id),
-        onDelete: () => _delete(_items[i].id),
+
+    return RefreshIndicator(
+      color: const Color(0xFF00C67E),
+      onRefresh: () => _loadChats(refresh: true),
+      child: ListView.builder(
+        controller: _scrollCtrl,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(top: 8.w),
+        itemCount: _items.length + (_isLoadingMore ? 1 : 0),
+        itemBuilder: (ctx, i) {
+          if (_isLoadingMore && i == _items.length) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.w),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF00C67E),
+                  strokeWidth: 2,
+                ),
+              ),
+            );
+          }
+          final item = _items[i];
+          return _SwipeableTile(
+            key: ValueKey(item.id),
+            item: item,
+            openIdNotifier: _openIdNotifier,
+            onInteract: () {},
+            onTap: () => ChatConversationRoute(
+              name: item.name,
+              avatarUrl: item.avatarUrl,
+              uid: item.id,
+            ).push(context),
+            onPin: () => _pin(item.id),
+            onMute: () => _mute(item.id),
+            onDelete: () => _delete(item.id),
+          );
+        },
       ),
     );
   }
@@ -369,7 +421,7 @@ class _MessagePageState extends State<MessagePage> {
 // ──────────────────────────────────────────
 class _SwipeableTile extends StatefulWidget {
   final _MsgItem item;
-  final ValueNotifier<String?> openIdNotifier;
+  final ValueNotifier<int?> openIdNotifier;
   final VoidCallback onInteract;
   final VoidCallback onTap;
   final VoidCallback onPin;
@@ -391,8 +443,7 @@ class _SwipeableTile extends StatefulWidget {
   State<_SwipeableTile> createState() => _SwipeableTileState();
 }
 
-class _SwipeableTileState extends State<_SwipeableTile>
-    with SingleTickerProviderStateMixin {
+class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   double _dragOffset = 0;
 
@@ -520,11 +571,7 @@ class _ActionBtn extends StatelessWidget {
   final VoidCallback onTap;
   final Color textColor;
 
-  const _ActionBtn(
-      {required this.label,
-      required this.color,
-      required this.onTap,
-      required this.textColor});
+  const _ActionBtn({required this.label, required this.color, required this.onTap, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -572,9 +619,7 @@ class _MsgTile extends StatelessWidget {
               bottom: 16.w,
             ),
             decoration: BoxDecoration(
-              border: Border(
-                  bottom:
-                      BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
+              border: Border(bottom: BorderSide(color: const Color(0xFFF8F9FE), width: 1.w)),
             ),
             child: Row(
               children: [
@@ -606,7 +651,10 @@ class _MsgTile extends StatelessWidget {
           ),
           child: item.avatarUrl.isEmpty
               ? Icon(Icons.person, size: 28.sp, color: Colors.white)
-              : null,
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Image.network(item.avatarUrl, fit: BoxFit.cover),
+                ),
         ),
         if (item.isOnline)
           Positioned(
@@ -643,8 +691,7 @@ class _MsgTile extends StatelessWidget {
             ),
             if (item.isMuted) ...[
               SizedBox(width: 4.w),
-              MyImage.asset(MyImagePaths.iconVolumeOff,
-                  width: 16.w, height: 16.w),
+              MyImage.asset(MyImagePaths.iconVolumeOff, width: 16.w, height: 16.w),
             ],
           ],
         ),
@@ -672,14 +719,9 @@ class _MsgTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (item.readStatus == ReadStatus.sent ||
-                item.readStatus == ReadStatus.delivered)
-              MyImage.asset(
-                  item.readStatus == ReadStatus.sent
-                      ? MyImagePaths.iconCheck
-                      : MyImagePaths.iconDoneAll,
-                  width: 14.w,
-                  height: 14.w),
+            if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
+              MyImage.asset(item.readStatus == ReadStatus.sent ? MyImagePaths.iconCheck : MyImagePaths.iconDoneAll,
+                  width: 14.w, height: 14.w),
             SizedBox(width: 2.w),
             Container(
               width: 40.w,
@@ -707,9 +749,7 @@ class _MsgTile extends StatelessWidget {
                     constraints: BoxConstraints(minWidth: 18.w),
                     height: 18.w,
                     decoration: BoxDecoration(
-                      color: item.isMuted
-                          ? const Color(0xFF90A1B9)
-                          : const Color(0xFFFF2056),
+                      color: item.isMuted ? const Color(0xFF90A1B9) : const Color(0xFFFF2056),
                       borderRadius: BorderRadius.circular(15.r),
                     ),
                     alignment: Alignment.center,

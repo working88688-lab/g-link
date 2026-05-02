@@ -471,9 +471,7 @@ extension $ChatConversationRouteExtension on ChatConversationRoute {
       ChatConversationRoute(
         name: state.uri.queryParameters['name']!,
         avatarUrl: state.uri.queryParameters['avatar-url'] ?? '',
-        isOnline: _$convertMapValue(
-                'is-online', state.uri.queryParameters, _$boolConverter) ??
-            false,
+        uid: int.parse(state.uri.queryParameters['uid']??"0"),
       );
 
   String get location => GoRouteData.$location(
@@ -481,7 +479,7 @@ extension $ChatConversationRouteExtension on ChatConversationRoute {
         queryParams: {
           'name': name,
           if (avatarUrl != '') 'avatar-url': avatarUrl,
-          if (isOnline != false) 'is-online': isOnline.toString(),
+          'uid': uid.toString(),
         },
       );
 

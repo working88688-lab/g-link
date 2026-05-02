@@ -2,10 +2,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/search.dart';
-import 'package:g_link/domain/model/search_models.dart';
-import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/page/message/widgets/recommend_users_widget.dart';
-import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';
 import 'models/search_models.dart';
@@ -25,19 +23,25 @@ class UserSearchPage extends StatefulWidget {
 class _UserSearchPageState extends State<UserSearchPage> {
   final _ctrl = TextEditingController();
   final _focusNode = FocusNode();
+  final _scrollController = ScrollController();
 
   String _query = '';
 
   // ── 搜索结果 ──────────────────────────
   bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
   List<UserItem> _users = [];
   String? _error;
+  String? _nextCursor;
+  String? _loadingKeyword;
 
   bool _showRecommend = true;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -45,9 +49,20 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _ctrl.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients || _query.isEmpty) return;
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+    final position = _scrollController.position;
+    if (position.extentAfter < 220) {
+      _loadMore();
+    }
   }
 
   void _onChanged(String val) {
@@ -57,6 +72,10 @@ class _UserSearchPageState extends State<UserSearchPage> {
       if (kw.isEmpty) {
         _users = [];
         _isLoading = false;
+        _isLoadingMore = false;
+        _hasMore = false;
+        _nextCursor = null;
+        _loadingKeyword = null;
         _error = null;
       }
     });
@@ -64,21 +83,31 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
   void _onSubmitted(String val) {
     final kw = val.trim();
-    if (kw.isNotEmpty) _search(kw);
+    if (kw.isNotEmpty) _search(kw, refresh: true);
   }
 
-  Future<void> _search(String keyword) async {
+  Future<void> _search(String keyword, {bool refresh = false}) async {
     if (keyword.isEmpty || !mounted) return;
+    if (_isLoadingMore) return;
     setState(() {
       _isLoading = true;
       _error = null;
+      if (refresh) {
+        _users = [];
+        _nextCursor = null;
+        _hasMore = false;
+      }
     });
     try {
-      final result =
-          await context.read<SearchDomain>().searchUsers(q: keyword, limit: 20);
+      final result = await context.read<SearchDomain>().searchUsers(
+            q: keyword,
+            cursor: null,
+            limit: 20,
+          );
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoading = false;
+        _loadingKeyword = keyword;
         _users = result.items
             .map((e) => UserItem(
                   uid: e.uid,
@@ -88,6 +117,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
                   followerCount: e.followerCount,
                 ))
             .toList();
+        _nextCursor = result.nextCursor;
+        _hasMore = result.hasMore;
       });
     } catch (_) {
       if (!mounted || _query != keyword) return;
@@ -96,6 +127,53 @@ class _UserSearchPageState extends State<UserSearchPage> {
         _error = 'userSearchFailed'.tr();
       });
     }
+  }
+
+  Future<void> _loadMore() async {
+    final keyword = _loadingKeyword ?? _query;
+    if (keyword.isEmpty || _nextCursor == null) return;
+    if (_isLoading || _isLoadingMore || !_hasMore) return;
+
+    setState(() {
+      _isLoadingMore = true;
+      _error = null;
+    });
+
+    try {
+      final result = await context.read<SearchDomain>().searchUsers(
+            q: keyword,
+            cursor: _nextCursor,
+            limit: 20,
+          );
+      if (!mounted || _query != keyword) return;
+      setState(() {
+        _isLoadingMore = false;
+        _users = [
+          ..._users,
+          ...result.items.map((e) => UserItem(
+                uid: e.uid,
+                username: e.username,
+                nickname: e.nickname,
+                avatarUrl: e.avatarUrl,
+                followerCount: e.followerCount,
+              ))
+        ];
+        _nextCursor = result.nextCursor;
+        _hasMore = result.hasMore;
+      });
+    } catch (_) {
+      if (!mounted || _query != keyword) return;
+      setState(() {
+        _isLoadingMore = false;
+        _error = 'userSearchFailed'.tr();
+      });
+    }
+  }
+
+  Future<void> _refresh() async {
+    final keyword = _query.trim();
+    if (keyword.isEmpty) return;
+    await _search(keyword, refresh: true);
   }
 
   void _clearQuery() {
@@ -128,15 +206,15 @@ class _UserSearchPageState extends State<UserSearchPage> {
         child: Column(
           children: [
             SearchInputBar(
-              hintText: 'userSearchHint'.tr(),
-              controller: _ctrl,
-              focusNode: _focusNode,
-              query: _query,
-              onChanged: _onChanged,
-              onSubmitted: _onSubmitted,
-              onClear: _clearQuery,
-              showCancel: false,
-            ),
+                hintText: 'userSearchHint'.tr(),
+                controller: _ctrl,
+                focusNode: _focusNode,
+                query: _query,
+                onChanged: _onChanged,
+                onSubmitted: _onSubmitted,
+                onClear: _clearQuery,
+                showCancel: false,
+                radius: 10.r),
             Expanded(child: _buildResults()),
           ],
         ),
@@ -145,7 +223,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
   }
 
   Widget _buildResults() {
-    if (_query.isEmpty)
+    if (_query.isEmpty) {
       return SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
@@ -162,6 +240,55 @@ class _UserSearchPageState extends State<UserSearchPage> {
           ],
         ),
       );
+    }
+
+    return RefreshIndicator(
+      color: const Color(0xFF00C67E),
+      onRefresh: _refresh,
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        itemCount: _users.length + 1,
+        itemBuilder: (_, i) {
+          if (_users.isEmpty) {
+            return SizedBox(
+              height: 420.w,
+              child: _buildSearchState(),
+            );
+          }
+          if (i == _users.length) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.w),
+              child: Center(
+                child: _isLoadingMore
+                    ? SizedBox(
+                        width: 18.w,
+                        height: 18.w,
+                        child: const CircularProgressIndicator(
+                          color: Color(0xFF00C67E),
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : _hasMore
+                        ? Text(
+                            'commonPullUpLoadMore'.tr(),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF62748E),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+              ),
+            );
+          }
+          return _UserTile(user: _users[i], keyword: _query);
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchState() {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -172,20 +299,17 @@ class _UserSearchPageState extends State<UserSearchPage> {
     }
     if (_error != null) {
       return Center(
-        child: Text(_error!,
-            style: TextStyle(fontSize: 14.sp, color: const Color(0xFF62748E))),
+        child: Text(
+          _error!,
+          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF62748E)),
+        ),
       );
     }
-    if (_users.isEmpty) {
-      return Center(
-        child: Text('commonNoResults'.tr(),
-            style: TextStyle(fontSize: 14.sp, color: const Color(0xFF62748E))),
-      );
-    }
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      itemCount: _users.length,
-      itemBuilder: (_, i) => _UserTile(user: _users[i], keyword: _query),
+    return Center(
+      child: Text(
+        'commonNoResults'.tr(),
+        style: TextStyle(fontSize: 14.sp, color: const Color(0xFF62748E)),
+      ),
     );
   }
 }
@@ -210,8 +334,6 @@ class _UserTileState extends State<_UserTile> {
     final user = widget.user;
     return Container(
       margin: EdgeInsets.only(bottom: 10.w),
-      decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFF8F9FE)))),
       child: Column(
         children: [
           Row(
@@ -244,10 +366,7 @@ class _UserTileState extends State<_UserTile> {
                   padding:
                       EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),
                   decoration: BoxDecoration(
-                    color: user.isFollowing ? const Color(0xFF1A1F2C) : null,
-                    border: user.isFollowing
-                        ? null
-                        : Border.all(color: const Color(0xFFCCCCCC)),
+                    border: Border.all(color: const Color(0xFFCCCCCC)),
                     borderRadius: BorderRadius.circular(100.r),
                   ),
                   alignment: Alignment.center,
@@ -257,9 +376,7 @@ class _UserTileState extends State<_UserTile> {
                         : 'commonFollow'.tr(),
                     style: TextStyle(
                       fontSize: 13.sp,
-                      color: user.isFollowing
-                          ? Colors.white
-                          : const Color(0xFF1A1F2C),
+                      color: const Color(0xFF1A1F2C),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -267,7 +384,11 @@ class _UserTileState extends State<_UserTile> {
               ),
               SizedBox(width: 7.w),
               GestureDetector(
-                onTap: () {},
+                onTap: () => ChatConversationRoute(
+                  name: user.nickname,
+                  avatarUrl: user.avatarUrl,
+                  uid: user.uid,
+                ).push(context),
                 child: Container(
                   padding:
                       EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),

@@ -46,10 +46,23 @@ class _RecommendUsersWidgetState extends State<RecommendUsersWidget> {
   bool _isFollowing(RecommendedUser user) =>
       _followingOverride[user.uid] ?? user.isFollowing;
 
-  void _toggleFollow(RecommendedUser user) {
+  Future<void> _toggleFollow(RecommendedUser user) async {
+    final targetFollowing = !_isFollowing(user);
     setState(() {
-      _followingOverride[user.uid] = !_isFollowing(user);
+      _followingOverride[user.uid] = targetFollowing;
     });
+
+    final domain = context.read<ProfileDomain>();
+    final result = targetFollowing
+        ? await domain.followUser(uid: user.uid)
+        : await domain.unfollowUser(uid: user.uid);
+
+    if (!mounted) return;
+    if (result.status != 0) {
+      setState(() {
+        _followingOverride[user.uid] = !targetFollowing;
+      });
+    }
   }
 
   @override

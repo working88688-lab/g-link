@@ -1,10 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/chat.dart';
+import 'package:g_link/domain/model/chat_model.dart';
+import 'package:g_link/ui_layer/router/routes.dart';
+import 'package:provider/provider.dart';
+import '../../../domain/domains/profile.dart';
 import '../../image_paths.dart';
 import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
-import '../../router/routes.dart';
 
 // ──────────────────────────────────────────
 // 数据模型
@@ -37,15 +41,15 @@ class _ChatMsg {
 // 页面
 // ──────────────────────────────────────────
 class ChatPage extends StatefulWidget {
+  final int uid;
   final String name;
   final String avatarUrl;
-  final bool isOnline;
 
   const ChatPage({
     super.key,
+    required this.uid,
     required this.name,
-    this.avatarUrl = '',
-    this.isOnline = false,
+    required this.avatarUrl,
   });
 
   @override
@@ -58,64 +62,21 @@ class _ChatPageState extends State<ChatPage> {
   final _focusNode = FocusNode();
   bool _hasText = false;
   bool _showPanel = false;
-
-  final List<_ChatMsg> _msgs = [
-    const _ChatMsg(
-        id: '1',
-        content: '3月12日 12:23',
-        type: MsgType.text,
-        isMine: false,
-        time: '',
-        isRead: false),
-    const _ChatMsg(
-        id: '2',
-        content: 'nni你好啊，在吗，你在哪啊',
-        type: MsgType.text,
-        isMine: false,
-        time: '12:23'),
-    const _ChatMsg(
-        id: '3',
-        content: "It's going well. Thanks for asking!",
-        type: MsgType.text,
-        isMine: true,
-        time: '12:24'),
-    const _ChatMsg(
-        id: '4',
-        content: 'nni你好啊，在吗，你在哪啊',
-        type: MsgType.text,
-        isMine: false,
-        time: '12:25'),
-    const _ChatMsg(
-        id: '5',
-        content: '我在云南大理',
-        type: MsgType.text,
-        isMine: true,
-        time: '12:26'),
-    const _ChatMsg(
-        id: '6',
-        content: '',
-        type: MsgType.image,
-        isMine: false,
-        time: '12:27'),
-    const _ChatMsg(
-        id: '7',
-        content: '',
-        type: MsgType.video,
-        isMine: false,
-        time: '12:28',
-        duration: '09:23'),
-    const _ChatMsg(
-        id: '8',
-        content: '你真太帅气了',
-        type: MsgType.text,
-        isMine: true,
-        time: '12:29'),
-  ];
+  bool _isLoadingSession = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = false;
+  String? _sessionError;
+  ChatItem? _session;
+  String? _nextCursor;
+  final List<ChatMessageItem> _messages = [];
+  int? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _bootstrapCurrentUser();
+      _loadSession();
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
       }
@@ -135,33 +96,130 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _sendMessage() {
-    final text = _inputCtrl.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      _msgs.add(_ChatMsg(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: text,
-        type: MsgType.text,
-        isMine: true,
-        time: _formatTime(DateTime.now()),
-      ));
-      _inputCtrl.clear();
-      _hasText = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  Future<void> _bootstrapCurrentUser() async {
+    try {
+      final profile = await context.read<ProfileDomain>().getMyProfile();
+      if (!mounted) return;
+      setState(() => _currentUserId = profile.data?.uid);
+    } catch (_) {}
   }
 
-  String _formatTime(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  Future<void> _loadSession() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingSession = true;
+      _sessionError = null;
+    });
+    try {
+      final session = await context.read<ChatDomain>().createOrGetChat(peerUid: widget.uid);
+      if (!mounted) return;
+      setState(() {
+        _session = session;
+        _isLoadingSession = false;
+      });
+      await _loadMessages(refresh: true);
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingSession = false;
+        _sessionError = err.toString();
+      });
+    }
+  }
+
+  Future<void> _loadMessages({bool refresh = false}) async {
+    final session = _session;
+    if (session == null) return;
+    if (_isLoadingMore) return;
+
+    setState(() {
+      if (refresh) {
+        _messages.clear();
+        _nextCursor = null;
+        _hasMore = false;
+      } else {
+        _isLoadingMore = true;
+      }
+      _sessionError = null;
+    });
+
+    try {
+      final result = await context.read<ChatDomain>().fetchChatMessages(
+            chatId: session.chatId,
+            cursor: refresh ? null : _nextCursor,
+            direction: 'before',
+            limit: 30,
+          );
+      if (!mounted) return;
+      setState(() {
+        _messages.addAll(result.items);
+        _nextCursor = result.nextCursor;
+        _hasMore = result.hasMore;
+        _isLoadingMore = false;
+      });
+      await _scrollToBottom();
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMore = false;
+        _sessionError = err.toString();
+      });
+    }
+  }
+
+  Future<void> _scrollToBottom() async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!_scrollCtrl.hasClients) return;
+    _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _inputCtrl.text.trim();
+    final session = _session;
+    if (text.isEmpty || session == null) return;
+    _inputCtrl.clear();
+    setState(() => _hasText = false);
+
+    try {
+      final draft = ChatMessageItem(
+        id: DateTime.now().microsecondsSinceEpoch,
+        chatId: session.chatId,
+        senderUid: _currentUserId ?? 0,
+        msgType: ChatMessageType.text,
+        content: text,
+        replyToMsgId: null,
+        status: 'sending',
+        createdAt: _formatTime(DateTime.now()),
+        mediaUrl: '',
+        mediaMeta: const {},
+      );
+      setState(() {
+        _messages.add(draft);
+      });
+      await _scrollToBottom();
+      final sent = await context.read<ChatDomain>().sendMessage(
+            chatId: session.chatId,
+            msgType: ChatMessageType.text,
+            content: text,
+            clientMsgId: draft.id.toString(),
+          );
+      if (!mounted) return;
+      // setState(() {
+      //   final idx = _messages.indexWhere((e) => e.id == draft.id);
+      //   if (idx != -1) {
+      //     _messages[idx] = sent;
+      //   }
+      // });
+      await _scrollToBottom();
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _sessionError = err.toString();
+      });
+    }
+  }
+
+  String _formatTime(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +229,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Column(
           children: [
             _buildTopBar(),
-            Expanded(child: _buildMsgList()),
+            Expanded(child: _buildBody()),
             _buildInputBar(),
             _buildMorePanel(),
           ],
@@ -180,8 +238,31 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  Widget _buildBody() {
+    if (_isLoadingSession||_currentUserId==null) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Color(0xFF00C67E),
+        ),
+      );
+    }
+    if (_sessionError != null) {
+      return Center(
+        child: Text(
+          _sessionError!,
+          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF64748B)),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    return _buildMsgList();
+  }
+
   // ── 顶部栏 ───────────────────────────────
   Widget _buildTopBar() {
+    final displayName = widget.name;
+    final displayAvatar = _session?.avatarUrl.isNotEmpty == true ? _session!.avatarUrl : widget.avatarUrl;
     return Container(
       height: 56.w,
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -206,15 +287,14 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Icon(Icons.chevron_left,
-                size: 28.sp, color: const Color(0xFF0F172B)),
+            child: Icon(Icons.chevron_left, size: 28.sp, color: const Color(0xFF0F172B)),
           ),
           SizedBox(width: 8.w),
-          _buildAvatar(size: 26.w),
+          _buildAvatar(size: 26.w, avatarUrl: displayAvatar),
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
-              widget.name,
+              displayName,
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
@@ -230,18 +310,9 @@ class _ChatPageState extends State<ChatPage> {
                   icon: MyImagePaths.iconChatSearch,
                   label: 'chatMenuSearch'.tr(),
                   onTap: () => const ChatRecordsSearchRoute().push(context)),
-              OverlayMenuItem(
-                  value: 'unpin',
-                  icon: MyImagePaths.iconChatUnpin,
-                  label: 'chatActionUnpin'.tr()),
-              OverlayMenuItem(
-                  value: 'unmute',
-                  icon: MyImagePaths.iconChatUnmute,
-                  label: 'chatActionUnmute'.tr()),
-              OverlayMenuItem(
-                  value: 'clear',
-                  icon: MyImagePaths.iconChatClearRecord,
-                  label: 'chatMenuClearChat'.tr()),
+              OverlayMenuItem(value: 'unpin', icon: MyImagePaths.iconChatUnpin, label: 'chatActionUnpin'.tr()),
+              OverlayMenuItem(value: 'unmute', icon: MyImagePaths.iconChatUnmute, label: 'chatActionUnmute'.tr()),
+              OverlayMenuItem(value: 'clear', icon: MyImagePaths.iconChatClearRecord, label: 'chatMenuClearChat'.tr()),
               OverlayMenuItem(
                   value: 'report',
                   icon: MyImagePaths.iconChatReport,
@@ -260,7 +331,8 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildAvatar({required double size}) {
+  Widget _buildAvatar({required double size, String? avatarUrl}) {
+    final url = avatarUrl ?? widget.avatarUrl;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -271,11 +343,11 @@ class _ChatPageState extends State<ChatPage> {
             borderRadius: BorderRadius.circular(size),
             color: const Color(0xFFD1D1D6),
           ),
-          child: widget.avatarUrl.isEmpty
+          child: url.isEmpty
               ? Icon(Icons.person, size: size * 0.7, color: Colors.white)
               : ClipRRect(
-                  borderRadius: BorderRadius.circular(size * 0.4),
-                  child: Image.network(widget.avatarUrl, fit: BoxFit.cover),
+                  borderRadius: BorderRadius.circular(size),
+                  child: Image.network(url, fit: BoxFit.cover),
                 ),
         ),
       ],
@@ -298,15 +370,32 @@ class _ChatPageState extends State<ChatPage> {
         },
         child: ListView.builder(
           controller: _scrollCtrl,
+          reverse: true,
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-          itemCount: _msgs.length,
+          itemCount: _messages.length + (_hasMore ? 1 : 0),
           itemBuilder: (ctx, i) {
-            final msg = _msgs[i];
-            // 时间分割线（isMine=false && time 为空，用 content 当作时间标签）
-            if (!msg.isMine && msg.time.isEmpty) {
-              return _buildDateDivider(msg.content);
+            if (_hasMore && i == _messages.length) {
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 14.w),
+                child: Center(
+                  child: _isLoadingMore
+                      ? SizedBox(
+                          width: 18.w,
+                          height: 18.w,
+                          child: const CircularProgressIndicator(
+                            color: Color(0xFF00C67E),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          '下拉加载更早消息',
+                          style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
+                        ),
+                ),
+              );
             }
-            return _buildBubble(msg);
+            final msg = _messages[_messages.length - 1 - i];
+            return _buildMessageBubble(msg);
           },
         ),
       ),
@@ -314,23 +403,49 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildDateDivider(String label) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12.w),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 12.sp, color: const Color(0xFFAAAAAA)),
-        ),
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(vertical: 2.w, horizontal: 10.w),
+          margin: EdgeInsets.only(bottom: 22.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FE),
+            borderRadius: BorderRadius.circular(40.r),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12.sp, color: const Color(0xFFAAAAAA)),
+            ),
+          ),
+        )
+      ],
     );
+  }
+
+  Widget _buildMessageBubble(ChatMessageItem msg) {
+    final isMine = msg.senderUid == (_currentUserId ?? -1);
+    final type = switch (msg.msgType) {
+      ChatMessageType.image => MsgType.image,
+      ChatMessageType.video => MsgType.video,
+      _ => MsgType.text,
+    };
+
+    return _buildBubble(_ChatMsg(
+      id: '${msg.id}',
+      content: msg.content,
+      type: type,
+      isMine: isMine,
+      time: msg.createdAt,
+    ));
   }
 
   Widget _buildBubble(_ChatMsg msg) {
     return Padding(
       padding: EdgeInsets.only(bottom: 18.w),
       child: Row(
-        mainAxisAlignment:
-            msg.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: msg.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: msg.isMine
             ? [
@@ -354,8 +469,7 @@ class _ChatPageState extends State<ChatPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (msg.isMine && msg.isRead)
-          Icon(Icons.done_all, size: 14.sp, color: const Color(0xFF00C67E)),
+        if (msg.isMine && msg.isRead) Icon(Icons.done_all, size: 14.sp, color: const Color(0xFF00C67E)),
         SizedBox(height: 2.w),
         Text(
           msg.time,
@@ -382,8 +496,7 @@ class _ChatPageState extends State<ChatPage> {
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        border:
-            Border(top: BorderSide(color: const Color(0xFFF0F7E2), width: 1.w)),
+        border: Border(top: BorderSide(color: const Color(0xFFF0F7E2), width: 1.w)),
         boxShadow: [
           BoxShadow(
             color: const Color(0x1A000000),
@@ -398,8 +511,7 @@ class _ChatPageState extends State<ChatPage> {
           // 麦克风
           GestureDetector(
             onTap: () {},
-            child:
-                MyImage.asset(MyImagePaths.iconMic, width: 24.w, height: 24.w),
+            child: MyImage.asset(MyImagePaths.iconMic, width: 24.w, height: 24.w),
           ),
           SizedBox(width: 12.w),
           // 输入框
@@ -409,16 +521,13 @@ class _ChatPageState extends State<ChatPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF8F9FE),
                 borderRadius: BorderRadius.circular(46.r),
-                border:
-                    Border.all(color: const Color(0xFFE3E7ED), width: 0.84.w),
+                border: Border.all(color: const Color(0xFFE3E7ED), width: 0.84.w),
               ),
               child: TextField(
                 controller: _inputCtrl,
                 focusNode: _focusNode,
-                style:
-                    TextStyle(fontSize: 12.sp, color: const Color(0xFF0F172B)),
-                onChanged: (v) =>
-                    setState(() => _hasText = v.trim().isNotEmpty),
+                style: TextStyle(fontSize: 12.sp, color: const Color(0xFF0F172B)),
+                onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
                 onSubmitted: (_) {
                   _sendMessage();
                   _focusNode.requestFocus();
@@ -426,11 +535,9 @@ class _ChatPageState extends State<ChatPage> {
                 textInputAction: TextInputAction.send,
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 15.w, vertical: 13.w),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 13.w),
                   hintText: 'chatInputHint'.tr(),
-                  hintStyle: TextStyle(
-                      fontSize: 12.sp, color: const Color(0xFF90A1B9)),
+                  hintStyle: TextStyle(fontSize: 12.sp, color: const Color(0xFF90A1B9)),
                   suffixIcon: GestureDetector(
                     onTap: () {},
                     child: Padding(
@@ -442,8 +549,7 @@ class _ChatPageState extends State<ChatPage> {
                       ),
                     ),
                   ),
-                  suffixIconConstraints:
-                      BoxConstraints(minWidth: 0, minHeight: 0),
+                  suffixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
                 ),
               ),
             ),
@@ -476,17 +582,14 @@ class _ChatPageState extends State<ChatPage> {
                       color: const Color(0xFF0F172B),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.send_rounded,
-                        size: 18.sp, color: Colors.white),
+                    child: Icon(Icons.send_rounded, size: 18.sp, color: Colors.white),
                   )
                 : Container(
                     decoration: BoxDecoration(
-                      border: Border.all(
-                          color: const Color(0xFFD1D1D6), width: 1.5.w),
+                      border: Border.all(color: const Color(0xFFD1D1D6), width: 1.5.w),
                       shape: BoxShape.circle,
                     ),
-                    child: MyImage.asset(MyImagePaths.iconChatPlus,
-                        width: 22.w, height: 22.w)),
+                    child: MyImage.asset(MyImagePaths.iconChatPlus, width: 22.w, height: 22.w)),
           ),
         ],
       ),
@@ -513,12 +616,8 @@ class _ChatPageState extends State<ChatPage> {
               mainAxisSpacing: 25.w,
               childAspectRatio: 46 / 67,
               children: [
-                _PanelItem(
-                    icon: MyImagePaths.iconChatAlbum,
-                    label: 'chatPanelAlbum'.tr()),
-                _PanelItem(
-                    icon: MyImagePaths.iconChatCamera,
-                    label: 'chatPanelCamera'.tr()),
+                _PanelItem(icon: MyImagePaths.iconChatAlbum, label: 'chatPanelAlbum'.tr()),
+                _PanelItem(icon: MyImagePaths.iconChatCamera, label: 'chatPanelCamera'.tr()),
               ],
             ),
           ),
@@ -664,8 +763,7 @@ class _VideoBubble extends StatelessWidget {
                   color: Colors.black45,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.play_arrow_rounded,
-                    size: 16.sp, color: Colors.white),
+                child: Icon(Icons.play_arrow_rounded, size: 16.sp, color: Colors.white),
               ),
             ),
           ),

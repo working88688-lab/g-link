@@ -191,8 +191,7 @@ class MineRoute extends GoRouteData {
 class RecommendFollowListRoute extends GoRouteData {
   const RecommendFollowListRoute({this.limit = 10});
 
-  static final GlobalKey<NavigatorState> $parentNavigatorKey =
-      AppRouter.rootNavigatorKey;
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
 
   final int limit;
 
@@ -258,8 +257,7 @@ class GuideRoute extends GoRouteData {
 class FeedbackSubmitRoute extends GoRouteData {
   const FeedbackSubmitRoute();
 
-  static final GlobalKey<NavigatorState> $parentNavigatorKey =
-      AppRouter.rootNavigatorKey;
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
@@ -333,24 +331,24 @@ class ComplaintRoute extends GoRouteData {
 class ChatConversationRoute extends GoRouteData {
   const ChatConversationRoute({
     required this.name,
-    this.avatarUrl = '',
-    this.isOnline = false,
+    required this.avatarUrl,
+    required this.uid,
   });
 
   static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
 
   final String name;
   final String avatarUrl;
-  final bool isOnline;
+  final int uid;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
       child: ChatPage(
+        uid: uid,
         name: name,
         avatarUrl: avatarUrl,
-        isOnline: isOnline,
       ),
     );
   }

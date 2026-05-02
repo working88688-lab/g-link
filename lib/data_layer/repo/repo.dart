@@ -32,7 +32,7 @@ import 'package:g_link/app_config.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/domain/model/ad_model.dart';
 import 'package:g_link/domain/model/feed_models.dart';
-import 'package:g_link/domain/model/profile_models.dart';
+import 'package:g_link/domain/model/profile_models.dart' hide FollowResult;
 import 'package:g_link/domain/model/auth_models.dart';
 import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
@@ -213,7 +213,7 @@ abstract class _BaseAppRepo implements AppDomain {
     _tokenValidStreamController.sink.add(MyTokenStatus.invalid);
     MyToast.showText(text: '需要登录');
     try {
-      // AppRouter.router.go(AppRouterPaths.login);
+      AppRouter.router.go(AppRouterPaths.login);
     } finally {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       _authRedirecting = false;

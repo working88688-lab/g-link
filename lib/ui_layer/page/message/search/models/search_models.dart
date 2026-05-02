@@ -143,19 +143,20 @@ class SearchInputBar extends StatelessWidget {
   final bool showCancel;
   final VoidCallback? onCancel;
   final String hintText;
+  final double? radius;
 
-  const SearchInputBar({
-    super.key,
-    required this.controller,
-    required this.focusNode,
-    required this.query,
-    required this.onChanged,
-    this.onSubmitted,
-    required this.onClear,
-    this.showCancel = true,
-    this.onCancel,
-    this.hintText = "搜索",
-  });
+  const SearchInputBar(
+      {super.key,
+      required this.controller,
+      required this.focusNode,
+      required this.query,
+      required this.onChanged,
+      this.onSubmitted,
+      required this.onClear,
+      this.showCancel = true,
+      this.onCancel,
+      this.hintText = "搜索",
+      this.radius});
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +169,7 @@ class SearchInputBar extends StatelessWidget {
               height: 40.w,
               decoration: BoxDecoration(
                 color: const Color(0xFFF8F9FE),
-                borderRadius: BorderRadius.circular(100.r),
+                borderRadius: BorderRadius.circular(radius ?? 100.r),
               ),
               child: TextField(
                 controller: controller,
@@ -181,13 +182,11 @@ class SearchInputBar extends StatelessWidget {
                 ),
                 decoration: InputDecoration(
                   border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 9.w, horizontal: 8.w),
+                  contentPadding: EdgeInsets.symmetric(vertical: 9.w, horizontal: 8.w),
                   prefixIcon: Stack(
                     alignment: Alignment.center,
                     children: [
-                      MyImage.asset(MyImagePaths.iconSearch,
-                          width: 22.w, height: 22.w),
+                      MyImage.asset(MyImagePaths.iconSearch, width: 22.w, height: 22.w),
                     ],
                   ),
                   prefixIconConstraints: BoxConstraints(minWidth: 40.w),
@@ -201,8 +200,7 @@ class SearchInputBar extends StatelessWidget {
                           onTap: onClear,
                           child: Padding(
                             padding: EdgeInsets.only(right: 12.w),
-                            child: MyImage.asset(MyImagePaths.iconInputClear,
-                                width: 24.w, height: 24.w),
+                            child: MyImage.asset(MyImagePaths.iconInputClear, width: 24.w, height: 24.w),
                           ),
                         )
                       : null,
