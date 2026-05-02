@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
+import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -61,9 +63,8 @@ class _NotificationPageState extends State<NotificationPage> {
           child: Text(
             '全部已读',
             style: TextStyle(
-              color: const Color(0xFF3156A5),
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w500,
+              color: const Color(0xFF45556C),
+              fontSize: 14.sp,
             ),
           ),
         ),
@@ -78,12 +79,12 @@ class _NotificationPageState extends State<NotificationPage> {
 
   Widget _buildTabs() {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 12.w, 16.w, 10.w),
+      padding: EdgeInsets.fromLTRB(16.w, 18.w, 16.w, 10.w),
       child: Row(
         children: List.generate(_tabs.length, (index) {
           final selected = index == _tabIndex;
           return Padding(
-            padding: EdgeInsets.only(right: 10.w),
+            padding: EdgeInsets.only(right: 12.w),
             child: GestureDetector(
               onTap: () => setState(() => _tabIndex = index),
               child: Stack(
@@ -91,37 +92,39 @@ class _NotificationPageState extends State<NotificationPage> {
                 children: [
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 7.w),
+                    height: 30.w,
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected ? const Color(0xFF1D2433) : const Color(0xFFF5F7FB),
+                      color: selected ? const Color(0xFF1A1F2C) : const Color(0xFFF8F9FE),
                       borderRadius: BorderRadius.circular(999.r),
                     ),
                     child: Text(
                       _tabs[index],
                       style: TextStyle(
                         color: selected ? Colors.white : const Color(0xFF38475B),
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 14.sp,
                       ),
                     ),
                   ),
                   if (index == 0)
                     Positioned(
-                      right: -2.w,
-                      top: -4.w,
+                      right: -8.w,
+                      top: -7.w,
                       child: Container(
-                        width: 16.w,
-                        height: 16.w,
+                        width: 18.w,
+                        height: 18.w,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFF3B6A),
+                          color: Color(0xFFFF2056),
                           shape: BoxShape.circle,
+                          border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.5)),
                         ),
                         alignment: Alignment.center,
                         child: Text(
                           '9',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 9.sp,
+                            fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -196,9 +199,13 @@ class _SystemNotificationList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       key: key,
-      padding: EdgeInsets.fromLTRB(16.w, 6.w, 16.w, 16.w),
+      padding: EdgeInsets.fromLTRB(8.w, 5.w, 8.w, 16.w),
       itemBuilder: (context, index) => _SystemNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => SizedBox(height: 12.w),
+      separatorBuilder: (_, __) => Container(
+        height: 1.w,
+        margin: EdgeInsets.only(left: 72.w),
+        color: const Color(0xFFF8F9FE),
+      ),
       itemCount: _items.length,
     );
   }
@@ -241,7 +248,7 @@ class _InteractionNotificationList extends StatelessWidget {
       action: '回复了你的评论',
       time: '2天前',
       message: '英伦风，很不错，挺赞的穿搭',
-      reaction: NotificationReaction.reply,
+      reaction: NotificationReaction.comment,
       quote: '英伦风，很不错，挺赞的穿搭',
     ),
     _InteractionNotificationItem(
@@ -278,9 +285,13 @@ class _InteractionNotificationList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       key: key,
-      padding: EdgeInsets.fromLTRB(16.w, 2.w, 16.w, 16.w),
+      padding: EdgeInsets.fromLTRB(8.w, 5.w, 8.w, 16.w),
       itemBuilder: (context, index) => _InteractionNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => SizedBox(height: 14.w),
+      separatorBuilder: (_, __) => Container(
+        height: 1.w,
+        margin: EdgeInsets.only(left: 72.w),
+        color: const Color(0xFFF8F9FE),
+      ),
       itemCount: _items.length,
     );
   }
@@ -324,7 +335,7 @@ class _FanNotificationList extends StatelessWidget {
       key: key,
       padding: EdgeInsets.fromLTRB(16.w, 4.w, 16.w, 16.w),
       itemBuilder: (context, index) => _FanNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => SizedBox(height: 14.w),
+      separatorBuilder: (_, __) => SizedBox(height: 24.w),
       itemCount: _items.length,
     );
   }
@@ -372,7 +383,7 @@ class _InteractionNotificationItem {
   final bool footerActions;
 }
 
-enum NotificationReaction { like, comment, reply, mention }
+enum NotificationReaction { like, comment, mention }
 
 class _FanNotificationItem {
   const _FanNotificationItem({
@@ -395,41 +406,46 @@ class _SystemNotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16.r),
+    return GestureDetector(
       onTap: () {
         SystemNotificationDetailRoute(title: item.desc).push(context);
       },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (item.unread)
-            Padding(
-              padding: EdgeInsets.only(top: 18.w, right: 10.w),
-              child: Container(
-                width: 7.w,
-                height: 7.w,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF3B6A),
-                  shape: BoxShape.circle,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.w),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (item.unread)
+                  Padding(
+                    padding: EdgeInsets.only(right: 7.w),
+                    child: Container(
+                      width: 9.w,
+                      height: 9.w,
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF2056),
+                        shape: BoxShape.circle,
+                        border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.w)),
+                      ),
+                    ),
+                  )
+                else
+                  SizedBox(width: 16.w),
+                Container(
+                  width: 50.w,
+                  height: 50.w,
+                  decoration: BoxDecoration(
+                    color: item.iconColor.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Icon(item.icon, color: item.iconColor.withValues(alpha: 0.95), size: 28.w),
                 ),
-              ),
-            )
-          else
-            SizedBox(width: 17.w),
-          Container(
-            width: 54.w,
-            height: 54.w,
-            decoration: BoxDecoration(
-              color: item.iconColor.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(16.r),
+              ],
             ),
-            child: Icon(item.icon, color: item.iconColor.withValues(alpha: 0.95), size: 28.w),
-          ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(top: 2.w),
+            SizedBox(width: 12.w),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -439,29 +455,26 @@ class _SystemNotificationTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.title,
-                          style: TextStyle(
-                            color: const Color(0xFF1D293D),
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
                         ),
                       ),
                       Text(
                         item.time,
                         style: TextStyle(
-                          color: const Color(0xFF95A0B4),
-                          fontSize: 11.sp,
+                          color: const Color(0xFF71727A),
+                          fontSize: 10.sp,
                         ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 6.w),
+                  SizedBox(height: 4.w),
                   Text(
                     item.desc,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: const Color(0xFF647286),
+                      color: const Color(0xFF71727A),
                       fontSize: 12.sp,
                       height: 1.35,
                     ),
@@ -469,8 +482,8 @@ class _SystemNotificationTile extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -483,94 +496,158 @@ class _InteractionNotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 44.w,
-          height: 44.w,
-          decoration: BoxDecoration(
-            color: item.avatarColor.withValues(alpha: 0.22),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Icon(Icons.person, color: item.avatarColor, size: 24.w),
-        ),
-        SizedBox(width: 10.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: EdgeInsets.only(left: 16.w, top: 8.w, right: 6.w, bottom: 8.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        style: TextStyle(
-                          color: const Color(0xFF1D293D),
-                          fontSize: 13.sp,
-                          height: 1.35,
-                        ),
+              Container(
+                width: 50.w,
+                height: 50.w,
+                decoration: BoxDecoration(
+                  color: item.avatarColor.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Icon(Icons.person, color: item.avatarColor, size: 24.w),
+              ),
+              Positioned(
+                  right: -5.w,
+                  bottom: 0.w,
+                  child: MyImage.asset(
+                    item.reaction == NotificationReaction.like
+                        ? MyImagePaths.iconNoticeLike
+                        : item.reaction == NotificationReaction.comment
+                            ? MyImagePaths.iconNoticeComment
+                            : item.reaction == NotificationReaction.mention
+                                ? MyImagePaths.iconNoticeMention
+                                : "",
+                    width: 17.w,
+                  ))
+            ],
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextSpan(
-                            text: item.title,
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: "${item.title}  ",
+                                  style: TextStyle(
+                                      color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
+                                ),
+                                TextSpan(
+                                  text: ' ${item.action}',
+                                  style: TextStyle(
+                                      color: const Color(0xFF314158), fontSize: 12.sp, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
                           ),
-                          TextSpan(text: ' ${item.action}'),
+                          if (item.message.isNotEmpty) ...[
+                            SizedBox(height: 4.w),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                item.quote ?? item.message,
+                                maxLines: item.quote == null ? 2 : 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: const Color(0xFF314158),
+                                  fontSize: 12.sp,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 8.w,
+                            ),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: double.infinity,
+                              ),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 5.w),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1A1F2C).withAlpha(4),
+                                  borderRadius: BorderRadius.circular(4.r),
+                                ),
+                                child: IntrinsicHeight(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Container(
+                                        width: 2.w,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEAEAEA),
+                                          borderRadius: BorderRadius.circular(100),
+                                        ),
+                                      ),
+                                      SizedBox(width: 7.w),
+                                      Flexible(
+                                        child: Text(
+                                          "英伦风，很不错，挺赞的穿搭英伦风，",
+                                          style: TextStyle(color: Color(0xFF1A1F2C), fontSize: 12.sp),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                          SizedBox(height: 4.w),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.time,
+                                style: TextStyle(
+                                  color: const Color(0xFF314158),
+                                  fontSize: 12.sp,
+                                ),
+                              ),
+                              Spacer(),
+                              if (item.footerActions) ...[
+                                SizedBox(height: 8.w),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    _ActionButton(label: '屏蔽', selected: true),
+                                    SizedBox(width: 8.w),
+                                    _ActionButton(label: '展示'),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          )
                         ],
                       ),
                     ),
-                  ),
-                  if (item.thumbVisible) ...[
-                    SizedBox(width: 12.w),
-                    _ThumbPreview(),
-                  ],
-                ],
-              ),
-              if (item.message.isNotEmpty) ...[
-                SizedBox(height: 8.w),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(10.w),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F7FB),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Text(
-                    item.quote ?? item.message,
-                    maxLines: item.quote == null ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: const Color(0xFF5A677A),
-                      fontSize: 12.sp,
-                      height: 1.35,
-                    ),
-                  ),
-                ),
-              ],
-              SizedBox(height: 6.w),
-              Text(
-                item.time,
-                style: TextStyle(
-                  color: const Color(0xFF95A0B4),
-                  fontSize: 11.sp,
-                ),
-              ),
-              if (item.footerActions) ...[
-                SizedBox(height: 8.w),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _ActionButton(label: '屏蔽', selected: true),
-                    SizedBox(width: 8.w),
-                    _ActionButton(label: '展示'),
+                    if (item.thumbVisible) ...[
+                      SizedBox(width: 11.w),
+                      _ThumbPreview(),
+                    ],
                   ],
                 ),
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -585,11 +662,11 @@ class _FanNotificationTile extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 52.w,
-          height: 52.w,
+          width: 50.w,
+          height: 50.w,
           decoration: BoxDecoration(
             color: const Color(0xFFF0E7D8),
-            borderRadius: BorderRadius.circular(14.r),
+            borderRadius: BorderRadius.circular(16.r),
           ),
           child: Icon(Icons.person, color: const Color(0xFFC2B091), size: 28.w),
         ),
@@ -598,28 +675,28 @@ class _FanNotificationTile extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                item.name,
-                style: TextStyle(
-                  color: const Color(0xFF1D293D),
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+              Row(
+                children: [
+                  Text(
+                    item.name,
+                    style: TextStyle(
+                      color: const Color(0xFF0F172B),
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: 2.w),
+                  Text(
+                    '关注了你',
+                    style: TextStyle(color: const Color(0xFF314158), fontSize: 12.sp, fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
-              SizedBox(height: 4.w),
-              Text(
-                '${item.name} 关注了你',
-                style: TextStyle(
-                  color: const Color(0xFF1D293D),
-                  fontSize: 12.sp,
-                ),
-              ),
-              SizedBox(height: 4.w),
               Text(
                 item.time,
                 style: TextStyle(
-                  color: const Color(0xFF95A0B4),
-                  fontSize: 11.sp,
+                  color: const Color(0xFF62748E),
+                  fontSize: 12.sp,
                 ),
               ),
             ],
@@ -673,17 +750,16 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.w),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.w),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFFFF3B6A) : const Color(0xFF1D2433),
-        borderRadius: BorderRadius.circular(8.r),
+        color: selected ? const Color(0xFFFF2056) : const Color(0xFF0F172B),
+        borderRadius: BorderRadius.circular(4.r),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: Colors.white,
-          fontSize: 11.sp,
-          fontWeight: FontWeight.w600,
+          color: Color(0xFFF8F9FE),
+          fontSize: 10.sp,
         ),
       ),
     );
@@ -699,17 +775,20 @@ class _FollowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.w),
+      width: 60.w,
+      alignment: Alignment.center,
+      padding: EdgeInsets.symmetric(vertical: 7.w),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFF1D2433) : Colors.white,
+        color: selected ? const Color(0xFF1A1F2C) : Colors.transparent,
         borderRadius: BorderRadius.circular(999.r),
-        border: Border.all(color: const Color(0xFFCCD3DD)),
+        border: !selected? Border.all(color: const Color(0xFFCCCCCC)):null,
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: selected ? Colors.white : const Color(0xFF1D293D),
-          fontSize: 12.sp,
+          color: selected ? Colors.white : const Color(0xFF1A1F2C),
+          fontSize: 13.sp,
+          height: 0,
           fontWeight: FontWeight.w500,
         ),
       ),

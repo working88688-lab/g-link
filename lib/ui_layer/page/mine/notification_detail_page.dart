@@ -20,9 +20,9 @@ class NotificationDetailPage extends StatelessWidget {
               Text(
                 '通知标题通知标题',
                 style: TextStyle(
-                  color: const Color(0xFF1D293D),
+                  color: const Color(0xFF1A1F2C),
                   fontSize: 18.sp,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   height: 1.2,
                 ),
               ),
@@ -30,8 +30,8 @@ class NotificationDetailPage extends StatelessWidget {
               Text(
                 '10分钟前',
                 style: TextStyle(
-                  color: const Color(0xFF6C7687),
-                  fontSize: 11.sp,
+                  color: const Color(0xFF1A1F2C),
+                  fontSize: 14.sp,
                   height: 1.2,
                 ),
               ),
@@ -39,8 +39,8 @@ class NotificationDetailPage extends StatelessWidget {
               Text(
                 '这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述',
                 style: TextStyle(
-                  color: const Color(0xFF2F3A4D),
-                  fontSize: 13.sp,
+                  color: const Color(0xFF1A1F2C),
+                  fontSize: 14.sp,
                   height: 1.6,
                 ),
               ),
@@ -54,8 +54,8 @@ class NotificationDetailPage extends StatelessWidget {
               Text(
                 '这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述这里是描述',
                 style: TextStyle(
-                  color: const Color(0xFF2F3A4D),
-                  fontSize: 13.sp,
+                  color: const Color(0xFF1A1F2C),
+                  fontSize: 14.sp,
                   height: 1.6,
                 ),
               ),

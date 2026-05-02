@@ -66,6 +66,9 @@ class MyImagePaths {
   static const iconMusical = './assets/images/icon_musical.png';
   static const iconMusicUncollection = './assets/images/icon_music_uncollection.png';
   static const iconMute = './assets/images/icon_mute.png';
+  static const iconNoticeComment = './assets/images/icon_notice_comment.png';
+  static const iconNoticeLike = './assets/images/icon_notice_like.png';
+  static const iconNoticeMention = './assets/images/icon_notice_mention.png';
   static const iconNotInterested = './assets/images/icon_not_interested.png';
   static const iconOmmentUnlike = './assets/images/icon_omment_unlike.png';
   static const iconPlay = './assets/images/icon_play.png';
