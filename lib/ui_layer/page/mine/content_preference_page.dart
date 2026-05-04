@@ -1,9 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 
 // ──────────────────────────────────────────
 // 页面
@@ -18,29 +21,18 @@ class ContentPreferencePage extends StatefulWidget {
 class _ContentPreferencePageState extends State<ContentPreferencePage> {
   static const int _maxInterests = 8;
 
-  final _allInterests = [
-    '摄影',
-    '家居灵感',
-    '职场成长',
-    '科技数码',
-    '电影解说',
-    '艺术展览',
-    '宠物日常',
-    '旅行',
-    '穿搭',
-    '美食',
-    '健身',
-    '音乐',
-    '游戏',
-    '读书',
-    '运动',
-  ];
-
-  final Set<String> _selectedInterests = {'旅行'};
-
+  final Set<int> _selectedTagIds = {};
   final List<String> _blockedKeywords = ['剧透', '极端饮食', '过度炫富'];
+  final TextEditingController _keywordCtrl = TextEditingController();
+  bool _loading = true;
+  String? _error;
+  List<InterestTag> _interestTags = [];
 
-  final _keywordCtrl = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    _loadTags();
+  }
 
   @override
   void dispose() {
@@ -53,21 +45,25 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
       appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.all(16.w),
-              children: [
-                _buildInterestsSection(),
-                SizedBox(height: 12.w),
-                _buildBlockKeywordsSection(),
-              ],
-            ),
-          ),
-          _buildSubmitButton(),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text(_error!))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.all(16.w),
+                        children: [
+                          _buildInterestsSection(),
+                          SizedBox(height: 12.w),
+                          _buildBlockKeywordsSection(),
+                        ],
+                      ),
+                    ),
+                    _buildSubmitButton(),
+                  ],
+                ),
     );
   }
 
@@ -117,9 +113,9 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Text(
-                      'contentPrefSelectedCount'.tr(namedArgs: {'count': '${_selectedInterests.length}'}),
+                      'contentPrefSelectedCount'.tr(namedArgs: {'count': '${_selectedTagIds.length}'}),
                       style: TextStyle(
                         color: const Color(0xFF45556C),
                         fontSize: 12.sp,
@@ -146,12 +142,12 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                 Wrap(
                   spacing: 12.w,
                   runSpacing: 12.w,
-                  children: _allInterests.map((tag) {
-                    final selected = _selectedInterests.contains(tag);
+                  children: _interestTags.map((tag) {
+                    final selected = _selectedTagIds.contains(tag.id);
                     return _TagChip(
-                      label: tag,
+                      label: tag.name,
                       selected: selected,
-                      onTap: () => _toggleInterest(tag),
+                      onTap: () => _toggleInterest(tag.id),
                     );
                   }).toList(),
                 ),
@@ -162,85 +158,84 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
   Widget _buildBlockKeywordsSection() {
     return MineSetingsWidgets.buildCard(
       children: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'contentPrefBlockTitle'.tr(),
-                    style: TextStyle(
-                      color: const Color(0xFF000000),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'contentPrefBlockTitle'.tr(),
+                  style: TextStyle(
+                    color: const Color(0xFF000000),
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
                   ),
-                  Spacer(),
-                  Text(
-                    'contentPrefBlockCount'.tr(namedArgs: {'count': '${_blockedKeywords.length}'}),
-                    style: TextStyle(
-                      color: const Color(0xFF45556C),
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'contentPrefBlockDesc'.tr(),
-                style: TextStyle(
-                  color: const Color(0xFF45556C),
-                  fontSize: 12.sp,
                 ),
+                const Spacer(),
+                Text(
+                  'contentPrefBlockCount'.tr(namedArgs: {'count': '${_blockedKeywords.length}'}),
+                  style: TextStyle(
+                    color: const Color(0xFF45556C),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              'contentPrefBlockDesc'.tr(),
+              style: TextStyle(
+                color: const Color(0xFF45556C),
+                fontSize: 12.sp,
               ),
-              SizedBox(height: 19.w),
-              Wrap(
-                spacing: 12.w,
-                runSpacing: 12.w,
-                children: [
-                  // 现有关键词
-                  ..._blockedKeywords.map(
-                    (kw) => _TagChip(
-                      label: kw,
-                      selected: false,
-                      showClose: true,
-                      onTap: () {},
-                      onClose: () => setState(() => _blockedKeywords.remove(kw)),
+            ),
+            SizedBox(height: 19.w),
+            Wrap(
+              spacing: 12.w,
+              runSpacing: 12.w,
+              children: [
+                ..._blockedKeywords.map(
+                  (kw) => _TagChip(
+                    label: kw,
+                    selected: false,
+                    showClose: true,
+                    onTap: () {},
+                    onClose: () => setState(() => _blockedKeywords.remove(kw)),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _showAddKeywordSheet,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FE),
+                      borderRadius: BorderRadius.circular(18.w),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        MyImage.asset(
+                          MyImagePaths.iconPlus,
+                          width: 20.w,
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(
+                          'contentPrefAddKeyword'.tr(),
+                          style: TextStyle(
+                            color: const Color(0xFF1A1F2C),
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  // 添加按钮
-                  GestureDetector(
-                    onTap: _showAddKeywordSheet,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.w),
-                      decoration: BoxDecoration(
-                        color:  const Color(0xFFF8F9FE),
-                        borderRadius: BorderRadius.circular(18.w),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          MyImage.asset(
-                            MyImagePaths.iconPlus,
-                            width: 20.w,
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                            'contentPrefAddKeyword'.tr(),
-                            style: TextStyle(
-                              color: const Color(0xFF1A1F2C),
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          )),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -285,14 +280,36 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
     );
   }
 
-  void _toggleInterest(String tag) {
+  void _toggleInterest(int tagId) {
     setState(() {
-      if (_selectedInterests.contains(tag)) {
-        _selectedInterests.remove(tag);
-      } else if (_selectedInterests.length < _maxInterests) {
-        _selectedInterests.add(tag);
+      if (_selectedTagIds.contains(tagId)) {
+        _selectedTagIds.remove(tagId);
+      } else if (_selectedTagIds.length < _maxInterests) {
+        _selectedTagIds.add(tagId);
       }
     });
+  }
+
+  Future<void> _loadTags() async {
+    try {
+      final profile = context.read<ProfileDomain>();
+      final tagsResult = await profile.getInterestTags();
+      final tags = tagsResult.data ?? const <InterestTag>[];
+      if (!mounted) return;
+      setState(() {
+        _interestTags = tags;
+        _selectedTagIds
+          ..clear()
+          ..addAll(tags.where((e) => e.isSelected).map((e) => e.id));
+        _loading = false;
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _error = err.toString();
+        _loading = false;
+      });
+    }
   }
 
   void _showAddKeywordSheet() {
@@ -346,8 +363,17 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
     );
   }
 
-  void _submit() {
-    Navigator.of(context).pop();
+  Future<void> _submit() async {
+    try {
+      await context.read<ProfileDomain>().updateMyInterestTags(tagIds: _selectedTagIds.toList());
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _error = err.toString();
+      });
+    }
   }
 }
 

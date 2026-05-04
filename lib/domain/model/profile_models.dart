@@ -171,11 +171,11 @@ class InterestTag {
 
   factory InterestTag.fromJson(Json json) {
     return InterestTag(
-      id: int.tryParse('${json['id'] ?? 0}') ?? 0,
-      name: '${json['name'] ?? ''}',
-      iconUrl: '${json['icon_url'] ?? ''}',
+      id: int.tryParse('${json['id'] ?? json['tag_id'] ?? 0}') ?? 0,
+      name: '${json['name'] ?? json['tag_name'] ?? json['title'] ?? ''}',
+      iconUrl: '${json['icon_url'] ?? json['icon'] ?? ''}',
       category: '${json['category'] ?? ''}',
-      isSelected: json['is_selected'] == true,
+      isSelected: json['is_selected'] == true || json['selected'] == true,
     );
   }
 }

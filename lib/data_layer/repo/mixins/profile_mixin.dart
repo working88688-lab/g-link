@@ -120,9 +120,13 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
 
   @override
   AsyncResult<List<InterestTag>> getInterestTags() => _profileService.getInterests().deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = List<Json>.from((json['list'] ?? json['data'] ?? []) as List);
         return list.map(InterestTag.fromJson).toList();
       }).guard;
+
+  @override
+  AsyncResult updateMyInterestTags({required List<int> tagIds}) =>
+      _profileService.updateMyInterestTags(tagIds: tagIds).deserialize().guard;
 
   @override
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20}) =>
