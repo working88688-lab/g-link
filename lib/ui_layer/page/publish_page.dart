@@ -469,40 +469,41 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
                   ],
                 ),
               ),
-              Center(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _toastComingSoon,
-                    borderRadius: BorderRadius.circular(22),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.music_note,
-                              color: Colors.white.withValues(alpha: 0.95),
-                              size: 20),
-                          const SizedBox(width: 6),
-                          Text(
-                            'publishSelectMusic'.tr(),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.95),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+              if (_mode == PublishCaptureMode.shortVideo)
+                Center(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _toastComingSoon,
+                      borderRadius: BorderRadius.circular(22),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.music_note,
+                                color: Colors.white.withValues(alpha: 0.95),
+                                size: 20),
+                            const SizedBox(width: 6),
+                            Text(
+                              'publishSelectMusic'.tr(),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.95),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               const Spacer(),
               Padding(
                 padding: EdgeInsets.fromLTRB(6, 0, 6, bottomInset + 18),
@@ -547,7 +548,10 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
           right: 4,
           bottom: bottomInset + 108,
           child: _RightToolColumn(
+            mode: _mode,
             onFlip: _flipCamera,
+            onClip: _toastComingSoon,
+            onCrop: _toastComingSoon,
             onText: _toastComingSoon,
             onBeautify: _toastComingSoon,
             onFilter: _toastComingSoon,
@@ -861,14 +865,21 @@ class _ModeTab extends StatelessWidget {
 
 class _RightToolColumn extends StatelessWidget {
   const _RightToolColumn({
+    required this.mode,
     required this.onFlip,
+    required this.onClip,
+    required this.onCrop,
     required this.onText,
     required this.onBeautify,
     required this.onFilter,
     required this.flipEnabled,
   });
 
+  /// 帖子：翻转、文字、美颜、滤镜；短视频：剪辑、文字、美颜、滤镜、裁剪。
+  final PublishCaptureMode mode;
   final VoidCallback onFlip;
+  final VoidCallback onClip;
+  final VoidCallback onCrop;
   final VoidCallback onText;
   final VoidCallback onBeautify;
   final VoidCallback onFilter;
@@ -908,30 +919,48 @@ class _RightToolColumn extends StatelessWidget {
       );
     }
 
+    final textBeautifyFilter = <Widget>[
+      item(
+        icon: Icons.text_fields_rounded,
+        label: 'publishToolText'.tr(),
+        onTap: onText,
+      ),
+      item(
+        icon: Icons.face_retouching_natural,
+        label: 'publishToolBeautify'.tr(),
+        onTap: onBeautify,
+      ),
+      item(
+        icon: Icons.blur_circular_outlined,
+        label: 'publishToolFilter'.tr(),
+        onTap: onFilter,
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        item(
-          icon: Icons.cameraswitch_outlined,
-          label: 'publishToolFlip'.tr(),
-          onTap: onFlip,
-          enabled: flipEnabled,
-        ),
-        item(
-          icon: Icons.text_fields_rounded,
-          label: 'publishToolText'.tr(),
-          onTap: onText,
-        ),
-        item(
-          icon: Icons.face_retouching_natural,
-          label: 'publishToolBeautify'.tr(),
-          onTap: onBeautify,
-        ),
-        item(
-          icon: Icons.blur_circular_outlined,
-          label: 'publishToolFilter'.tr(),
-          onTap: onFilter,
-        ),
+        if (mode == PublishCaptureMode.post) ...[
+          item(
+            icon: Icons.cameraswitch_outlined,
+            label: 'publishToolFlip'.tr(),
+            onTap: onFlip,
+            enabled: flipEnabled,
+          ),
+          ...textBeautifyFilter,
+        ] else ...[
+          item(
+            icon: Icons.content_cut_rounded,
+            label: 'publishToolClip'.tr(),
+            onTap: onClip,
+          ),
+          ...textBeautifyFilter,
+          item(
+            icon: Icons.crop_rounded,
+            label: 'publishToolCrop'.tr(),
+            onTap: onCrop,
+          ),
+        ],
       ],
     );
   }

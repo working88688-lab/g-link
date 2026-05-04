@@ -141,6 +141,69 @@ mixin _Feed on _BaseAppRepo implements FeedDomain {
       return Result(msg: e.toString());
     }
   }
+
+  List<PublishTopicRow> _parseTopicsResponseData(dynamic data) {
+    final List<dynamic> list;
+    if (data is List) {
+      list = data;
+    } else if (data is Map) {
+      list = (data['lists'] as List?) ??
+          (data['list'] as List?) ??
+          (data['items'] as List?) ??
+          (data['topics'] as List?) ??
+          (data['data'] is List ? data['data'] as List : null) ??
+          const [];
+    } else {
+      list = const [];
+    }
+    final out = <PublishTopicRow>[];
+    for (final e in list) {
+      if (e is! Map) continue;
+      final row = PublishTopicRow.tryParse(Json.from(e));
+      if (row != null) out.add(row);
+    }
+    return out;
+  }
+
+  @override
+  AsyncResult<List<PublishTopicRow>> getHotTopics() async {
+    try {
+      final raw = Json.from(await _topicService.getHotTopics());
+      if (raw.status != 0) {
+        return Result(status: raw.status, msg: raw.msg);
+      }
+      return Result(
+        data: _parseTopicsResponseData(raw.data),
+        status: 0,
+      );
+    } catch (e, st) {
+      CommonUtils.log(e);
+      CommonUtils.log(st);
+      return Result(msg: e.toString());
+    }
+  }
+
+  @override
+  AsyncResult<List<PublishTopicRow>> searchTopics(String query) async {
+    try {
+      final q = query.trim();
+      if (q.isEmpty) {
+        return Result(data: const [], status: 0);
+      }
+      final raw = Json.from(await _topicService.searchTopics(query: q));
+      if (raw.status != 0) {
+        return Result(status: raw.status, msg: raw.msg);
+      }
+      return Result(
+        data: _parseTopicsResponseData(raw.data),
+        status: 0,
+      );
+    } catch (e, st) {
+      CommonUtils.log(e);
+      CommonUtils.log(st);
+      return Result(msg: e.toString());
+    }
+  }
 }
 
 String _publishNormalizeImageExt(XFile file) {

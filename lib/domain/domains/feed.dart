@@ -40,4 +40,10 @@ abstract class FeedDomain {
     int? draftId,
     PublishLocationInput? location,
   });
+
+  /// 发布页热门话题（话题模块 `GET /api/v1/topics/hot`）。
+  AsyncResult<List<PublishTopicRow>> getHotTopics();
+
+  /// 发布页话题搜索（话题模块 `GET /api/v1/topics/search`）。
+  AsyncResult<List<PublishTopicRow>> searchTopics(String query);
 }

@@ -60,6 +60,7 @@ dependencies:
   camera: ^0.12.0+1
   photo_manager: ^3.9.0
   video_player: ^2.11.1
+  extended_text_field: ^16.0.2
 
 flutter_icons:
   android: true

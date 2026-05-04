@@ -108,52 +108,69 @@ class _HomePageState extends State<HomePage>
         parent: BouncingScrollPhysics(),
       ),
       slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: 3.w)),
-        SliverToBoxAdapter(child: _StoriesRow(users: n.recommendUsers)),
-        SliverToBoxAdapter(
-          child: _RecommendUsersSection(
-            users: n.recommendUsers,
-            loading: n.recommendUsersLoading,
-            isFollowing: n.isFollowing,
-            onToggleFollow: (uid) => _toggleFollow(context, n, uid),
-            onMore: () => _onTapRecommendMore(context),
-          ),
-        ),
         if (initialLoading)
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (empty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: _EmptyView(
-              message: n.errorOf(tab) ?? 'commonNoResults'.tr(),
-              onRetry: () => n.refresh(tab),
+            child: Center(
+              child: SizedBox(
+                width: 28.w,
+                height: 28.w,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: Color(0xFF1A1F2C),
+                ),
+              ),
             ),
           )
-        else
-          SliverList.separated(
-            itemCount: posts.length + 1,
-            itemBuilder: (context, index) {
-              if (index == posts.length) {
-                return _FeedFooter(
-                  loading: loadingMore,
-                  hasMore: n.hasMore(tab),
-                );
-              }
-              final post = posts[index];
-              return _FeedCard(
-                post: post,
-                isAuthorFollowed:
-                    n.isFollowing(post.author.uid, fallback: false),
-                onToggleAuthorFollow: () =>
-                    _toggleFollow(context, n, post.author.uid),
-                onToggleLike: () => _onToggleLike(context, n, post),
-              );
-            },
-            separatorBuilder: (_, __) => SizedBox(height: 10.h),
+        else ...[
+          SliverToBoxAdapter(child: SizedBox(height: 3.w)),
+          SliverToBoxAdapter(child: _StoriesRow(users: n.recommendUsers)),
+          SliverToBoxAdapter(
+            child: _RecommendUsersSection(
+              users: n.recommendUsers,
+              loading: n.recommendUsersLoading,
+              isFollowing: n.isFollowing,
+              onToggleFollow: (uid) => _toggleFollow(context, n, uid),
+              onMore: () => _onTapRecommendMore(context),
+            ),
           ),
+          if (empty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _EmptyView(
+                message: n.errorOf(tab) ?? 'commonNoResults'.tr(),
+                onRetry: () => n.refresh(tab),
+              ),
+            )
+          else
+            SliverList.separated(
+              itemCount: posts.length + 1,
+              itemBuilder: (context, index) {
+                if (index == posts.length) {
+                  return _FeedFooter(
+                    loading: loadingMore,
+                    hasMore: n.hasMore(tab),
+                  );
+                }
+                final post = posts[index];
+                return _FeedCard(
+                  key: ValueKey(post.postId),
+                  post: post,
+                  showAuthorFollowButton:
+                      n.currentUserUid == null ||
+                      post.author.uid != n.currentUserUid,
+                  isAuthorFollowed: n.isFollowing(
+                    post.author.uid,
+                    fallback: post.author.isFollowing ?? false,
+                  ),
+                  onToggleAuthorFollow: () =>
+                      _toggleFollow(context, n, post.author.uid),
+                  onToggleLike: () => _onToggleLike(context, n, post),
+                );
+              },
+              separatorBuilder: (_, __) => SizedBox(height: 10.h),
+            ),
+        ],
       ],
     );
   }
@@ -584,13 +601,16 @@ class _RecommendUserCard extends StatelessWidget {
 
 class _FeedCard extends StatefulWidget {
   const _FeedCard({
+    super.key,
     required this.post,
+    required this.showAuthorFollowButton,
     required this.isAuthorFollowed,
     required this.onToggleAuthorFollow,
     required this.onToggleLike,
   });
 
   final FeedPost post;
+  final bool showAuthorFollowButton;
   final bool isAuthorFollowed;
   final VoidCallback onToggleAuthorFollow;
   final VoidCallback onToggleLike;
@@ -601,6 +621,14 @@ class _FeedCard extends StatefulWidget {
 
 class _FeedCardState extends State<_FeedCard> {
   bool _expanded = false;
+
+  @override
+  void didUpdateWidget(covariant _FeedCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.post.postId != widget.post.postId) {
+      _expanded = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -674,36 +702,37 @@ class _FeedCardState extends State<_FeedCard> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: widget.onToggleAuthorFollow,
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: 74.w,
-              height: 30.h,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: widget.isAuthorFollowed
-                    ? Colors.transparent
-                    : const Color(0xFF1A1F2C),
-                border: widget.isAuthorFollowed
-                    ? Border.all(color: const Color(0xFFCCCCCC), width: 1)
-                    : null,
-                borderRadius: BorderRadius.circular(99.r),
-              ),
-              child: Text(
-                widget.isAuthorFollowed
-                    ? 'commonFollowed'.tr()
-                    : 'commonFollow'.tr(),
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w600,
+          if (widget.showAuthorFollowButton)
+            GestureDetector(
+              onTap: widget.onToggleAuthorFollow,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 74.w,
+                height: 30.h,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   color: widget.isAuthorFollowed
-                      ? const Color(0xFF1A1F2C)
-                      : Colors.white,
+                      ? Colors.transparent
+                      : const Color(0xFF1A1F2C),
+                  border: widget.isAuthorFollowed
+                      ? Border.all(color: const Color(0xFFCCCCCC), width: 1)
+                      : null,
+                  borderRadius: BorderRadius.circular(99.r),
+                ),
+                child: Text(
+                  widget.isAuthorFollowed
+                      ? 'commonFollowed'.tr()
+                      : 'commonFollow'.tr(),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: widget.isAuthorFollowed
+                        ? const Color(0xFF1A1F2C)
+                        : Colors.white,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -829,65 +858,90 @@ class _FeedCardState extends State<_FeedCard> {
         ? ''
         : post.tags.map((t) => '#$t').join(' ');
 
+    if (tagText.isEmpty && !hasContent) {
+      if (!hasLocation) return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 14.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (tagText.isNotEmpty || hasContent)
-            _ExpandableContent(
-              tagText: tagText,
-              content: post.content,
-              expanded: _expanded,
-              onToggle: () => setState(() => _expanded = !_expanded),
-            ),
-          if (hasLocation || true /* always show row to keep layout stable */)
-            Padding(
-              padding: EdgeInsets.only(top: 6.h),
-              child: Row(
-                children: [
-                  if (hasLocation) ...[
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 13.sp,
-                      color: const Color(0xFF62748E),
-                    ),
-                    SizedBox(width: 2.w),
-                    Flexible(
-                      child: Text(
-                        post.location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12.sp,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final spans = _postBodySpans(
+            context,
+            tagText: tagText,
+            content: post.content,
+          );
+          final exceedsTwo = spans.isEmpty
+              ? false
+              : _richTextExceedsMaxLines(
+                  context,
+                  constraints.maxWidth,
+                  spans,
+                  maxLines: 2,
+                );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (tagText.isNotEmpty || hasContent)
+                Text.rich(
+                  TextSpan(children: spans),
+                  maxLines: _expanded ? null : 2,
+                  overflow:
+                      _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                ),
+              if (hasLocation || exceedsTwo)
+                Padding(
+                  padding: EdgeInsets.only(top: 6.h),
+                  child: Row(
+                    children: [
+                      if (hasLocation) ...[
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 13.sp,
                           color: const Color(0xFF62748E),
                         ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  if ((tagText.isNotEmpty || post.content.length > 60))
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => setState(() => _expanded = !_expanded),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 4.h),
-                        child: Text(
-                          _expanded
-                              ? 'homeCollapse'.tr()
-                              : 'homeExpand'.tr(),
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            color: const Color(0xFF1A1F2C),
-                            fontWeight: FontWeight.w600,
+                        SizedBox(width: 2.w),
+                        Flexible(
+                          child: Text(
+                            post.location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF62748E),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-        ],
+                      ],
+                      if (hasLocation && exceedsTwo) const Spacer(),
+                      if (!hasLocation && exceedsTwo) const Spacer(),
+                      if (exceedsTwo)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              setState(() => _expanded = !_expanded),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 2.w, vertical: 4.h),
+                            child: Text(
+                              _expanded
+                                  ? 'homeCollapse'.tr()
+                                  : 'homeExpand'.tr(),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: const Color(0xFF1A1F2C),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -919,23 +973,12 @@ class _FeedCardState extends State<_FeedCard> {
     final years = (diff.inDays / 365).floor();
     return 'homeYearsAgo'.tr(namedArgs: {'n': '$years'});
   }
-}
 
-class _ExpandableContent extends StatelessWidget {
-  const _ExpandableContent({
-    required this.tagText,
-    required this.content,
-    required this.expanded,
-    required this.onToggle,
-  });
-
-  final String tagText;
-  final String content;
-  final bool expanded;
-  final VoidCallback onToggle;
-
-  @override
-  Widget build(BuildContext context) {
+  List<InlineSpan> _postBodySpans(
+    BuildContext context, {
+    required String tagText,
+    required String content,
+  }) {
     final spans = <InlineSpan>[];
     if (tagText.isNotEmpty) {
       spans.add(TextSpan(
@@ -958,15 +1001,25 @@ class _ExpandableContent extends StatelessWidget {
         ),
       ));
     }
-    return GestureDetector(
-      onTap: onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: Text.rich(
-        TextSpan(children: spans),
-        maxLines: expanded ? null : 2,
-        overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
-      ),
+    return spans;
+  }
+
+  bool _richTextExceedsMaxLines(
+    BuildContext context,
+    double maxWidth,
+    List<InlineSpan> spans, {
+    required int maxLines,
+  }) {
+    if (spans.isEmpty || maxWidth <= 0) return false;
+    final painter = TextPainter(
+      text: TextSpan(children: spans),
+      textDirection: Directionality.of(context),
+      maxLines: maxLines,
+      textScaler: MediaQuery.textScalerOf(context),
+      ellipsis: '…',
     );
+    painter.layout(maxWidth: maxWidth);
+    return painter.didExceedMaxLines;
   }
 }
 
@@ -1019,17 +1072,23 @@ class _FeedFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!loading && hasMore) {
+      return SizedBox(height: 12.h);
+    }
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 18.h),
       child: Center(
         child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+            ? SizedBox(
+                width: 22.w,
+                height: 22.w,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF1A1F2C),
+                ),
               )
             : Text(
-                hasMore ? 'homeLoadingMore'.tr() : 'homeNoMore'.tr(),
+                'homeNoMore'.tr(),
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFF8C95A8),

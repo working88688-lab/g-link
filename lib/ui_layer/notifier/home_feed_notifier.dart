@@ -93,6 +93,11 @@ class HomeFeedNotifier extends ChangeNotifier {
   bool get recommendUsersLoading => _recommendUsersLoading;
   String? get recommendUsersError => _recommendUsersError;
 
+  /// 当前登录用户 uid；用于隐藏本人帖子的关注按钮。
+  int? get currentUserUid => _currentUserUid;
+
+  int? _currentUserUid;
+
   bool isFollowing(int uid, {bool fallback = false}) =>
       _followOverride[uid] ?? fallback;
 
@@ -100,10 +105,35 @@ class HomeFeedNotifier extends ChangeNotifier {
 
   /// MainShell 第一次进入首页时调用：拉默认 tab 数据 + 推荐关注。
   Future<void> bootstrap() async {
+    await _resolveCurrentUserUid();
     await Future.wait([
       ensureLoaded(_currentTab),
       loadRecommendUsers(),
     ]);
+  }
+
+  Future<void> _resolveCurrentUserUid() async {
+    final cached = await _profileDomain.readCachedMyProfile();
+    if (_disposed) return;
+    if (cached != null && cached.uid > 0) {
+      _currentUserUid = cached.uid;
+      _safeNotify();
+    }
+    final r = await _profileDomain.getMyProfile();
+    if (_disposed) return;
+    if (r.status == 0 && r.data != null && r.data!.uid > 0) {
+      _currentUserUid = r.data!.uid;
+      _safeNotify();
+    }
+  }
+
+  void _seedFollowFromPosts(Iterable<FeedPost> posts) {
+    for (final p in posts) {
+      final f = p.author.isFollowing;
+      if (f != null) {
+        _followOverride.putIfAbsent(p.author.uid, () => f);
+      }
+    }
   }
 
   /// 切换 tab。第一次进该 tab 才会拉，避免来回点重复请求。
@@ -151,6 +181,7 @@ class HomeFeedNotifier extends ChangeNotifier {
     if (result.status == 0 && result.data != null) {
       final page = result.data!;
       _posts[tab] = [...?_posts[tab], ...page.items];
+      _seedFollowFromPosts(page.items);
       _cursor[tab] = page.nextCursor;
       _hasMore[tab] = page.hasMore && page.nextCursor != null;
       _errorMessage[tab] = null;
@@ -185,6 +216,7 @@ class HomeFeedNotifier extends ChangeNotifier {
 
   /// 切换关注状态。先乐观更新，失败回滚。
   Future<bool> toggleFollow(int uid) async {
+    if (_currentUserUid != null && uid == _currentUserUid) return false;
     if (_followInflight.contains(uid)) return false;
     final wasFollowing = _followOverride[uid] ?? false;
     _followInflight.add(uid);
@@ -300,6 +332,7 @@ class HomeFeedNotifier extends ChangeNotifier {
     if (result.status == 0 && result.data != null) {
       final page = result.data!;
       _posts[tab] = [...page.items];
+      _seedFollowFromPosts(page.items);
       _cursor[tab] = page.nextCursor;
       _hasMore[tab] = page.hasMore && page.nextCursor != null;
       _errorMessage[tab] = null;
