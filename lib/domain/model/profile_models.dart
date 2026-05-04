@@ -180,6 +180,43 @@ class InterestTag {
   }
 }
 
+class FaqItem {
+  const FaqItem({
+    required this.id,
+    required this.question,
+    required this.answer,
+  });
+
+  final int id;
+  final String question;
+  final String answer;
+
+  factory FaqItem.fromJson(Json json) {
+    return FaqItem(
+      id: int.tryParse('${json['id'] ?? 0}') ?? 0,
+      question: '${json['question'] ?? json['title'] ?? ''}',
+      answer: '${json['answer'] ?? json['content'] ?? ''}',
+    );
+  }
+}
+
+class FaqCategoryItem {
+  const FaqCategoryItem({
+    required this.category,
+    required this.items,
+  });
+
+  final String category;
+  final List<FaqItem> items;
+
+  factory FaqCategoryItem.fromJson(Json json) {
+    return FaqCategoryItem(
+      category: '${json['category'] ?? ''}',
+      items: List<Json>.from((json['items'] ?? []) as List).map(FaqItem.fromJson).toList(),
+    );
+  }
+}
+
 class RecommendedUser {
   const RecommendedUser({
     required this.uid,

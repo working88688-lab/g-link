@@ -182,6 +182,7 @@ class ProfileService extends BaseService {
       );
 
   AsyncJson getInterests() => get('/interest-tags', encrypted: false);
+  AsyncJson getFaqCategories() => get('/faqs', encrypted: false);
   AsyncJson updateMyInterestTags({required List<int> tagIds}) => put(
         '/interest-tags',
         data: {

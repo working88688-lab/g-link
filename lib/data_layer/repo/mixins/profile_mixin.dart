@@ -125,6 +125,12 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       }).guard;
 
   @override
+  AsyncResult<List<FaqCategoryItem>> getFaqCategories() => _profileService.getFaqCategories().deserializeJsonBy((json) {
+        final list = List<Json>.from((json['lists'] ?? json['list'] ?? json['data'] ?? []) as List);
+        return list.map(FaqCategoryItem.fromJson).toList();
+      }).guard;
+
+  @override
   AsyncResult updateMyInterestTags({required List<int> tagIds}) =>
       _profileService.updateMyInterestTags(tagIds: tagIds).deserialize().guard;
 
