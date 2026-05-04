@@ -24,8 +24,8 @@ class _AuthPageState extends State<AuthPage> {
   static const _termsUrl = 'https://api.zywsbgha.cc/terms';
   static const _privacyUrl = 'https://api.zywsbgha.cc/privacy';
 
-  final _loginAccountController = TextEditingController(text: "13830405060");
-  final _loginPasswordController = TextEditingController(text: "qwer1234");
+  final _loginAccountController = TextEditingController();
+  final _loginPasswordController = TextEditingController();
   bool _agreePolicy = true;
   bool _loginPwdVisible = false;
   bool _countryCodesLoaded = false;
