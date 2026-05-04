@@ -227,6 +227,57 @@ class BlockedKeywordItem {
   }
 }
 
+class NotificationUnreadCount {
+  const NotificationUnreadCount({required this.system});
+
+  final int system;
+
+  factory NotificationUnreadCount.fromJson(Json json) {
+    final data = Json.from(json['data'] ?? json);
+    return NotificationUnreadCount(
+      system: int.tryParse('${data['system'] ?? data['system_count'] ?? data['unread_count'] ?? 0}') ?? 0,
+    );
+  }
+}
+
+class NotificationItem {
+  const NotificationItem({
+    required this.id,
+    required this.category,
+    required this.title,
+    required this.desc,
+    required this.time,
+    this.unread = false,
+    this.detailTitle,
+    this.detailContent,
+    this.detailTime,
+  });
+
+  final int id;
+  final String category;
+  final String title;
+  final String desc;
+  final String time;
+  final bool unread;
+  final String? detailTitle;
+  final String? detailContent;
+  final String? detailTime;
+
+  factory NotificationItem.fromJson(Json json) {
+    return NotificationItem(
+      id: int.tryParse('${json['id'] ?? 0}') ?? 0,
+      category: '${json['category'] ?? json['type'] ?? ''}',
+      title: '${json['title'] ?? json['name'] ?? ''}',
+      desc: '${json['desc'] ?? json['content'] ?? json['message'] ?? ''}',
+      time: '${json['time'] ?? json['created_at'] ?? ''}',
+      unread: json['unread'] == true || json['is_read'] == false,
+      detailTitle: '${json['detail_title'] ?? json['title'] ?? ''}',
+      detailContent: '${json['detail_content'] ?? json['content'] ?? json['message'] ?? ''}',
+      detailTime: '${json['detail_time'] ?? json['time'] ?? json['created_at'] ?? ''}',
+    );
+  }
+}
+
 class RecommendedUser {
   const RecommendedUser({
     required this.uid,

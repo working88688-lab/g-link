@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/profile_models.dart' as models;
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -59,7 +62,7 @@ class _NotificationPageState extends State<NotificationPage> {
       centerTitle: true,
       actions: [
         TextButton(
-          onPressed: () {},
+          onPressed: _markAllRead,
           child: Text(
             '全部已读',
             style: TextStyle(
@@ -142,202 +145,124 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget _buildTabContent({Key? key}) {
     switch (_tabIndex) {
       case 0:
-        return _SystemNotificationList(key: key);
+        return const _SystemNotificationList();
       case 1:
-        return _InteractionNotificationList(key: key);
+        return const _InteractionNotificationList();
       case 2:
-        return _FanNotificationList(key: key);
+        return const _FanNotificationList();
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Future<void> _markAllRead() async {
+    await context.read<ProfileDomain>().markAllNotificationsRead();
+  }
+}
+
+_SystemNotificationItem _systemFromModel(models.NotificationItem item) {
+  return _SystemNotificationItem(
+    iconColor: const Color(0xFFFFD88D),
+    icon: Icons.notifications_active_rounded,
+    title: item.title,
+    desc: item.detailContent ?? item.desc,
+    time: item.detailTime ?? item.time,
+    unread: item.unread,
+  );
+}
+
+_InteractionNotificationItem _interactionFromModel(models.NotificationItem item) {
+  return _InteractionNotificationItem(
+    avatarColor: const Color(0xFFEAB67B),
+    title: item.title,
+    action: item.desc,
+    time: item.time,
+    message: item.desc,
+    reaction: NotificationReaction.comment,
+  );
+}
+
+_FanNotificationItem _fanFromModel(models.NotificationItem item) {
+  return _FanNotificationItem(
+    name: item.title,
+    time: item.time,
+    buttonText: '已互关',
+    selected: false,
+  );
+}
+
+class NotificationScrollList extends StatefulWidget {
+  const NotificationScrollList({
+    super.key,
+    required this.controller,
+    required this.itemCount,
+    required this.itemBuilder,
+    required this.separator,
+    required this.loadingMore,
+    required this.hasMore,
+    required this.onLoadMore,
+    required this.padding,
+  });
+
+  final ScrollController? controller;
+  final int itemCount;
+  final IndexedWidgetBuilder itemBuilder;
+  final Widget separator;
+  final bool loadingMore;
+  final bool hasMore;
+  final Future<void> Function()? onLoadMore;
+  final EdgeInsets padding;
+
+  @override
+  State<NotificationScrollList> createState() => _NotificationScrollListState();
+}
+
+class _NotificationScrollListState extends State<NotificationScrollList> {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      controller: widget.controller,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: widget.padding,
+      itemCount: widget.itemCount + (widget.loadingMore ? 1 : 0),
+      separatorBuilder: (_, __) => widget.separator,
+      itemBuilder: (context, index) {
+        if (index >= widget.itemCount) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.w),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        return widget.itemBuilder(context, index);
+      },
+    );
   }
 }
 
 class _SystemNotificationList extends StatelessWidget {
   const _SystemNotificationList({super.key});
 
-  static const _items = [
-    _SystemNotificationItem(
-      iconColor: Color(0xFFFFD88D),
-      icon: Icons.volume_up_rounded,
-      title: '版本公告',
-      desc: 'V2.0 版本更新啦！全新界面，更流畅的体验。我们新增了多种视频特效，快来试试... ',
-      time: '10分钟前',
-      unread: true,
-    ),
-    _SystemNotificationItem(
-      iconColor: Color(0xFFB9F2D6),
-      icon: Icons.notifications_active_rounded,
-      title: '平台通知',
-      desc: '您的账号在异地(北京)登录，如非本人操作，请立即修改密码并检查账号状态以保... ',
-      time: '1小时前',
-    ),
-    _SystemNotificationItem(
-      iconColor: Color(0xFFBFD0FF),
-      icon: Icons.verified_user_rounded,
-      title: '账号安全',
-      desc: '这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行... ',
-      time: '1小时前',
-    ),
-    _SystemNotificationItem(
-      iconColor: Color(0xFFD7F4B5),
-      icon: Icons.emoji_events_rounded,
-      title: '作品审核通知',
-      desc: '这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行... ',
-      time: '1小时前',
-    ),
-    _SystemNotificationItem(
-      iconColor: Color(0xFFFFD1BE),
-      icon: Icons.inventory_2_rounded,
-      title: '线上作品下架通知',
-      desc: '这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行省略这里是内容超出两行... ',
-      time: '1小时前',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      key: key,
-      padding: EdgeInsets.fromLTRB(8.w, 5.w, 8.w, 16.w),
-      itemBuilder: (context, index) => _SystemNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => Container(
-        height: 1.w,
-        margin: EdgeInsets.only(left: 72.w),
-        color: const Color(0xFFF8F9FE),
-      ),
-      itemCount: _items.length,
-    );
+    return Center(child: Text('系统通知'));
   }
 }
 
 class _InteractionNotificationList extends StatelessWidget {
   const _InteractionNotificationList({super.key});
 
-  static const _items = [
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFEAB67B),
-      title: '摄影阿木',
-      action: '赞了你的视频',
-      time: '2天前',
-      message: '',
-      thumbVisible: true,
-      reaction: NotificationReaction.like,
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFEAB67B),
-      title: '摄影阿木',
-      action: '赞了你的帖子',
-      time: '2天前',
-      message: '',
-      thumbVisible: true,
-      reaction: NotificationReaction.like,
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFEB8E59),
-      title: '摄影阿木',
-      action: '评论了你的帖子',
-      time: '2天前',
-      message: '这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享...',
-      thumbVisible: true,
-      reaction: NotificationReaction.comment,
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFAD7BFF),
-      title: '摄影阿木',
-      action: '回复了你的评论',
-      time: '2天前',
-      message: '英伦风，很不错，挺赞的穿搭',
-      reaction: NotificationReaction.comment,
-      quote: '英伦风，很不错，挺赞的穿搭',
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFDB6CA8),
-      title: '摄影阿木',
-      action: '赞了你的评论',
-      time: '2天前',
-      message: '英伦风，很不错，挺赞的穿搭',
-      thumbVisible: true,
-      reaction: NotificationReaction.like,
-      quote: '英伦风，很不错，挺赞的穿搭',
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFF5B55E),
-      title: '摄影阿木',
-      action: '@提及了你',
-      time: '2天前',
-      message: '#拍照@婉儿这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享...',
-      thumbVisible: true,
-      reaction: NotificationReaction.mention,
-    ),
-    _InteractionNotificationItem(
-      avatarColor: Color(0xFFEB8E59),
-      title: '摄影阿木',
-      action: '在你的主页留言',
-      time: '2天前',
-      message: '这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享购买这套穿搭太好看了吧，求分享...',
-      reaction: NotificationReaction.comment,
-      footerActions: true,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      key: key,
-      padding: EdgeInsets.fromLTRB(8.w, 5.w, 8.w, 16.w),
-      itemBuilder: (context, index) => _InteractionNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => Container(
-        height: 1.w,
-        margin: EdgeInsets.only(left: 72.w),
-        color: const Color(0xFFF8F9FE),
-      ),
-      itemCount: _items.length,
-    );
+    return const Center(child: Text('互动通知'));
   }
 }
 
 class _FanNotificationList extends StatelessWidget {
   const _FanNotificationList({super.key});
 
-  static const _items = [
-    _FanNotificationItem(
-      name: 'Sarah Jenks',
-      time: '昨天',
-      buttonText: '已互关',
-    ),
-    _FanNotificationItem(
-      name: 'Sarah Jenks',
-      time: '昨天',
-      buttonText: '回关',
-      selected: true,
-    ),
-    _FanNotificationItem(
-      name: 'Sarah Jenks',
-      time: '昨天',
-      buttonText: '已互关',
-    ),
-    _FanNotificationItem(
-      name: 'Sarah Jenks',
-      time: '昨天',
-      buttonText: '已互关',
-    ),
-    _FanNotificationItem(
-      name: 'Sarah Jenks',
-      time: '昨天',
-      buttonText: '已互关',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      key: key,
-      padding: EdgeInsets.fromLTRB(16.w, 4.w, 16.w, 16.w),
-      itemBuilder: (context, index) => _FanNotificationTile(item: _items[index]),
-      separatorBuilder: (_, __) => SizedBox(height: 24.w),
-      itemCount: _items.length,
-    );
+    return const Center(child: Text('新增粉丝'));
   }
 }
 

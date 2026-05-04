@@ -61,6 +61,10 @@ abstract class ProfileDomain {
   AsyncResult<List<String>> getBlockedKeywords();
   AsyncResult addBlockedKeyword({required String keyword});
   AsyncResult deleteBlockedKeyword({required String keyword});
+  AsyncResult<List<NotificationUnreadCount>> getNotificationUnreadCount();
+  AsyncResult<List<NotificationItem>> getNotifications({String? category});
+  AsyncResult markNotificationRead({required int id});
+  AsyncResult markAllNotificationsRead();
   AsyncResult updateMyInterestTags({required List<int> tagIds});
 
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});

@@ -184,6 +184,20 @@ class ProfileService extends BaseService {
   AsyncJson getInterests() => get('/interest-tags', encrypted: false);
   AsyncJson getFaqCategories() => get('/faqs', encrypted: false);
   AsyncJson getBlockedKeywords() => get('/settings/content-blocked-keywords', encrypted: false);
+  AsyncJson getNotificationUnreadCount() => get('/notifications/unread-count', encrypted: false);
+  AsyncJson getNotifications({String? category}) => get(
+        '/notifications',
+        queryParameters: {
+          if (category != null && category.isNotEmpty) 'category': category,
+        },
+        encrypted: false,
+      );
+  AsyncJson markNotificationRead({required int id}) => post(
+        '/notifications/read',
+        data: {'id': id},
+        encrypted: false,
+      );
+  AsyncJson markAllNotificationsRead() => post('/notifications/mark-all-read', data: const {}, encrypted: false);
   AsyncJson addBlockedKeyword({required String keyword}) => post(
         '/settings/content-blocked-keywords',
         data: {'keyword': keyword},

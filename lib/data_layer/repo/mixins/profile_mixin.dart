@@ -145,6 +145,27 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       _profileService.deleteBlockedKeyword(keyword: keyword).deserialize().guard;
 
   @override
+  AsyncResult<List<NotificationUnreadCount>> getNotificationUnreadCount() =>
+      _profileService.getNotificationUnreadCount().deserializeJsonBy((json) {
+        final list = List<Json>.from((json['lists'] ?? json['list'] ?? json['data'] ?? []) as List);
+        return list.map(NotificationUnreadCount.fromJson).toList();
+      }).guard;
+
+  @override
+  AsyncResult<List<NotificationItem>> getNotifications({String? category}) =>
+      _profileService.getNotifications(category: category).deserializeJsonBy((json) {
+        final list = List<Json>.from((json['lists'] ?? json['list'] ?? json['data'] ?? []) as List);
+        return list.map(NotificationItem.fromJson).toList();
+      }).guard;
+
+  @override
+  AsyncResult markNotificationRead({required int id}) =>
+      _profileService.markNotificationRead(id: id).deserialize().guard;
+
+  @override
+  AsyncResult markAllNotificationsRead() => _profileService.markAllNotificationsRead().deserialize().guard;
+
+  @override
   AsyncResult updateMyInterestTags({required List<int> tagIds}) =>
       _profileService.updateMyInterestTags(tagIds: tagIds).deserialize().guard;
 

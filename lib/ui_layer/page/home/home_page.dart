@@ -248,7 +248,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                onPressed: () => MyToast.showText(text: 'homeNotificationsComingSoon'.tr()),
+                onPressed: () => NotificationRoute().push(context),
                 icon: Image.asset(
                   MyImagePaths.notification,
                   width: 21.w,
@@ -261,9 +261,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   right: 6.w,
                   top: 6.h,
                   child: GestureDetector(
-                    onTap: () {
-                      NotificationRoute().push(context);
-                    },
+                    onTap: () {},
                     child: Container(
                       constraints: BoxConstraints(minWidth: 14.w, minHeight: 14.w),
                       padding: EdgeInsets.symmetric(horizontal: 3.w),
