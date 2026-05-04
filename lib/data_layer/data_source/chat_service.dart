@@ -29,12 +29,12 @@ class ChatService {
 
   Future<ChatMessagesResult> fetchChatMessages({
     required int chatId,
-    String? cursor,
+    int? cursor,
     String direction = 'before',
     int limit = 30,
   }) async {
     final params = <String, dynamic>{'limit': limit, 'direction': direction};
-    if (cursor != null && cursor.isNotEmpty) params['cursor'] = cursor;
+    if (cursor != null && cursor > 0) params['cursor'] = cursor;
     final res = await _dio.get('/api/v1/chats/$chatId/messages', queryParameters: params);
     final root = res.data;
     final data = root is Map<String, dynamic> ? (root['data'] as Map<String, dynamic>? ?? root) : <String, dynamic>{};
@@ -43,7 +43,7 @@ class ChatService {
         .toList();
     return (
       items: items,
-      nextCursor: data['next_cursor']?.toString(),
+      nextCursor: int.tryParse('${data['next_cursor'] ?? ''}'),
       hasMore: (data['has_more'] as bool?) ?? false,
     );
   }

@@ -55,6 +55,7 @@ dependencies:
   image: ^4.3.0
   device_info_plus: ^9.1.1
   pull_to_refresh: ^2.0.0
+  scrollable_positioned_list: ^0.3.8
   geolocator: ^13.0.0
   geocoding: ^3.0.0
 

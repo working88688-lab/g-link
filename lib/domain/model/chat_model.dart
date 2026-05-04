@@ -180,6 +180,6 @@ class ChatMessageItem {
 
 typedef ChatMessagesResult = ({
   List<ChatMessageItem> items,
-  String? nextCursor,
+  int? nextCursor,
   bool hasMore,
 });

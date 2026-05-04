@@ -8,6 +8,7 @@ import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../ui_layer/widgets/app_confirm_dialog.dart';
 import '../../image_paths.dart';
 import '../../widgets/my_image.dart';
@@ -32,24 +33,37 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
+enum _AnchorDirection { top, bottom }
+
+class _Anchor {
+  final int messageId;
+  final double alignment;
+
+  const _Anchor({required this.messageId, required this.alignment});
+}
+
 class _ChatPageState extends State<ChatPage> {
   final _inputCtrl = TextEditingController();
-  final _scrollCtrl = ScrollController();
+  final ItemScrollController _itemScrollCtrl = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
   final _focusNode = FocusNode();
   bool _hasText = false;
   bool _showPanel = false;
   bool _isLoadingSession = true;
-  bool _isLoadingMore = false;
-  bool _hasMore = false;
+  bool _isLoadingOlder = false;
+  bool _isLoadingNewer = false;
+  bool _hasMoreOlder = false;
+  bool _hasMoreNewer = false;
+  int? _olderCursor;
+  int? _newerCursor;
   String? _sessionError;
   ChatItem? _session;
-  String? _nextCursor;
   final List<ChatMessageItem> _messages = [];
   int? _currentUserId;
 
-  String? get nikeName => widget.name.isNotEmpty ? widget.name : _session?.name;
+  String? get displayName => widget.name.isNotEmpty ? widget.name : _session?.name;
 
-  String? get avatarUrl => _session?.avatarUrl.isNotEmpty == true ? _session!.avatarUrl : widget.avatarUrl;
+  String? get displayAvatarUrl => _session?.avatarUrl.isNotEmpty == true ? _session!.avatarUrl : widget.avatarUrl;
 
   @override
   void initState() {
@@ -57,21 +71,19 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _bootstrapCurrentUser();
       _loadSession();
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.jumpTo(_scrollCtrl.position.maxScrollExtent);
-      }
     });
     _focusNode.addListener(() {
       if (_focusNode.hasFocus && _showPanel) {
         setState(() => _showPanel = false);
       }
     });
+    _itemPositionsListener.itemPositions.addListener(_handleScrollPosition);
   }
 
   @override
   void dispose() {
+    _itemPositionsListener.itemPositions.removeListener(_handleScrollPosition);
     _inputCtrl.dispose();
-    _scrollCtrl.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -110,72 +122,267 @@ class _ChatPageState extends State<ChatPage> {
 
   Future<void> _loadMessages({bool refresh = false}) async {
     final session = _session;
-    if (session == null) return;
-    if (_isLoadingMore) return;
+    if (session == null || _isLoadingOlder || _isLoadingNewer) return;
 
-    setState(() {
-      if (refresh) {
-        _messages.clear();
-        _nextCursor = null;
-        _hasMore = false;
-      } else {
-        _isLoadingMore = true;
-      }
-      _sessionError = null;
-    });
+    _setOlderLoading(true);
+    if (refresh) {
+      _resetPagination();
+    }
+    _clearSessionError();
 
     try {
       final result = await context.read<ChatDomain>().fetchChatMessages(
-        chatId: session.chatId,
-        cursor: refresh ? null : _nextCursor,
-        direction: 'after',
-        limit: 30,
-      );
+            chatId: session.chatId,
+            cursor: null,
+            direction: 'before',
+            limit: 30,
+          );
       if (!mounted) return;
       setState(() {
-        _messages.addAll(result.items);
-        _nextCursor = result.nextCursor;
-        _hasMore = result.hasMore;
-        _isLoadingMore = false;
+        _messages
+          ..clear()
+          ..addAll(result.items);
+        _olderCursor = result.nextCursor;
+        _hasMoreOlder = result.hasMore;
+        _newerCursor = _messages.isNotEmpty ? _messages.first.id : null;
+        _hasMoreNewer = false;
       });
-      await _scrollToBottom();
     } catch (err) {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingMore = false;
-        _sessionError = err.toString();
-      });
+      _setSessionError(err);
+    } finally {
+      _setOlderLoading(false);
     }
   }
 
-  Future<void> _scrollToBottom() async {
-    // await WidgetsBinding.instance.endOfFr if (!_scrollCtrl.hasClients) return;
-    _scrollCtrl.jumpTo(_scrollCtrl.position.minScrollExtent);
+  void _handleScrollPosition() {
+    if (_isLoadingOlder || _isLoadingNewer) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty || _messages.isEmpty) return;
+
+    final minIndex = positions.map((e) => e.index).reduce((a, b) => a < b ? a : b);
+    final maxIndex = positions.map((e) => e.index).reduce((a, b) => a > b ? a : b);
+    if (_hasMoreOlder && maxIndex >= _messages.length - 2) {
+      _loadOlderMessages();
+    }
+    if (_hasMoreNewer && minIndex <= 1) {
+      _loadNewerMessages();
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_messages.isEmpty || !_itemScrollCtrl.isAttached) return;
+    _itemScrollCtrl.jumpTo(
+      index: 0,
+      alignment: 0,
+    );
+  }
+
+  Future<void> _jumpToMessageAndRefresh(int msgId) async {
+    final session = _session;
+    if (session == null) return;
+
+    final exists = _messages.any((m) => m.id == msgId);
+    if (exists) {
+      await _scrollToMessage(msgId);
+      return;
+    }
+
+    final anchor = _captureBottomAnchor();
+    try {
+      final result = await context.read<ChatDomain>().fetchChatMessages(
+            chatId: session.chatId,
+            cursor: msgId,
+            direction: 'before',
+            limit: 30,
+          );
+      if (!mounted) return;
+      setState(() {
+        _messages
+          ..clear()
+          ..addAll(result.items);
+        _olderCursor = result.nextCursor;
+        _hasMoreOlder = result.hasMore;
+        _newerCursor = _messages.isNotEmpty ? _messages.first.id : msgId;
+        _hasMoreNewer = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreAnchor(anchor, animate: false);
+        if (_itemScrollCtrl.isAttached) {
+          _itemScrollCtrl.jumpTo(index: _messages.indexWhere((m) => m.id == msgId), alignment: 0.5);
+        }
+      });
+    } catch (err) {
+      _setSessionError(err);
+    }
+  }
+
+  Future<void> _scrollToMessage(int msgId) async {
+    if (!_itemScrollCtrl.isAttached) return;
+    final idx = _messages.indexWhere((m) => m.id == msgId);
+    if (idx < 0) return;
+    await _itemScrollCtrl.scrollTo(
+      index: idx,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+      alignment: 0.5,
+    );
+  }
+
+  Future<void> _loadOlderMessages() async {
+    final session = _session;
+    if (session == null || _isLoadingOlder || !_hasMoreOlder || _olderCursor == null) return;
+
+    final anchor = _captureTopAnchor();
+    _setOlderLoading(true);
+    try {
+      final result = await context.read<ChatDomain>().fetchChatMessages(
+            chatId: session.chatId,
+            cursor: _olderCursor,
+            direction: 'before',
+            limit: 30,
+          );
+      if (!mounted) return;
+      final incoming = result.items.toList();
+      setState(() {
+        _messages.addAll(incoming);
+        _olderCursor = result.nextCursor;
+        _hasMoreOlder = result.hasMore;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _restoreAnchor(anchor, animate: false));
+    } catch (err) {
+      _setSessionError(err);
+    } finally {
+      _setOlderLoading(false);
+    }
+  }
+
+  _Anchor? _captureTopAnchor() {
+    return _captureAnchor(direction: _AnchorDirection.top);
+  }
+
+  _Anchor? _captureBottomAnchor() {
+    return _captureAnchor(direction: _AnchorDirection.bottom);
+  }
+
+  _Anchor? _captureAnchor({required _AnchorDirection direction}) {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty || _messages.isEmpty) return null;
+    final visible = positions.where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1).toList();
+    if (visible.isEmpty) return null;
+
+    visible.sort((a, b) {
+      return switch (direction) {
+        _AnchorDirection.top => a.itemLeadingEdge.compareTo(b.itemLeadingEdge),
+        _AnchorDirection.bottom => b.itemTrailingEdge.compareTo(a.itemTrailingEdge),
+      };
+    });
+
+    final pos = visible.first;
+    final idx = pos.index.clamp(0, _messages.length - 1);
+    return _Anchor(
+      messageId: _messages[idx].id,
+      alignment: switch (direction) {
+        _AnchorDirection.top => pos.itemLeadingEdge.clamp(0.0, 1.0),
+        _AnchorDirection.bottom => (1.0 - pos.itemTrailingEdge).clamp(0.0, 1.0),
+      },
+    );
+  }
+
+  void _restoreAnchor(_Anchor? anchor, {required bool animate}) {
+    if (anchor == null || !_itemScrollCtrl.isAttached) return;
+    final newIndex = _messages.indexWhere((m) => m.id == anchor.messageId);
+    if (newIndex < 0) return;
+    if (animate) {
+      _itemScrollCtrl.scrollTo(
+        index: newIndex,
+        alignment: anchor.alignment,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _itemScrollCtrl.jumpTo(index: newIndex, alignment: anchor.alignment);
+    }
+  }
+
+  void _resetPagination() {
+    _messages.clear();
+    _olderCursor = null;
+    _newerCursor = null;
+    _hasMoreOlder = false;
+    _hasMoreNewer = false;
+  }
+
+  void _setOlderLoading(bool value) {
+    if (!mounted) return;
+    setState(() => _isLoadingOlder = value);
+  }
+
+  void _setNewerLoading(bool value) {
+    if (!mounted) return;
+    setState(() => _isLoadingNewer = value);
+  }
+
+  void _clearSessionError() {
+    if (!mounted) return;
+    if (_sessionError == null) return;
+    setState(() => _sessionError = null);
+  }
+
+  void _setSessionError(Object err) {
+    if (!mounted) return;
+    setState(() {
+      _sessionError = err.toString();
+    });
+  }
+
+  Future<void> _loadNewerMessages() async {
+    final session = _session;
+    if (session == null || _isLoadingNewer || !_hasMoreNewer || _newerCursor == null) return;
+
+    final anchor = _captureBottomAnchor();
+    _setNewerLoading(true);
+    try {
+      final result = await context.read<ChatDomain>().fetchChatMessages(
+            chatId: session.chatId,
+            cursor: _newerCursor,
+            direction: 'after',
+            limit: 30,
+          );
+      if (!mounted) return;
+      final incoming = result.items.toList();
+      setState(() {
+        _messages.insertAll(0, incoming);
+        _newerCursor = result.nextCursor;
+        _hasMoreNewer = result.hasMore;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) => _restoreAnchor(anchor, animate: false));
+    } catch (err) {
+      _setSessionError(err);
+    } finally {
+      _setNewerLoading(false);
+    }
   }
 
   Future<UploadedImagePayload?> _uploadChatImage({required ImageSource source}) async {
     try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(
+      final picked = await ImagePicker().pickImage(
         source: source,
         imageQuality: 85,
         maxWidth: 1920,
       );
       if (picked == null) return null;
 
-      final bytes = await picked.readAsBytes();
       final session = _session;
       if (session == null) return null;
 
-      final ext = picked.name.contains('.') ? picked.name
-          .split('.')
-          .last : 'jpg';
+      final bytes = await picked.readAsBytes();
+      final ext = picked.name.contains('.') ? picked.name.split('.').last : 'jpg';
       final payload = await context.read<ProfileDomain>().uploadImageByPresign(
-        bytes: bytes,
-        fileExt: ext,
-        fileSize: bytes.length,
-        scene: ImageUploadScene.chat,
-      );
+            bytes: bytes,
+            fileExt: ext,
+            fileSize: bytes.length,
+            scene: ImageUploadScene.chat,
+          );
       return payload.data;
     } catch (_) {
       return null;
@@ -188,91 +395,92 @@ class _ChatPageState extends State<ChatPage> {
     final uploaded = await _uploadChatImage(source: source);
     if (uploaded == null || uploaded.downloadUrl.isEmpty) return;
 
-    final draft = ChatMessageItem(
-      id: DateTime
-          .now()
-          .microsecondsSinceEpoch,
+    final draft = _buildSendingDraft(
       chatId: session.chatId,
-      senderUid: _currentUserId ?? 0,
       msgType: ChatMessageType.image,
       content: '',
-      replyToMsgId: null,
-      status: 'sending',
-      createdAt: _formatTime(DateTime.now()),
       mediaUrl: uploaded.downloadUrl,
-      mediaMeta: const {},
-      isMine: true,
     );
 
     setState(() {
-      _messages.add(draft);
+      _messages.insert(0, draft);
       _showPanel = false;
     });
-    await _scrollToBottom();
+    _scrollToBottom();
 
     try {
       final resp = await context.read<ChatDomain>().sendMessage(
-        chatId: session.chatId,
-        msgType: ChatMessageType.image,
-        mediaUrl: uploaded.downloadUrl,
-        clientMsgId: draft.id.toString(),
-      );
+            chatId: session.chatId,
+            msgType: ChatMessageType.image,
+            mediaUrl: uploaded.downloadUrl,
+            clientMsgId: draft.id.toString(),
+          );
       if (!mounted) return;
       setState(() {
-        final idx = _messages.indexWhere((e) => e.id == draft.id.toString());
+        final idx = _messages.indexWhere((e) => e.id == draft.id);
         if (idx >= 0 && resp.id != 0) {
           _messages[idx] = resp;
         }
       });
     } catch (err) {
-      if (!mounted) return;
-      setState(() {
-        _sessionError = err.toString();
-      });
+      _setSessionError(err);
     }
   }
 
   Future<void> _sendMessage() async {
-    final text = _inputCtrl.text.trim();
     final session = _session;
-    if (text.isEmpty || session == null) return;
+    final text = _inputCtrl.text.trim();
+    if (session == null || text.isEmpty) return;
+
     _inputCtrl.clear();
-    setState(() => _hasText = false);
+    if (mounted) {
+      setState(() => _hasText = false);
+    }
+
+    final draft = _buildSendingDraft(
+      chatId: session.chatId,
+      msgType: ChatMessageType.text,
+      content: text,
+    );
+
+    setState(() {
+      _messages.insert(0, draft);
+    });
+    _scrollToBottom();
 
     try {
-      final draft = ChatMessageItem(
-        id: DateTime
-            .now()
-            .microsecondsSinceEpoch,
-        chatId: session.chatId,
-        senderUid: _currentUserId ?? 0,
-        msgType: ChatMessageType.text,
-        content: text,
-        replyToMsgId: null,
-        status: 'sending',
-        createdAt: _formatTime(DateTime.now()),
-        mediaUrl: '',
-        mediaMeta: const {},
-        isMine: true,
-      );
-      setState(() {
-        _messages.add(draft);
-      });
-      await _scrollToBottom();
       await context.read<ChatDomain>().sendMessage(
-        chatId: session.chatId,
-        msgType: ChatMessageType.text,
-        content: text,
-        clientMsgId: draft.id.toString(),
-      );
+            chatId: session.chatId,
+            msgType: ChatMessageType.text,
+            content: text,
+            clientMsgId: draft.id.toString(),
+          );
       if (!mounted) return;
-      await _scrollToBottom();
+      _scrollToBottom();
     } catch (err) {
-      if (!mounted) return;
-      setState(() {
-        _sessionError = err.toString();
-      });
+      _setSessionError(err);
     }
+  }
+
+  ChatMessageItem _buildSendingDraft({
+    required int chatId,
+    required ChatMessageType msgType,
+    required String content,
+    String? mediaUrl,
+  }) {
+    return ChatMessageItem(
+      id: DateTime.now().microsecondsSinceEpoch,
+      chatId: chatId,
+      senderUid: _currentUserId ?? 0,
+      msgType: msgType,
+      content: content,
+      replyToMsgId: null,
+      status: 'sending',
+      createdAt: _formatTime(DateTime.now()),
+      mediaUrl: mediaUrl ?? '',
+      mediaMeta: const {},
+      isMine: true,
+    );
   }
 
   String _formatTime(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
@@ -315,10 +523,17 @@ class _ChatPageState extends State<ChatPage> {
     return _buildMsgList();
   }
 
+  void _dismissKeyboardAndPanel() {
+    FocusScope.of(context).unfocus();
+    if (_showPanel) {
+      setState(() => _showPanel = false);
+    }
+  }
+
   // ── 顶部栏 ───────────────────────────────
   Widget _buildTopBar() {
-    final displayName = nikeName;
-    final displayAvatar = avatarUrl;
+    final displayName = this.displayName;
+    final displayAvatar = displayAvatarUrl;
     return Container(
       height: 56.w,
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -365,7 +580,13 @@ class _ChatPageState extends State<ChatPage> {
                 value: 'search',
                 icon: MyImagePaths.iconChatSearch,
                 label: 'chatMenuSearch'.tr(),
-                onTap: () => ChatRecordsSearchRoute(chatId: _session?.chatId ?? 0).push(context),
+                onTap: () async {
+                  final chatId = _session?.chatId ?? 0;
+                  if (chatId == 0) return;
+                  final msgId = await ChatRecordsSearchRoute(chatId: chatId).push<int>(context);
+                  if (!mounted || msgId == null || msgId <= 0) return;
+                  await _jumpToMessageAndRefresh(msgId);
+                },
               ),
               if (_session?.isPinned == true)
                 OverlayMenuItem(
@@ -386,24 +607,23 @@ class _ChatPageState extends State<ChatPage> {
                 onTap: _session == null
                     ? null
                     : () {
-                  AppConfirmDialog.show(
-                    context: context,
-                    title: 'chatMenuClearChat'.tr(),
-                    content: 'chatClearConfirmContent'.tr(),
-                    confirmText: 'commonConfirm'.tr(),
-                    cancelText: 'commonCancel'.tr(),
-                    onConfirm: () async {
-                      if (_session == null) return;
-                      await context.read<ChatDomain>().clearChatMessages(_session!.chatId);
-                      if (!mounted) return;
-                      setState(() {
-                        _messages.clear();
-                        _nextCursor = null;
-                        _hasMore = false;
-                      });
-                    },
-                  );
-                },
+                        AppConfirmDialog.show(
+                          context: context,
+                          title: 'chatMenuClearChat'.tr(),
+                          content: 'chatClearConfirmContent'.tr(),
+                          confirmText: 'commonConfirm'.tr(),
+                          cancelText: 'commonCancel'.tr(),
+                          onConfirm: () async {
+                            final session = _session;
+                            if (session == null) return;
+                            await context.read<ChatDomain>().clearChatMessages(session.chatId);
+                            if (!mounted) return;
+                            setState(() {
+                              _resetPagination();
+                            });
+                          },
+                        );
+                      },
               ),
               OverlayMenuItem(
                 value: 'report',
@@ -439,9 +659,9 @@ class _ChatPageState extends State<ChatPage> {
           child: url.isEmpty
               ? Icon(Icons.person, size: size * 0.7, color: Colors.white)
               : ClipRRect(
-            borderRadius: BorderRadius.circular(size),
-            child: Image.network(url, fit: BoxFit.cover),
-          ),
+                  borderRadius: BorderRadius.circular(size),
+                  child: Image.network(url, fit: BoxFit.cover),
+                ),
         ),
       ],
     );
@@ -449,125 +669,46 @@ class _ChatPageState extends State<ChatPage> {
 
   // ── 消息列表 ─────────────────────────────
   Widget _buildMsgList() {
-    return NotificationListener<ScrollStartNotification>(
-      onNotification: (n) {
-        if (n.dragDetails == null) return false; // 代码触发的滚动不处理
-        FocusScope.of(context).unfocus();
-        if (_showPanel) setState(() => _showPanel = false);
-        return false;
-      },
-      child: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-          if (_showPanel) setState(() => _showPanel = false);
-        },
-        child: ListView.builder(
-          controller: _scrollCtrl,
-          reverse: true,
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-          itemCount: _messages.length + (_hasMore ? 1 : 0),
-          itemBuilder: (ctx, i) {
-            if (_hasMore && i == _messages.length) {
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: 14.w),
-                child: Center(
-                  child: _isLoadingMore
-                      ? SizedBox(
-                    width: 18.w,
-                    height: 18.w,
-                    child: const CircularProgressIndicator(
-                      color: Color(0xFF00C67E),
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : Text(
-                    '下拉加载更早消息',
-                    style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
-                  ),
-                ),
-              );
-            }
-            final msg = _messages[_messages.length - 1 - i];
-            return _buildMessageBubble(msg);
-          },
-        ),
+    return GestureDetector(
+      onTap: _dismissKeyboardAndPanel,
+      child: ScrollablePositionedList.builder(
+        reverse: true,
+        itemScrollController: _itemScrollCtrl,
+        itemPositionsListener: _itemPositionsListener,
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+        itemCount: _messages.length,
+        itemBuilder: (ctx, i) => _buildMessageBubble(_messages[i]),
       ),
-    );
-  }
-
-  Widget _buildDateDivider(String label) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: EdgeInsets.symmetric(vertical: 2.w, horizontal: 10.w),
-          margin: EdgeInsets.only(bottom: 22.w),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FE),
-            borderRadius: BorderRadius.circular(40.r),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 12.sp, color: const Color(0xFFAAAAAA)),
-            ),
-          ),
-        )
-      ],
     );
   }
 
   Widget _buildMessageBubble(ChatMessageItem msg) {
     final isMine = msg.senderUid == (_currentUserId ?? -1);
-
-    return _buildBubble(msg);
-  }
-
-  Widget _buildBubble(ChatMessageItem msg) {
-    msg.isMine = msg.senderUid == (_currentUserId ?? -1);
-
     return Padding(
       padding: EdgeInsets.only(bottom: 18.w),
       child: Row(
-        mainAxisAlignment: msg.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // _buildTimeLabel(msg),
-          // SizedBox(width: 8.w),
-          _buildBubbleContent(msg),
+          _buildBubbleContent(msg, isMine: isMine),
         ],
       ),
     );
   }
 
-  Widget _buildTimeLabel(ChatMessageItem msg) {
-    if (msg.createdAt.isEmpty) return const SizedBox.shrink();
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        // if (isMine && msg.) Icon(Icons.done_all, size: 14.sp, color: const Color(0xFF00C67E)),
-        SizedBox(height: 2.w),
-        Text(
-          msg.createdAt,
-          style: TextStyle(fontSize: 11.sp, color: const Color(0xFFAAAAAA)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBubbleContent(ChatMessageItem msg) {
+  Widget _buildBubbleContent(ChatMessageItem msg, {required bool isMine}) {
     switch (msg.msgType) {
       case ChatMessageType.text:
-        return _TextBubble(text: msg.content, isMine: msg.isMine);
+        return _TextBubble(text: msg.content, isMine: isMine);
       case ChatMessageType.image:
         return _ImageBubble(
-          isMine: msg.isMine,
+          isMine: isMine,
           imageUrl: msg.mediaUrl ?? "",
         );
       case ChatMessageType.video:
-        return _VideoBubble(duration: '', isMine: msg.isMine);
+        return _VideoBubble(duration: '', isMine: isMine);
       case ChatMessageType.unknown:
-        return SizedBox.shrink();
+        return const SizedBox.shrink();
     }
   }
 
@@ -608,11 +749,7 @@ class _ChatPageState extends State<ChatPage> {
                 controller: _inputCtrl,
                 focusNode: _focusNode,
                 style: TextStyle(fontSize: 12.sp, color: const Color(0xFF0F172B)),
-                onChanged: (v) =>
-                    setState(() =>
-                    _hasText = v
-                        .trim()
-                        .isNotEmpty),
+                onChanged: (v) => setState(() => _hasText = v.trim().isNotEmpty),
                 onSubmitted: (_) {
                   _sendMessage();
                   _focusNode.requestFocus();
@@ -645,30 +782,30 @@ class _ChatPageState extends State<ChatPage> {
             onTap: _hasText
                 ? _sendMessage
                 : () {
-              FocusScope.of(context).unfocus();
-              setState(() => _showPanel = !_showPanel);
-              if (!_showPanel) return;
-              // 等面板展开动画完成后再滚到底（maxScrollExtent 已更新）
-              Future.delayed(const Duration(milliseconds: 260), () {
-                _scrollToBottom();
-              });
-            },
+                    FocusScope.of(context).unfocus();
+                    setState(() => _showPanel = !_showPanel);
+                    if (!_showPanel) return;
+                    // 等面板展开动画完成后再滚到底（maxScrollExtent 已更新）
+                    Future.delayed(const Duration(milliseconds: 260), () {
+                      _scrollToBottom();
+                    });
+                  },
             child: _hasText
                 ? Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172B),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.send_rounded, size: 18.sp, color: Colors.white),
-            )
+                    width: 36.w,
+                    height: 36.w,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172B),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.send_rounded, size: 18.sp, color: Colors.white),
+                  )
                 : Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFD1D1D6), width: 1.5.w),
-                  shape: BoxShape.circle,
-                ),
-                child: MyImage.asset(MyImagePaths.iconChatPlus, width: 22.w, height: 22.w)),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFD1D1D6), width: 1.5.w),
+                      shape: BoxShape.circle,
+                    ),
+                    child: MyImage.asset(MyImagePaths.iconChatPlus, width: 22.w, height: 22.w)),
           ),
         ],
       ),
@@ -737,7 +874,7 @@ class _PanelItem extends StatelessWidget {
             child: MyImage.asset(icon, width: 24.w, height: 24.w),
           ),
         ),
-        Spacer(),
+        SizedBox(height: 6.w),
         Text(
           label,
           style: TextStyle(fontSize: 12.sp, color: const Color(0xFF000000)),
@@ -760,8 +897,6 @@ class _TextBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // icon 占位宽度（图标宽 + 间距）
-    final double iconPlaceholder = 14.w + 4.w;
     return Container(
       constraints: BoxConstraints(maxWidth: 240.w),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.w),
@@ -776,9 +911,8 @@ class _TextBubble extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // 文字末尾用透明占位撑出图标的空间
           Text(
-            '$text${isMine ? " \u2003" : ""}', // 末尾两个 em-space 留位
+            '$text${isMine ? " \u2003" : ""}',
             style: TextStyle(
               fontSize: 14.sp,
               color: isMine ? Colors.white : const Color(0xFF0F172B),
@@ -786,7 +920,6 @@ class _TextBubble extends StatelessWidget {
             ),
           ),
           if (isMine)
-          // 图标贴在右下角
             Positioned(
               right: 0,
               bottom: 0,

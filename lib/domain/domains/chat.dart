@@ -10,7 +10,7 @@ abstract class ChatDomain {
   /// 拉取某个会话的消息列表（游标分页）
   Future<ChatMessagesResult> fetchChatMessages({
     required int chatId,
-    String? cursor,
+    int? cursor,
     String direction = 'before',
     int limit = 30,
   });

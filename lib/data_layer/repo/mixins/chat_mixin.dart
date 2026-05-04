@@ -11,7 +11,7 @@ mixin _Chat on _BaseAppRepo implements ChatDomain {
   @override
   Future<ChatMessagesResult> fetchChatMessages({
     required int chatId,
-    String? cursor,
+    int? cursor,
     String direction = 'before',
     int limit = 30,
   }) =>

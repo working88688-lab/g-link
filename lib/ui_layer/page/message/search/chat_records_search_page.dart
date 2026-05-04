@@ -65,8 +65,12 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
         _chatRecords = [
           ...result.messages.map(
             (m) => ChatRecordItem(
+              msgId: m.msgId,
+              chatId: m.chatId,
               name: result.contacts.isNotEmpty ? result.contacts.first.nickname : 'chat',
               preview: m.content,
+              createdAt: m.createdAt,
+              senderUid: m.senderUid,
             ),
           ),
         ];
@@ -148,9 +152,10 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           children: [
             _ChatRecordsSection(
-                query: _query,
-                items: _chatRecords,
-                onEnterContact: _enterDetail),
+              query: _query,
+              items: _chatRecords,
+              onOpenMessage: (msgId) => Navigator.of(context).pop(msgId),
+            ),
             SizedBox(height: 24.w),
           ],
         );
@@ -158,7 +163,7 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
         return _ChatDetailSection(
           contactName: _drillContact ?? '',
           query: _query,
-          onBack: _backToResults,
+          onBackWithMsgId: (msgId) => Navigator.of(context).pop(msgId),
         );
     }
   }
@@ -171,10 +176,13 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
 class _ChatRecordsSection extends StatelessWidget {
   final String query;
   final List<ChatRecordItem> items;
-  final ValueChanged<String>? onEnterContact;
+  final ValueChanged<int>? onOpenMessage;
 
-  const _ChatRecordsSection(
-      {required this.query, required this.items, this.onEnterContact});
+  const _ChatRecordsSection({
+    required this.query,
+    required this.items,
+    this.onOpenMessage,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -182,13 +190,13 @@ class _ChatRecordsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...items.map((r) => ChatRecordTile(
-              item: r,
-              keyword: query,
-              onTap: r.extraCount != null
-                  ? () => onEnterContact?.call(r.name)
-                  : null,
-            )),
+        ...items.map(
+          (r) => ChatRecordTile(
+            item: r,
+            keyword: query,
+            onTap: r.msgId > 0 ? () => onOpenMessage?.call(r.msgId) : null,
+          ),
+        ),
       ],
     );
   }
@@ -254,10 +262,13 @@ class _ChatRecordTile extends StatelessWidget {
 class _ChatDetailSection extends StatefulWidget {
   final String contactName;
   final String query;
-  final VoidCallback? onBack;
+  final ValueChanged<int>? onBackWithMsgId;
 
-  const _ChatDetailSection(
-      {required this.contactName, required this.query, this.onBack});
+  const _ChatDetailSection({
+    required this.contactName,
+    required this.query,
+    this.onBackWithMsgId,
+  });
 
   @override
   State<_ChatDetailSection> createState() => _ChatDetailSectionState();
@@ -280,11 +291,17 @@ class _ChatDetailSectionState extends State<_ChatDetailSection> {
     setState(() {
       _isLoading = false;
       _records = [
-        const ChatRecordItem(name: '2025-03-01', preview: '太优秀了吧'),
-        const ChatRecordItem(name: '2025-02-18', preview: '优秀到无可救药'),
-        const ChatRecordItem(name: '2024-12-25', preview: '真的太优秀了'),
+        const ChatRecordItem(msgId: 101, name: '2025-03-01', preview: '太优秀了吧'),
+        const ChatRecordItem(msgId: 102, name: '2025-02-18', preview: '优秀到无可救药'),
+        const ChatRecordItem(msgId: 103, name: '2024-12-25', preview: '真的太优秀了'),
       ];
     });
+  }
+
+  void _handleBack(ChatRecordItem record) {
+    final msgId = record.msgId;
+    if (msgId <= 0) return;
+    widget.onBackWithMsgId?.call(msgId);
   }
 
   @override
@@ -301,8 +318,12 @@ class _ChatDetailSectionState extends State<_ChatDetailSection> {
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       children: [
         SizedBox(height: 8.w),
-        ..._records
-            .map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
+        ..._records.map(
+          (r) => GestureDetector(
+            onTap: () => _handleBack(r),
+            child: ChatRecordDetailTile(item: r, keyword: widget.query),
+          ),
+        ),
         SizedBox(height: 24.w),
       ],
     );

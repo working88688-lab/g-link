@@ -470,15 +470,15 @@ extension $ChatConversationRouteExtension on ChatConversationRoute {
   static ChatConversationRoute _fromState(GoRouterState state) =>
       ChatConversationRoute(
         name: state.uri.queryParameters['name']!,
-        avatarUrl: state.uri.queryParameters['avatar-url'] ?? '',
-        uid: int.parse(state.uri.queryParameters['uid']??"0"),
+        avatarUrl: state.uri.queryParameters['avatar-url']!,
+        uid: int.parse(state.uri.queryParameters['uid']!),
       );
 
   String get location => GoRouteData.$location(
         '/chat_conversation',
         queryParams: {
           'name': name,
-          if (avatarUrl != '') 'avatar-url': avatarUrl,
+          'avatar-url': avatarUrl,
           'uid': uid.toString(),
         },
       );
@@ -491,17 +491,6 @@ extension $ChatConversationRouteExtension on ChatConversationRoute {
       context.pushReplacement(location);
 
   void replace(BuildContext context) => context.replace(location);
-}
-
-bool _$boolConverter(String value) {
-  switch (value) {
-    case 'true':
-      return true;
-    case 'false':
-      return false;
-    default:
-      throw UnsupportedError('Cannot convert "$value" into a bool.');
-  }
 }
 
 RouteBase get $userSearchRoute => GoRouteData.$route(
@@ -560,10 +549,17 @@ RouteBase get $chatRecordsSearchRoute => GoRouteData.$route(
 
 extension $ChatRecordsSearchRouteExtension on ChatRecordsSearchRoute {
   static ChatRecordsSearchRoute _fromState(GoRouterState state) =>
-      const ChatRecordsSearchRoute();
+      ChatRecordsSearchRoute(
+        chatId: _$convertMapValue(
+                'chat-id', state.uri.queryParameters, int.parse) ??
+            0,
+      );
 
   String get location => GoRouteData.$location(
         '/chat_records_search',
+        queryParams: {
+          if (chatId != 0) 'chat-id': chatId.toString(),
+        },
       );
 
   void go(BuildContext context) => context.go(location);
