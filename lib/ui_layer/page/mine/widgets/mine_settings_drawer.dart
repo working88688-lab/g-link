@@ -1,9 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/auth.dart';
+import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
+import 'package:g_link/ui_layer/page/auth_page.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
+import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:provider/provider.dart';
 import '../history_favorites_page.dart';
 import '../offline_cache_page.dart';
 import '../security_privacy_page.dart';
@@ -114,14 +119,8 @@ class MineSettingsDrawer extends StatelessWidget {
                             context,
                             icon: MyImagePaths.iconSettingLogout,
                             label: 'mineDrawerLogout'.tr(),
-                            onTap: () {},
+                            onTap: () => _confirmLogout(context),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              NotificationRoute().push(context);
-                            },
-                            child: Text("通知"),
-                          )
                         ],
                       ),
                     )
@@ -186,6 +185,21 @@ class MineSettingsDrawer extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final authDomain = context.read<AuthDomain>();
+    AppConfirmDialog.show(
+      context: context,
+      title: 'mineDrawerLogout'.tr(),
+      content: 'commonLogoutConfirm'.tr(),
+      confirmText: 'commonConfirm'.tr(),
+      cancelText: 'commonCancel'.tr(),
+      onConfirm: () async {
+        await authDomain.logout();
+        LoginRoute().push(context);
+      },
     );
   }
 

@@ -133,4 +133,13 @@ mixin _Auth on _BaseAppRepo implements AuthDomain {
               .toList();
         },
       ).guard;
+
+  @override
+  AsyncResult logout() async {
+    final parsed = await _authService.logout().deserialize().guard;
+    if (parsed.status == 0) {
+      await _cleanToken();
+    }
+    return parsed;
+  }
 }

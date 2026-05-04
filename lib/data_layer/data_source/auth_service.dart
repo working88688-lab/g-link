@@ -97,4 +97,5 @@ class AuthService extends BaseService {
           encrypted: false);
 
   AsyncJson getCountryCodes() => get('/auth/country-codes', encrypted: false);
+  AsyncJson logout() => post('/auth/logout', data: const {}, encrypted: false);
 }

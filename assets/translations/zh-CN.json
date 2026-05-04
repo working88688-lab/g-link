@@ -155,6 +155,7 @@
   "updateDialogContent": "为避免失联，请定期更新app至最新版～",
   "updateDialogLater": "稍后再说",
   "commonCancel": "取消",
+  "commonLogoutConfirm": "确认要退出登录吗？",
   "updateDialogGoUpdate": "前往更新",
   "generalFoundNewVersion": "发现新版本 {version}",
   "authTitle": "欢迎来到 G-Link",

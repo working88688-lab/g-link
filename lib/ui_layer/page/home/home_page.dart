@@ -32,8 +32,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with AutomaticKeepAliveClientMixin {
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin {
   late final ScrollController _scrollCtrl;
   HomeFeedNotifier? _notifier;
 
@@ -60,9 +59,7 @@ class _HomePageState extends State<HomePage>
     if (!_scrollCtrl.hasClients) return;
     final pos = _scrollCtrl.position;
     // 距离底部 480 像素就预拉下一页，体验比刚到底再加载更顺。
-    if (pos.pixels + 480 >= pos.maxScrollExtent &&
-        !n.isLoading(n.currentTab) &&
-        n.hasMore(n.currentTab)) {
+    if (pos.pixels + 480 >= pos.maxScrollExtent && !n.isLoading(n.currentTab) && n.hasMore(n.currentTab)) {
       n.loadMore(n.currentTab);
     }
   }
@@ -145,10 +142,8 @@ class _HomePageState extends State<HomePage>
               final post = posts[index];
               return _FeedCard(
                 post: post,
-                isAuthorFollowed:
-                    n.isFollowing(post.author.uid, fallback: false),
-                onToggleAuthorFollow: () =>
-                    _toggleFollow(context, n, post.author.uid),
+                isAuthorFollowed: n.isFollowing(post.author.uid, fallback: false),
+                onToggleAuthorFollow: () => _toggleFollow(context, n, post.author.uid),
                 onToggleLike: () => _onToggleLike(context, n, post),
               );
             },
@@ -253,8 +248,7 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             clipBehavior: Clip.none,
             children: [
               IconButton(
-                onPressed: () => MyToast.showText(
-                    text: 'homeNotificationsComingSoon'.tr()),
+                onPressed: () => MyToast.showText(text: 'homeNotificationsComingSoon'.tr()),
                 icon: Image.asset(
                   MyImagePaths.notification,
                   width: 21.w,
@@ -264,28 +258,32 @@ class _HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               // 设计稿角标。当前无真实未读数接口，先用静态 "3" 占位。
               Positioned(
-                right: 6.w,
-                top: 6.h,
-                child: Container(
-                  constraints: BoxConstraints(minWidth: 14.w, minHeight: 14.w),
-                  padding: EdgeInsets.symmetric(horizontal: 3.w),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFF3B30),
-                    borderRadius: BorderRadius.circular(999.r),
-                    border: Border.all(color: Colors.white, width: 1),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '3',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9.sp,
-                      fontWeight: FontWeight.w700,
-                      height: 1,
+                  right: 6.w,
+                  top: 6.h,
+                  child: GestureDetector(
+                    onTap: () {
+                      NotificationRoute().push(context);
+                    },
+                    child: Container(
+                      constraints: BoxConstraints(minWidth: 14.w, minHeight: 14.w),
+                      padding: EdgeInsets.symmetric(horizontal: 3.w),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFFF3B30),
+                        borderRadius: BorderRadius.circular(999.r),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '3',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
+                  )),
             ],
           ),
         ),
@@ -556,9 +554,7 @@ class _RecommendUserCard extends StatelessWidget {
               margin: EdgeInsets.symmetric(horizontal: 15.w),
               decoration: BoxDecoration(
                 color: isFollowing ? Colors.transparent : const Color(0xFF1A1F2C),
-                border: isFollowing
-                    ? Border.all(color: const Color(0xFFCCCCCC), width: 1)
-                    : null,
+                border: isFollowing ? Border.all(color: const Color(0xFFCCCCCC), width: 1) : null,
                 borderRadius: BorderRadius.circular(99.r),
               ),
               child: Text(
@@ -566,8 +562,7 @@ class _RecommendUserCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
-                  color:
-                      isFollowing ? const Color(0xFF1A1F2C) : Colors.white,
+                  color: isFollowing ? const Color(0xFF1A1F2C) : Colors.white,
                 ),
               ),
             ),
@@ -652,9 +647,7 @@ class _FeedCardState extends State<_FeedCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  author.nickname.isNotEmpty
-                      ? author.nickname
-                      : 'homeAnonymousAuthor'.tr(),
+                  author.nickname.isNotEmpty ? author.nickname : 'homeAnonymousAuthor'.tr(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -682,24 +675,16 @@ class _FeedCardState extends State<_FeedCard> {
               height: 30.h,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: widget.isAuthorFollowed
-                    ? Colors.transparent
-                    : const Color(0xFF1A1F2C),
-                border: widget.isAuthorFollowed
-                    ? Border.all(color: const Color(0xFFCCCCCC), width: 1)
-                    : null,
+                color: widget.isAuthorFollowed ? Colors.transparent : const Color(0xFF1A1F2C),
+                border: widget.isAuthorFollowed ? Border.all(color: const Color(0xFFCCCCCC), width: 1) : null,
                 borderRadius: BorderRadius.circular(99.r),
               ),
               child: Text(
-                widget.isAuthorFollowed
-                    ? 'commonFollowed'.tr()
-                    : 'commonFollow'.tr(),
+                widget.isAuthorFollowed ? 'commonFollowed'.tr() : 'commonFollow'.tr(),
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
-                  color: widget.isAuthorFollowed
-                      ? const Color(0xFF1A1F2C)
-                      : Colors.white,
+                  color: widget.isAuthorFollowed ? const Color(0xFF1A1F2C) : Colors.white,
                 ),
               ),
             ),
@@ -740,8 +725,7 @@ class _FeedCardState extends State<_FeedCard> {
                       final raw = controller.hasClients ? controller.page : 0.0;
                       final page = (raw ?? 0).round();
                       return Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 7.w, vertical: 4.h),
+                        padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 4.h),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12.r),
@@ -771,11 +755,8 @@ class _FeedCardState extends State<_FeedCard> {
       child: Row(
         children: [
           _ActionItem(
-            icon: post.isLiked
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            iconColor:
-                post.isLiked ? const Color(0xFFFF3B30) : const Color(0xFF1A1F2C),
+            icon: post.isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            iconColor: post.isLiked ? const Color(0xFFFF3B30) : const Color(0xFF1A1F2C),
             label: CommonUtils.renderEnFixedNumber(post.likeCount).toString(),
             onTap: widget.onToggleLike,
           ),
@@ -783,10 +764,8 @@ class _FeedCardState extends State<_FeedCard> {
           _ActionItem(
             icon: Icons.mode_comment_outlined,
             iconColor: const Color(0xFF1A1F2C),
-            label:
-                CommonUtils.renderEnFixedNumber(post.commentCount).toString(),
-            onTap: () =>
-                MyToast.showText(text: 'homeCommentsComingSoon'.tr()),
+            label: CommonUtils.renderEnFixedNumber(post.commentCount).toString(),
+            onTap: () => MyToast.showText(text: 'homeCommentsComingSoon'.tr()),
           ),
           SizedBox(width: 20.w),
           _ActionItem(
@@ -801,10 +780,8 @@ class _FeedCardState extends State<_FeedCard> {
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () =>
-                MyToast.showText(text: 'homeFavoriteComingSoon'.tr()),
-            icon: Icon(Icons.star_border_rounded,
-                color: const Color(0xFF1A1F2C)),
+            onPressed: () => MyToast.showText(text: 'homeFavoriteComingSoon'.tr()),
+            icon: Icon(Icons.star_border_rounded, color: const Color(0xFF1A1F2C)),
           ),
           SizedBox(width: 14.w),
           IconButton(
@@ -812,10 +789,8 @@ class _FeedCardState extends State<_FeedCard> {
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () =>
-                MyToast.showText(text: 'homePostMoreComingSoon'.tr()),
-            icon: Icon(Icons.more_vert_rounded,
-                color: const Color(0xFF8C95A8)),
+            onPressed: () => MyToast.showText(text: 'homePostMoreComingSoon'.tr()),
+            icon: Icon(Icons.more_vert_rounded, color: const Color(0xFF8C95A8)),
           ),
         ],
       ),
@@ -825,9 +800,7 @@ class _FeedCardState extends State<_FeedCard> {
   Widget _buildContent(FeedPost post) {
     final hasContent = post.content.isNotEmpty;
     final hasLocation = post.location.isNotEmpty;
-    final tagText = post.tags.isEmpty
-        ? ''
-        : post.tags.map((t) => '#$t').join(' ');
+    final tagText = post.tags.isEmpty ? '' : post.tags.map((t) => '#$t').join(' ');
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 14.w),
@@ -873,9 +846,7 @@ class _FeedCardState extends State<_FeedCard> {
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 4.h),
                         child: Text(
-                          _expanded
-                              ? 'homeCollapse'.tr()
-                              : 'homeExpand'.tr(),
+                          _expanded ? 'homeCollapse'.tr() : 'homeExpand'.tr(),
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: const Color(0xFF1A1F2C),
@@ -1054,8 +1025,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined,
-                size: 56.sp, color: const Color(0xFFCFD3DC)),
+            Icon(Icons.inbox_outlined, size: 56.sp, color: const Color(0xFFCFD3DC)),
             SizedBox(height: 12.h),
             Text(
               message,

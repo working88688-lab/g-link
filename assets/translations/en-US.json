@@ -149,6 +149,7 @@
   "updateDialogContent": "To stay connected, please update to the latest app version regularly.",
   "updateDialogLater": "Later",
   "commonCancel": "Cancel",
+  "commonLogoutConfirm": "Are you sure you want to log out?",
   "updateDialogGoUpdate": "Update now",
   "generalFoundNewVersion": "New version found {version}",
   "authTitle": "Welcome to G-Link",

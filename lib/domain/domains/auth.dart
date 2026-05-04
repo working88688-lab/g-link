@@ -43,4 +43,5 @@ abstract class AuthDomain {
   });
 
   AsyncResult<List<AuthCountryCode>> getCountryCodes();
+  AsyncResult logout();
 }
