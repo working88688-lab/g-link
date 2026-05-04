@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:g_link/ui_layer/widgets/publish_video_preview_player.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
 
 /// 相册中点击缩略图后的全屏预览（图片可缩放，视频可播放）。
+/// 顶部关闭与标题叠在画面上（Stack），预览内容在页面正中。
 class MediaAssetPreviewPage extends StatefulWidget {
   const MediaAssetPreviewPage({super.key, required this.entity});
 
@@ -21,6 +23,7 @@ class _MediaAssetPreviewPageState extends State<MediaAssetPreviewPage> {
   VideoPlayerController? _video;
   bool _videoBusy = true;
   Object? _error;
+  bool _videoOnFullscreenRoute = false;
 
   @override
   void initState() {
@@ -67,6 +70,18 @@ class _MediaAssetPreviewPageState extends State<MediaAssetPreviewPage> {
     }
   }
 
+  Future<void> _openVideoFullscreen(VideoPlayerController c) async {
+    if (!mounted) return;
+    setState(() => _videoOnFullscreenRoute = true);
+    await Navigator.of(context).push<void>(
+      PageRouteBuilder<void>(
+        opaque: true,
+        pageBuilder: (ctx, _, __) => VideoPreviewFullscreenPage(controller: c),
+      ),
+    );
+    if (mounted) setState(() => _videoOnFullscreenRoute = false);
+  }
+
   @override
   void dispose() {
     _video?.dispose();
@@ -77,30 +92,52 @@ class _MediaAssetPreviewPageState extends State<MediaAssetPreviewPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'mediaPickerPreview'.tr(),
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(child: _buildMainContent()),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      color: Colors.white,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'mediaPickerPreview'.tr(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
-      body: Center(child: _buildBody()),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildMainContent() {
     if (_error != null) {
       return Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Text(
           'mediaPickerLoadError'.tr(),
           style: const TextStyle(color: Colors.white70),
@@ -117,33 +154,25 @@ class _MediaAssetPreviewPageState extends State<MediaAssetPreviewPage> {
       if (c == null || !c.value.isInitialized) {
         return const CircularProgressIndicator(color: Colors.white);
       }
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: AspectRatio(
-              aspectRatio: c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio,
-              child: VideoPlayer(c),
-            ),
-          ),
-          const SizedBox(height: 20),
-          IconButton(
-            iconSize: 56,
-            color: Colors.white,
-            icon: Icon(
-              c.value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-            ),
-            onPressed: () async {
-              if (c.value.isPlaying) {
-                await c.pause();
-              } else {
-                await c.play();
-              }
-              if (mounted) setState(() {});
-            },
-          ),
-        ],
+      final ar = c.value.aspectRatio == 0 ? 16 / 9 : c.value.aspectRatio;
+      return AspectRatio(
+        aspectRatio: ar,
+        child: _videoOnFullscreenRoute
+            ? const ColoredBox(
+                color: Colors.black,
+                child: Center(
+                  child: Icon(
+                    Icons.fullscreen,
+                    color: Colors.white38,
+                    size: 48,
+                  ),
+                ),
+              )
+            : VideoPreviewPlayerSurface(
+                controller: c,
+                isFullscreen: false,
+                onOpenFullscreen: () => unawaited(_openVideoFullscreen(c)),
+              ),
       );
     }
 

@@ -15,6 +15,7 @@ import 'package:g_link/ui_layer/page/publish_hashtag_span_builder.dart';
 import 'package:g_link/ui_layer/page/publish_nearby_locations.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/theme/app_design.dart';
+import 'package:g_link/ui_layer/widgets/publish_video_preview_player.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -640,17 +641,7 @@ class _PublishComposePageState extends State<PublishComposePage> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: AspectRatio(
-              aspectRatio: 9 / 16,
-              child: ColoredBox(
-                color: Colors.black12,
-                child: Icon(Icons.play_circle_fill,
-                    size: 64, color: Colors.grey.shade600),
-              ),
-            ),
-          ),
+          PublishVideoPreviewPlayer(xFile: widget.media.first),
           const SizedBox(height: 16),
           TextFormField(
             controller: _titleController,
