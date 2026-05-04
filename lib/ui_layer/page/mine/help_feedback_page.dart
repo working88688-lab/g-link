@@ -45,8 +45,7 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
                   padding: EdgeInsets.all(16.w),
                   children: [
                     ..._faqCategories.map((category) => _buildSection(context, category: category)),
-                    SizedBox(height: 12.w),
-                    _buildFeedbackEntry(context),
+
                     SizedBox(height: 24.w),
                   ],
                 ),
