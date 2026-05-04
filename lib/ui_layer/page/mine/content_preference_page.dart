@@ -22,7 +22,8 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
   static const int _maxInterests = 8;
 
   final Set<int> _selectedTagIds = {};
-  final List<String> _blockedKeywords = ['剧透', '极端饮食', '过度炫富'];
+  final List<String> _blockedKeywords = [];
+  final Set<String> _initialBlockedKeywords = {};
   final TextEditingController _keywordCtrl = TextEditingController();
   bool _loading = true;
   String? _error;
@@ -294,13 +295,21 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
     try {
       final profile = context.read<ProfileDomain>();
       final tagsResult = await profile.getInterestTags();
+      final blockedResult = await profile.getBlockedKeywords();
       final tags = tagsResult.data ?? const <InterestTag>[];
+      final blocked = blockedResult.data ?? const <String>[];
       if (!mounted) return;
       setState(() {
         _interestTags = tags;
         _selectedTagIds
           ..clear()
           ..addAll(tags.where((e) => e.isSelected).map((e) => e.id));
+        _blockedKeywords
+          ..clear()
+          ..addAll(blocked);
+        _initialBlockedKeywords
+          ..clear()
+          ..addAll(blocked);
         _loading = false;
       });
     } catch (err) {
@@ -365,7 +374,18 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
 
   Future<void> _submit() async {
     try {
-      await context.read<ProfileDomain>().updateMyInterestTags(tagIds: _selectedTagIds.toList());
+      final profile = context.read<ProfileDomain>();
+      await profile.updateMyInterestTags(tagIds: _selectedTagIds.toList());
+
+      final added = _blockedKeywords.where((kw) => !_initialBlockedKeywords.contains(kw)).toList();
+      final removed = _initialBlockedKeywords.where((kw) => !_blockedKeywords.contains(kw)).toList();
+      for (final kw in added) {
+        await profile.addBlockedKeyword(keyword: kw);
+      }
+      for (final kw in removed) {
+        await profile.deleteBlockedKeyword(keyword: kw);
+      }
+
       if (!mounted) return;
       Navigator.of(context).pop();
     } catch (err) {

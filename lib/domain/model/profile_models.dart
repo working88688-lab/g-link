@@ -217,6 +217,16 @@ class FaqCategoryItem {
   }
 }
 
+class BlockedKeywordItem {
+  const BlockedKeywordItem({required this.keyword});
+
+  final String keyword;
+
+  factory BlockedKeywordItem.fromJson(dynamic value) {
+    return BlockedKeywordItem(keyword: '$value');
+  }
+}
+
 class RecommendedUser {
   const RecommendedUser({
     required this.uid,

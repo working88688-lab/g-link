@@ -58,6 +58,9 @@ abstract class ProfileDomain {
 
   AsyncResult<List<InterestTag>> getInterestTags();
   AsyncResult<List<FaqCategoryItem>> getFaqCategories();
+  AsyncResult<List<String>> getBlockedKeywords();
+  AsyncResult addBlockedKeyword({required String keyword});
+  AsyncResult deleteBlockedKeyword({required String keyword});
   AsyncResult updateMyInterestTags({required List<int> tagIds});
 
   AsyncResult<List<RecommendedUser>> getRecommendedUsers({int limit = 20});

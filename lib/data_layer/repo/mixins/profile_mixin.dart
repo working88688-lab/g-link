@@ -131,6 +131,20 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       }).guard;
 
   @override
+  AsyncResult<List<String>> getBlockedKeywords() => _profileService.getBlockedKeywords().deserializeJsonBy((json) {
+        final list = List<dynamic>.from((json['lists'] ?? json['list'] ?? json['data'] ?? []) as List);
+        return list.map((e) => '$e').toList();
+      }).guard;
+
+  @override
+  AsyncResult addBlockedKeyword({required String keyword}) =>
+      _profileService.addBlockedKeyword(keyword: keyword).deserialize().guard;
+
+  @override
+  AsyncResult deleteBlockedKeyword({required String keyword}) =>
+      _profileService.deleteBlockedKeyword(keyword: keyword).deserialize().guard;
+
+  @override
   AsyncResult updateMyInterestTags({required List<int> tagIds}) =>
       _profileService.updateMyInterestTags(tagIds: tagIds).deserialize().guard;
 
