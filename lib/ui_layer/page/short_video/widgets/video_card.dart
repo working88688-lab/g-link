@@ -1,18 +1,21 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:video_player/video_player.dart';
 import 'package:g_link/domain/model/video_feed_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 
-// ──────────────────────────────────────────
-// 单个视频卡片（全屏 Stack）
-// ──────────────────────────────────────────
 class VideoCard extends StatefulWidget {
   final VideoFeedItem item;
   final bool isFollowing;
   final bool isFavorited;
   final bool isMuted;
+  final bool isCurrentPage;
+  final bool isDetailLoading;
   final VoidCallback onToggleFollow;
   final VoidCallback onToggleLike;
   final VoidCallback onToggleFavorite;
@@ -29,6 +32,8 @@ class VideoCard extends StatefulWidget {
     required this.isFollowing,
     required this.isFavorited,
     required this.isMuted,
+    required this.isCurrentPage,
+    this.isDetailLoading = false,
     required this.onToggleFollow,
     required this.onToggleLike,
     required this.onToggleFavorite,
@@ -45,24 +50,92 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
+  VideoPlayerController? _controller;
+  bool _loading = false;
+  bool _failed = false;
+  final double _speed = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncPlayback();
+  }
+
+  @override
+  void didUpdateWidget(covariant VideoCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.videoUrl != widget.item.videoUrl || oldWidget.isCurrentPage != widget.isCurrentPage) {
+      unawaited(_syncPlayback());
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeController();
+    super.dispose();
+  }
+
+  Future<void> _disposeController() async {
+    final controller = _controller;
+    _controller = null;
+    if (controller != null) {
+      await controller.pause();
+      await controller.dispose();
+    }
+  }
+
+  Future<void> _syncPlayback() async {
+    if (!widget.isCurrentPage) {
+      await _disposeController();
+      if (mounted) setState(() {});
+      return;
+    }
+    if (_controller != null && _controller!.dataSource == widget.item.videoUrl && _controller!.value.isInitialized) {
+      if (!_controller!.value.isPlaying) {
+        await _controller!.play();
+      }
+      return;
+    }
+    _loading = true;
+    _failed = false;
+    if (mounted) setState(() {});
+    await _disposeController();
+    try {
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(widget.item.videoUrl),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+      _controller = controller;
+      controller.addListener(() {
+        if (mounted) setState(() {});
+      });
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(1);
+      await controller.setPlaybackSpeed(_speed);
+      await controller.play();
+    } catch (e) {
+      if (e is PlatformException) {
+        debugPrint('Video init failed: ${e.message}');
+      } else {
+        debugPrint('Video init failed: $e');
+      }
+      _failed = true;
+    } finally {
+      _loading = false;
+      if (mounted) setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final authorName = item.author.nickname.isNotEmpty ? item.author.nickname : item.author.username;
-    final locationLabel = item.author.username.isNotEmpty ? '@${item.author.username}' : '';
+    final authorName = item.author.nickname;
+    final locationLabel = '杭州·西湖';
     return Stack(
       fit: StackFit.expand,
       children: [
-        Positioned.fill(
-          child: item.coverUrl.isNotEmpty
-              ? Image.network(item.coverUrl, fit: BoxFit.cover)
-              : Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: Icon(Icons.play_circle_outline, size: 72.sp, color: Colors.white24),
-                  ),
-                ),
-        ),
+        Positioned.fill(child: _buildVideo()),
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -85,18 +158,33 @@ class _VideoCardState extends State<VideoCard> {
         Positioned(
           right: 8.w,
           bottom: 40.w,
-          child: VideoActionBar(
-            item: item,
-            isFollowing: widget.isFollowing,
-            isFavorited: widget.isFavorited,
-            isMuted: widget.isMuted,
-            onToggleFollow: widget.onToggleFollow,
-            onToggleLike: widget.onToggleLike,
-            onToggleFavorite: widget.onToggleFavorite,
-            onToggleMute: widget.onToggleMute,
-            onComment: widget.onComment,
-            onMore: widget.onMore,
-            onShare: widget.onShare,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              VideoActionBar(
+                item: item,
+                isFollowing: widget.isFollowing,
+                isFavorited: widget.isFavorited,
+                isMuted: widget.isMuted,
+                onToggleFollow: widget.onToggleFollow,
+                onToggleLike: widget.onToggleLike,
+                onToggleFavorite: widget.onToggleFavorite,
+                onToggleMute: widget.onToggleMute,
+                onComment: widget.onComment,
+                onMore: widget.onMore,
+                onShare: widget.onShare,
+              ),
+              if (widget.isDetailLoading)
+                Positioned(
+                  top: -28.w,
+                  right: 0,
+                  child: SizedBox(
+                    width: 18.w,
+                    height: 18.w,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+            ],
           ),
         ),
         Positioned(
@@ -114,6 +202,38 @@ class _VideoCardState extends State<VideoCard> {
         const Positioned(left: 0, right: 0, bottom: 0, child: VideoProgressBar()),
       ],
     );
+  }
+
+  Widget _buildVideo() {
+    if (_failed) {
+      return _buildCover();
+    }
+    if (_loading || _controller == null || !_controller!.value.isInitialized) {
+      return _buildCover();
+    }
+    return ValueListenableBuilder<VideoPlayerValue>(
+      valueListenable: _controller!,
+      builder: (_, value, __) {
+        if (value.hasError) return _buildCover();
+        return Center(
+          child: AspectRatio(
+            aspectRatio: value.aspectRatio,
+            child: VideoPlayer(_controller!),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCover() {
+    return widget.item.coverUrl.isNotEmpty
+        ? Image.network(widget.item.coverUrl, fit: BoxFit.cover)
+        : Container(
+            color: Colors.black,
+            child: Center(
+              child: Icon(Icons.play_circle_outline, size: 72.sp, color: Colors.white24),
+            ),
+          );
   }
 }
 
@@ -155,7 +275,7 @@ class VideoActionBar extends StatelessWidget {
         VideoActionBtn(
           icon: MyImage.asset(item.isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconLike, width: 32.w),
           color: item.isLiked ? const Color(0xFFFF2D55) : Colors.white,
-          count: item.stats.likeCount + (item.isLiked ? 1 : 0),
+          count: item.stats.likeCount,
           onTap: onToggleLike,
         ),
         SizedBox(height: 20.w),
@@ -269,7 +389,12 @@ class VideoActionBtn extends StatelessWidget {
           icon,
           if (count != null) ...[
             SizedBox(height: 2.w),
-            Text(_formatCount(count!), style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x43000000), blurRadius: 4.w)])),
+            Text(_formatCount(count!),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    shadows: [Shadow(color: const Color(0x43000000), blurRadius: 4.w)])),
           ],
         ],
       ),
@@ -284,7 +409,13 @@ class VideoContentInfo extends StatelessWidget {
   final VoidCallback? onExpandTap;
   final VoidCallback? onMusicTap;
 
-  const VideoContentInfo({super.key, required this.item, required this.authorName, required this.locationLabel, this.onExpandTap, this.onMusicTap});
+  const VideoContentInfo(
+      {super.key,
+      required this.item,
+      required this.authorName,
+      required this.locationLabel,
+      this.onExpandTap,
+      this.onMusicTap});
 
   @override
   Widget build(BuildContext context) {
@@ -303,22 +434,44 @@ class VideoContentInfo extends StatelessWidget {
             children: [
               MyImage.asset(MyImagePaths.iconLocate, width: 16.w),
               SizedBox(width: 3.w),
-              Text(locationLabel, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
+              Text(locationLabel,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.sp,
+                      shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
             ],
           ),
         ),
         SizedBox(height: 8.w),
-        Text(authorName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
+        Text(authorName,
+            style: TextStyle(
+                color: Colors.white,
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w600,
+                shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
         SizedBox(height: 8.w),
         Wrap(
           spacing: 6.w,
-          children: item.tags.map((t) => Text('#$t', style: TextStyle(color: const Color(0xFFFAB200), fontSize: 14.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]))).toList(),
+          children: item.tags
+              .map((t) => Text('#$t',
+                  style: TextStyle(
+                      color: const Color(0xFFFAB200),
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])))
+              .toList(),
         ),
         SizedBox(height: 2.w),
         VideoExpandableText(
           text: item.description,
-          style: TextStyle(color: Colors.white, fontSize: 13.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
-          moreStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
+          style: TextStyle(
+              color: Colors.white, fontSize: 13.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
+          moreStyle: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 14.sp,
+              shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
           onExpandTap: onExpandTap,
         ),
         SizedBox(height: 16.w),
@@ -337,7 +490,9 @@ class VideoContentInfo extends StatelessWidget {
                 MyImage.asset(MyImagePaths.iconMusical, width: 16.w),
                 SizedBox(width: 4.w),
                 Flexible(
-                  child: Text(item.videoUrl, style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                  child: Text("都是月亮惹的祸 ｜ 章鱼",
+                      style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -354,7 +509,8 @@ class VideoExpandableText extends StatefulWidget {
   final TextStyle moreStyle;
   final VoidCallback? onExpandTap;
 
-  const VideoExpandableText({super.key, required this.text, required this.style, required this.moreStyle, this.onExpandTap});
+  const VideoExpandableText(
+      {super.key, required this.text, required this.style, required this.moreStyle, this.onExpandTap});
 
   @override
   State<VideoExpandableText> createState() => _VideoExpandableTextState();
@@ -366,13 +522,19 @@ class _VideoExpandableTextState extends State<VideoExpandableText> {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final textDir = Directionality.of(ctx);
-        final tp = TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)..layout(maxWidth: constraints.maxWidth);
+        final tp =
+            TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)
+              ..layout(maxWidth: constraints.maxWidth);
         if (!tp.didExceedMaxLines) return Text(widget.text, style: widget.style);
         final moreText = '...  ${'shortVideoExpand'.tr()} ';
-        final moreTp = TextPainter(text: TextSpan(text: moreText, style: widget.moreStyle), maxLines: 1, textDirection: textDir)..layout();
+        final moreTp =
+            TextPainter(text: TextSpan(text: moreText, style: widget.moreStyle), maxLines: 1, textDirection: textDir)
+              ..layout();
         const iconWidth = 16.0;
         final availableWidth = constraints.maxWidth - moreTp.width - iconWidth;
-        final mainTp = TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)..layout(maxWidth: availableWidth);
+        final mainTp =
+            TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)
+              ..layout(maxWidth: availableWidth);
         final offset = mainTp.getPositionForOffset(Offset(availableWidth, mainTp.height / 2)).offset;
         final truncated = widget.text.substring(0, offset);
         return RichText(

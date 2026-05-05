@@ -65,6 +65,7 @@ class VideoFeedItem {
     required this.height,
     required this.tags,
     required this.isLiked,
+    required this.isFavorited,
     required this.stats,
     required this.publishedAt,
   });
@@ -80,6 +81,7 @@ class VideoFeedItem {
   final int height;
   final List<String> tags;
   final bool isLiked;
+  final bool isFavorited;
   final VideoFeedStats stats;
   final DateTime? publishedAt;
 
@@ -98,10 +100,48 @@ class VideoFeedItem {
       height: int.tryParse('${json['height'] ?? 0}') ?? 0,
       tags: tags.map((e) => '$e').toList(),
       isLiked: json['is_liked'] == true,
+      isFavorited: json['is_favorited'] == true,
       stats: VideoFeedStats.fromJson(Json.from(json['stats'] ?? {})),
       publishedAt: publishedAtRaw is String
           ? DateTime.tryParse(publishedAtRaw)?.toLocal()
           : null,
+    );
+  }
+}
+
+class VideoFeedLikeActionResult {
+  const VideoFeedLikeActionResult({
+    required this.liked,
+    required this.likeCount,
+  });
+
+  final bool liked;
+  final int likeCount;
+
+  factory VideoFeedLikeActionResult.fromJson(Json json) {
+    return VideoFeedLikeActionResult(
+      liked: json['liked'] == true,
+      likeCount: int.tryParse('${json['like_count'] ?? 0}') ?? 0,
+    );
+  }
+}
+
+class VideoFeedFavoriteActionResult {
+  const VideoFeedFavoriteActionResult({
+    required this.postId,
+    required this.isFavorited,
+    required this.favoriteCount,
+  });
+
+  final int postId;
+  final bool isFavorited;
+  final int favoriteCount;
+
+  factory VideoFeedFavoriteActionResult.fromJson(Json json) {
+    return VideoFeedFavoriteActionResult(
+      postId: int.tryParse('${json['post_id'] ?? 0}') ?? 0,
+      isFavorited: json['is_favorited'] == true,
+      favoriteCount: int.tryParse('${json['favorite_count'] ?? 0}') ?? 0,
     );
   }
 }

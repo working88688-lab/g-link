@@ -13,4 +13,29 @@ mixin _VideoFeed on _BaseAppRepo implements VideoFeedDomain {
       limit: limit,
     );
   }
+
+  @override
+  Future<VideoFeedItem> getVideoDetail(int videoId) async {
+    return await _videoFeedService.fetchVideoDetail(videoId);
+  }
+
+  @override
+  Future<VideoFeedLikeActionResult> likeVideo(int videoId) async {
+    return await _videoFeedService.likeVideo(videoId);
+  }
+
+  @override
+  Future<VideoFeedLikeActionResult> unlikeVideo(int videoId) async {
+    return await _videoFeedService.unlikeVideo(videoId);
+  }
+
+  @override
+  Future<VideoFeedFavoriteActionResult> favoriteVideo(int videoId) async {
+    return await _videoFeedService.favoriteVideo(videoId);
+  }
+
+  @override
+  Future<VideoFeedFavoriteActionResult> unfavoriteVideo(int videoId) async {
+    return await _videoFeedService.unfavoriteVideo(videoId);
+  }
 }

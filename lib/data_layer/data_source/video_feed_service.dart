@@ -1,5 +1,4 @@
 import 'package:g_link/domain/model/video_feed_models.dart';
-import 'package:g_link/domain/type_def.dart';
 
 import 'base_service.dart';
 
@@ -28,5 +27,35 @@ class VideoFeedService extends BaseService {
       nextCursor: data['next_cursor'] as String?,
       hasMore: (data['has_more'] as bool?) ?? false,
     );
+  }
+
+  Future<VideoFeedItem> fetchVideoDetail(int videoId) async {
+    final res = await get('/videos/$videoId', encrypted: false);
+    final data = res['data'] as Map<String, dynamic>? ?? res;
+    return VideoFeedItem.fromJson(data);
+  }
+
+  Future<VideoFeedLikeActionResult> likeVideo(int videoId) async {
+    final res = await post('/videos/$videoId/like', data: const <String, dynamic>{}, encrypted: false);
+    final data = res['data'] as Map<String, dynamic>? ?? res;
+    return VideoFeedLikeActionResult.fromJson(data);
+  }
+
+  Future<VideoFeedLikeActionResult> unlikeVideo(int videoId) async {
+    final res = await delete('/videos/$videoId/like', encrypted: false);
+    final data = res['data'] as Map<String, dynamic>? ?? res;
+    return VideoFeedLikeActionResult.fromJson(data);
+  }
+
+  Future<VideoFeedFavoriteActionResult> favoriteVideo(int videoId) async {
+    final res = await post('/videos/$videoId/favorite', data: const <String, dynamic>{}, encrypted: false);
+    final data = res['data'] as Map<String, dynamic>? ?? res;
+    return VideoFeedFavoriteActionResult.fromJson(data);
+  }
+
+  Future<VideoFeedFavoriteActionResult> unfavoriteVideo(int videoId) async {
+    final res = await delete('/videos/$videoId/favorite', encrypted: false);
+    final data = res['data'] as Map<String, dynamic>? ?? res;
+    return VideoFeedFavoriteActionResult.fromJson(data);
   }
 }
