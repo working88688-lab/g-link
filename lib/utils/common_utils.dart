@@ -32,8 +32,6 @@ import 'package:universal_html/html.dart' as html;
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:utils/utils.dart';
 
-import '../../report/ui_layer/report_gesture_detector.dart';
-
 class CommonUtils {
   static setStatusBar({bool isLight = false}) {
     if (kIsWeb) {
@@ -345,7 +343,7 @@ class CommonUtils {
         borderRadius: BorderRadius.circular(borderRadius ?? 0.w), // 圆角半径
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: ReportGestureDetector(
+          child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: () {
               onTap?.call();
@@ -959,7 +957,7 @@ class CommonUtils {
       double w = constrains.maxWidth;
       return Container(
         padding: EdgeInsets.only(bottom: 20.w),
-        child: ReportGestureDetector(
+        child: GestureDetector(
           onTap: () {
             // openRoute(context, data.toJson());
           },

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_swiper_null_safety_flutter3/flutter_swiper_null_safety_flutter3.dart';
 import 'package:g_link/domain/model/tip_model.dart';
-import 'package:g_link/report/ui_layer/report_gesture_detector.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/widgets/marquee_widget.dart';
-import 'package:g_link/utils/common_utils.dart';
 
 class SwiperTips extends StatefulWidget {
   const SwiperTips({
@@ -38,7 +36,7 @@ class _SwiperTipsState extends State<SwiperTips> {
           physics: const NeverScrollableScrollPhysics(), // 禁用手动滚动
           scrollDirection: Axis.vertical,
           itemBuilder: (BuildContext context, int index) {
-            return ReportGestureDetector(
+            return GestureDetector(
               onTap: () {
                 // CommonUtils.openRoute(context, widget.tips[index].toJson());
               },

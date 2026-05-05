@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../image_paths.dart';
 import '../theme.dart';
 
-import '../../../report/ui_layer/report_gesture_detector.dart';
-
 class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
   const MyAppBar({
     super.key,
@@ -57,7 +55,7 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
                   leftWidget == null
                       ? Align(
                           alignment: Alignment.center,
-                          child: ReportGestureDetector(
+                          child: GestureDetector(
                             child: Image.asset(
                               MyImagePaths.appBackIcon,
                               width: 20.w,

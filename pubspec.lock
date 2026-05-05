@@ -9,13 +9,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "67.0.0"
-  analytics_sdk:
-    dependency: "direct main"
-    description:
-      path: "plugins/analytics_sdk"
-      relative: true
-    source: path
-    version: "1.3.0"
   analyzer:
     dependency: "direct dev"
     description:
@@ -1423,14 +1416,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.4.1"
-  synchronized:
-    dependency: transitive
-    description:
-      name: synchronized
-      sha256: "5fcbd27688af6082f5abd611af56ee575342c30e87541d0245f7ff99faa02c60"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "3.1.0"
   term_glyph:
     dependency: transitive
     description:

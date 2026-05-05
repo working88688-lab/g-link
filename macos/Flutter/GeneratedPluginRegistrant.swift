@@ -5,7 +5,6 @@
 import FlutterMacOS
 import Foundation
 
-import analytics_sdk
 import app_installer
 import device_info_plus
 import file_selector_macos
@@ -22,7 +21,6 @@ import volume_controller
 import webcrypto
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
-  AnalyticsSdkPlugin.register(with: registry.registrar(forPlugin: "AnalyticsSdkPlugin"))
   AppInstallerPlugin.register(with: registry.registrar(forPlugin: "AppInstallerPlugin"))
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))

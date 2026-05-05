@@ -6,7 +6,6 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <analytics_sdk/analytics_sdk_plugin_c_api.h>
 #include <file_selector_windows/file_selector_windows.h>
 #include <flutter_inappwebview_windows/flutter_inappwebview_windows_plugin_c_api.h>
 #include <geolocator_windows/geolocator_windows.h>
@@ -17,8 +16,6 @@
 #include <webcrypto/webcrypto_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
-  AnalyticsSdkPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("AnalyticsSdkPluginCApi"));
   FileSelectorWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
   FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar(

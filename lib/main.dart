@@ -1,4 +1,3 @@
-import 'package:analytics_sdk/widget/global_click_wrapper.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -15,7 +14,6 @@ import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/domains/search.dart';
-import 'package:g_link/report/analytics/analytics_report.dart';
 import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/notifier/app_feed_notifier.dart';
 import 'package:g_link/ui_layer/notifier/guide_page_notifier.dart';
@@ -44,7 +42,6 @@ void main() async {
   final appRepo = AppRepo();
   await appRepo.init();
   disableUrlStrategy();
-  await initAnalyticsSdk(null, oauthId: appRepo.getOAuthId());
 
   /// 初始化多语系
   await EasyLocalization.ensureInitialized();
@@ -166,20 +163,7 @@ class _MyAppState extends State<MyApp> {
           ),
           child: widget,
         );
-        // if (kDebugMode) {
-        //   return GlobalClickWrapper(
-        //     child: Column(
-        //       children: [
-        //         if (kDebugMode) const AnalyticsDebugBanner(),
-        //         Expanded(
-        //           child: ExcludeSemantics(child: widget),
-        //         ),
-        //       ],
-        //     ),
-        //   );
-        // } else {
-        return GlobalClickWrapper(child: ExcludeSemantics(child: widget));
-        // }
+        return ExcludeSemantics(child: widget);
       },
       scrollBehavior: ScrollConfiguration.of(context).copyWith(
         physics: const BouncingScrollPhysics(),

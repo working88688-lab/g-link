@@ -17,8 +17,6 @@ dependencies:
     path: plugins/video_thumbnail
   utils:
     path: plugins/utils
-  analytics_sdk:
-    path: plugins/analytics_sdk
   image_picker:
     path: plugins/image_picker
   event_bus: ^2.0.0

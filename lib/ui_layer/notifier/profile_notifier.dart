@@ -2,18 +2,21 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/feed_models.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/event/event_bus.dart';
 
 class ProfileNotifier extends ChangeNotifier {
-  ProfileNotifier(this._profileDomain) {
+  ProfileNotifier(this._profileDomain, this._feedDomain) {
     _postPublishedSub = eventBus.on<PostPublishedEvent>().listen((_) {
       _onPostPublishedElsewhere();
     });
   }
 
   final ProfileDomain _profileDomain;
+  final FeedDomain _feedDomain;
   bool _disposed = false;
 
   bool loadingProfile = false;
@@ -27,7 +30,13 @@ class ProfileNotifier extends ChangeNotifier {
   List<UserVideoItem> videos = const [];
   List<UserPostItem> likes = const [];
   List<InterestTag> interestTags = const [];
-  int tabIndex = 1;
+
+  /// 「作品」/「视频」tab 上要置顶展示的最新草稿；为空表示当前用户没有对应类型的草稿。
+  /// 由 `_loadTabData` 与对应列表接口并行拉取，失败不影响主列表展示。
+  DraftItem? postDraft;
+  DraftItem? videoDraft;
+
+  int tabIndex = 0;
 
   /// 标记当前展示的 [profile] 是否来自本地缓存：在缓存命中后真接口还没回来时是
   /// true，用来在 UI 上判断"是否还要显示初始 loading"——拿到了缓存就不必显示。
@@ -206,6 +215,10 @@ class ProfileNotifier extends ChangeNotifier {
     _safeNotify();
   }
 
+  /// 强制刷新当前 tab 的列表与置顶草稿（供草稿箱管理页删除返回时调用，
+  /// 让网格里那张「草稿箱」cell 不至于停留在已删除项的封面上）。
+  Future<void> reloadCurrentTab() => _loadTabData(force: true);
+
   Future<void> _loadTabData({bool force = false}) async {
     if (profile == null) return;
     if (!force) {
@@ -216,24 +229,41 @@ class ProfileNotifier extends ChangeNotifier {
     loadingVideos = true;
     _safeNotify();
     if (tabIndex == 0) {
-      final result = await _profileDomain.getUserPosts(
-        uid: profile!.uid,
-        limit: 21,
-      );
-      if (result.status == 0 && result.data != null) {
-        posts = result.data!;
+      // 列表与「最新一条草稿」并行拉取——草稿失败/为空都不影响主列表展示。
+      final postsFuture =
+          _profileDomain.getUserPosts(uid: profile!.uid, limit: 21);
+      final draftFuture = _feedDomain.getDrafts(type: 'post', limit: 1);
+      final postResult = await postsFuture;
+      if (postResult.status == 0 && postResult.data != null) {
+        posts = postResult.data!;
       } else {
-        _handleError(result.status, result.msg, fallback: 'Load posts failed');
+        _handleError(postResult.status, postResult.msg,
+            fallback: 'Load posts failed');
+      }
+      final draftResult = await draftFuture;
+      if (draftResult.status == 0 && draftResult.data != null) {
+        final list = draftResult.data!;
+        postDraft = list.isNotEmpty ? list.first : null;
+      } else {
+        postDraft = null;
       }
     } else if (tabIndex == 1) {
-      final result = await _profileDomain.getUserVideos(
-        uid: profile!.uid,
-        limit: 21,
-      );
-      if (result.status == 0 && result.data != null) {
-        videos = result.data!;
+      final videosFuture =
+          _profileDomain.getUserVideos(uid: profile!.uid, limit: 21);
+      final draftFuture = _feedDomain.getDrafts(type: 'video', limit: 1);
+      final videoResult = await videosFuture;
+      if (videoResult.status == 0 && videoResult.data != null) {
+        videos = videoResult.data!;
       } else {
-        _handleError(result.status, result.msg, fallback: 'Load videos failed');
+        _handleError(videoResult.status, videoResult.msg,
+            fallback: 'Load videos failed');
+      }
+      final draftResult = await draftFuture;
+      if (draftResult.status == 0 && draftResult.data != null) {
+        final list = draftResult.data!;
+        videoDraft = list.isNotEmpty ? list.first : null;
+      } else {
+        videoDraft = null;
       }
     } else {
       final result = await _profileDomain.getUserLikes(

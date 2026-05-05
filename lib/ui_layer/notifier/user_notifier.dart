@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:analytics_sdk/analytics_sdk.dart';
-import 'package:analytics_sdk/enum/user_type_enum.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
 import 'package:g_link/app_global.dart';
@@ -73,17 +71,6 @@ class UserNotifier extends ChangeNotifier {
     //   AppGlobal.aff = result.data?.aff ?? 0;
     //
     //   initSystemNotice();
-    //
-    //   AnalyticsSdk.setUid(result.data?.aff?.toString() ?? '');
-    //   AnalyticsSdk.setChannel(
-    //     (result.data?.channel == 'self' ? '' : result.data?.channel) ?? '',
-    //   );
-    //   AnalyticsSdk.setUserIdAndType(
-    //     userId: (AppGlobal.aff > 0) ? AppGlobal.aff.toString() : '',
-    //     userTypeEnum: ((result.data?.vipLevel ?? 0) > 0)
-    //         ? UserTypeEnum.vip
-    //         : UserTypeEnum.normal,
-    //   );
     //
     //   if (result.data case final data?) {
     //     _member = data;
@@ -202,7 +189,6 @@ class UserNotifier extends ChangeNotifier {
   Future logout() async {
     // _userFollowingStatus.clear();
     // await _remoteDomain.logout();
-    // AnalyticsSdk.logoutUser();
     // await init();
   }
 

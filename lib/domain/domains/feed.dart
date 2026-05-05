@@ -41,6 +41,57 @@ abstract class FeedDomain {
     PublishLocationInput? location,
   });
 
+  /// 发布短视频完整链路：
+  /// `POST /videos/upload-presign` → PUT 直传 → `POST /videos/upload-done` →
+  /// （可选）`POST /publish/video/cover-from-frame` 截帧 →
+  /// 轮询 `GET /videos/{id}/transcode-status` 直至 2(完成) →
+  /// `POST /videos/{id}/publish`。
+  ///
+  /// 任一步失败时 [Result.msg] 会带回 i18n key（见 `publishVideo*`）或后端原文。
+  AsyncResult<PublishVideoResult> publishVideoPost({
+    required XFile video,
+    required String description,
+    required int durationMs,
+    required int width,
+    required int height,
+    String? title,
+    List<String>? tags,
+    int visibility = 0,
+    int? bgmId,
+    int coverFrameTimeMs = 0,
+    PublishLocationInput? location,
+    void Function(int sent, int total)? onUploadProgress,
+  });
+
+  /// 保存草稿：`POST /api/v1/drafts`。
+  ///
+  /// 服务端按现状落库（30 天自动清理），无需自管 id 映射；返回新建的 `draft_id`。
+  /// `type` = `post` / `video`；`mediaData` / `settings` 是自由结构 JSON，
+  /// 见 OpenAPI «保存草稿» 描述。
+  AsyncResult<SaveDraftResult> saveDraft({
+    required String type,
+    String? title,
+    String? content,
+    Json? mediaData,
+    Json? settings,
+  });
+
+  /// 草稿列表：`GET /api/v1/drafts`。
+  ///
+  /// `type` 为 `post` / `video` / `all`（默认 all）；游标分页按 id 倒序，
+  /// 仅返回摘要（封面 + 前 50 字预览），详情走 `GET /drafts/{id}`。
+  AsyncResult<List<DraftItem>> getDrafts({
+    String? type,
+    String? cursor,
+    int limit = 20,
+  });
+
+  /// 删除草稿：`DELETE /api/v1/drafts/{id}`。
+  ///
+  /// 仅允许删除本人草稿，他人草稿返回 `DRAFT_NO_PERMISSION`，便于客户端区分
+  /// 「不存在」与「无权限」。
+  AsyncResult<void> deleteDraft({required int draftId});
+
   /// 发布页热门话题（话题模块 `GET /api/v1/topics/hot`）。
   AsyncResult<List<PublishTopicRow>> getHotTopics();
 

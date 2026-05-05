@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
+import 'package:g_link/ui_layer/page/publish_compose_page.dart';
 import 'package:g_link/ui_layer/widgets/publish_video_preview_controller.dart';
 import 'package:video_player/video_player.dart';
 
@@ -21,9 +22,7 @@ class PublishVideoEditorPage extends StatefulWidget {
 }
 
 class _PublishVideoEditorPageState extends State<PublishVideoEditorPage> {
-  static const Color _capCutRed = Color(0xFFFE2C55);
   static const Color _capCutBarBg = Color(0xFF121212);
-  static const Color _capCutChipBg = Color(0xFF2C2C2C);
   static const Color _capCutNavMuted = Color(0xFF888888);
   static const double _thumbSegW = 46.0;
   static const double _rulerH = 22.0;
@@ -222,6 +221,36 @@ class _PublishVideoEditorPageState extends State<PublishVideoEditorPage> {
     Navigator.of(context).pop();
   }
 
+  void _openVideoPublishCompose() {
+    // 编辑页已经初始化过 VideoPlayerController，把现成的时长/宽高透传给发布页，
+    // 让 publishVideoPost 拿到 upload-done 必填的 duration_ms / width / height，
+    // 而不必在发布关键路径上再起一个临时控制器。
+    final c = _controller;
+    int? durationMs;
+    int? width;
+    int? height;
+    if (c != null && c.value.isInitialized) {
+      final d = c.value.duration.inMilliseconds;
+      final s = c.value.size;
+      if (d > 0 && s.width > 0 && s.height > 0) {
+        durationMs = d;
+        width = s.width.round();
+        height = s.height.round();
+      }
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (ctx) => PublishComposePage(
+          media: [widget.xFile],
+          isVideo: true,
+          videoDurationMs: durationMs,
+          videoWidth: width,
+          videoHeight: height,
+        ),
+      ),
+    );
+  }
+
   Future<void> _togglePreviewPlay() async {
     final c = _controller;
     if (c == null || !c.value.isInitialized) return;
@@ -258,64 +287,20 @@ class _PublishVideoEditorPageState extends State<PublishVideoEditorPage> {
                 icon:
                     const Icon(Icons.close_rounded, color: Colors.white, size: 26),
               ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: _toastComingSoon,
-                icon: Icon(
-                  Icons.search_rounded,
-                  color: Colors.white.withValues(alpha: 0.92),
-                  size: 26,
-                ),
-              ),
               const Spacer(),
-              Material(
-                color: _capCutChipBg,
-                borderRadius: BorderRadius.circular(8),
-                child: InkWell(
-                  onTap: _toastComingSoon,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'publishVideoEditorResolution'.tr(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.white.withValues(alpha: 0.85),
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
+              TextButton(
+                onPressed: _openVideoPublishCompose,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Material(
-                color: _capCutRed,
-                borderRadius: BorderRadius.circular(6),
-                child: InkWell(
-                  onTap: _pop,
-                  borderRadius: BorderRadius.circular(6),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text(
-                      'publishVideoEditorExport'.tr(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                child: Text(
+                  'publishVideoEditorDone'.tr(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

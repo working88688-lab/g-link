@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/model/feed_models.dart';
+import 'package:g_link/domain/type_def.dart';
 import 'package:g_link/ui_layer/event/event_bus.dart';
 import 'package:g_link/ui_layer/notifier/app_feed_notifier.dart';
 import 'package:g_link/ui_layer/notifier/publish_notifier.dart';
@@ -14,23 +15,33 @@ import 'package:g_link/ui_layer/page/publish_hashtag_delete_formatter.dart';
 import 'package:g_link/ui_layer/page/publish_hashtag_span_builder.dart';
 import 'package:g_link/ui_layer/page/publish_nearby_locations.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
-import 'package:g_link/ui_layer/theme/app_design.dart';
-import 'package:g_link/ui_layer/widgets/publish_video_preview_player.dart';
+import 'package:g_link/ui_layer/widgets/publish_video_preview_controller.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:get_thumbnail_video/index.dart' show ImageFormat;
+import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:provider/provider.dart';
+import 'package:video_player/video_player.dart';
 
-/// 拍摄/相册选择后的编辑与发布页（帖子按设计稿 1:1；短视频保留标题+正文表单）。
+/// 拍摄/相册选择后的编辑与发布页（图文为设计稿样式；短视频为「封面 + 描述 + 话题 + 发布设置 + 底栏」与稿一致）。
 class PublishComposePage extends StatefulWidget {
   PublishComposePage({
     super.key,
     required this.media,
     required this.isVideo,
+    this.videoDurationMs,
+    this.videoWidth,
+    this.videoHeight,
   })  : assert(media.isNotEmpty),
         assert(!isVideo || media.length == 1);
 
   final List<XFile> media;
   final bool isVideo;
+
+  /// 调用方（如视频编辑页）若已经初始化过 `VideoPlayerController`，
+  /// 可把元数据透传过来，发布时省去再次创建控制器探测的耗时。
+  final int? videoDurationMs;
+  final int? videoWidth;
+  final int? videoHeight;
 
   @override
   State<PublishComposePage> createState() => _PublishComposePageState();
@@ -81,8 +92,6 @@ class _PublishComposePageState extends State<PublishComposePage> {
     ),
   ];
 
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _descController = TextEditingController();
 
   List<Uint8List>? _multiPreviewBytes;
@@ -104,6 +113,11 @@ class _PublishComposePageState extends State<PublishComposePage> {
   int _topicReq = 0;
   List<PublishTopicRow> _topicRows = const [];
   bool _topicLoading = false;
+  bool _videoComposeDefaultsSeeded = false;
+
+  /// 视频元数据预探测：进入页面后立刻在后台读取时长 / 宽高，
+  /// 等用户点「发布」时直接复用结果，不再在关键路径上等 `VideoPlayerController.initialize`。
+  Future<({int durationMs, int width, int height})?>? _videoMetaFuture;
 
   @override
   void initState() {
@@ -111,8 +125,32 @@ class _PublishComposePageState extends State<PublishComposePage> {
     if (!widget.isVideo && widget.media.length > 1) {
       unawaited(_loadMultiPreviewBytes());
     }
+    if (widget.isVideo && widget.media.isNotEmpty) {
+      // 上一页（视频编辑页）若已经初始化过控制器，可直接复用其结果，
+      // 否则后台异步预探测，等用户点「发布」时直接拿到结果。
+      final dur = widget.videoDurationMs ?? 0;
+      final w = widget.videoWidth ?? 0;
+      final h = widget.videoHeight ?? 0;
+      if (dur > 0 && w > 0 && h > 0) {
+        _videoMetaFuture = Future.value(
+          (durationMs: dur, width: w, height: h),
+        );
+      } else {
+        _videoMetaFuture = _probeVideoMeta(widget.media.first);
+      }
+    }
     _descFocus.addListener(_onDescFocusChanged);
     _descController.addListener(_onDescTextOrSelectionChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.isVideo && !_videoComposeDefaultsSeeded) {
+      _videoComposeDefaultsSeeded = true;
+      _location = PublishLocationInput(name: 'publishDemoLocation'.tr());
+      _visibilityChoice = 2;
+    }
   }
 
   void _onDescFocusChanged() {
@@ -630,92 +668,8 @@ class _PublishComposePageState extends State<PublishComposePage> {
     _topicDebounce?.cancel();
     _descFocus.removeListener(_onDescFocusChanged);
     _descFocus.dispose();
-    _titleController.dispose();
     _descController.dispose();
     super.dispose();
-  }
-
-  Widget _buildVideoForm(PublishNotifier notifier) {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        children: [
-          PublishVideoPreviewPlayer(xFile: widget.media.first),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _titleController,
-            maxLength: 30,
-            decoration: InputDecoration(
-              labelText: 'commonTitle'.tr(),
-              hintText: 'publishTitleHint'.tr(),
-            ),
-            validator: (value) {
-              final text = (value ?? '').trim();
-              if (text.length < 2) return 'publishTitleError'.tr();
-              return null;
-            },
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _descController,
-            minLines: 5,
-            maxLines: 8,
-            decoration: InputDecoration(
-              labelText: 'commonContent'.tr(),
-              hintText: 'publishBodyHintVideo'.tr(),
-            ),
-            validator: (value) {
-              final text = (value ?? '').trim();
-              if (text.length < 10) return 'publishBodyError'.tr();
-              return null;
-            },
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('publishAllowComment'.tr()),
-            value: notifier.allowComment,
-            onChanged: notifier.toggleComment,
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('publishSyncProfile'.tr()),
-            value: notifier.syncToProfile,
-            onChanged: notifier.toggleSync,
-          ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: notifier.submitting
-                ? null
-                : () async {
-                    if (!_formKey.currentState!.validate()) return;
-                    await notifier.submit();
-                    if (!context.mounted) return;
-                    context.read<AppFeedNotifier>().createPost(
-                          title: _titleController.text.trim(),
-                          content: _descController.text.trim(),
-                        );
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('publishSubmitSuccess'.tr())),
-                    );
-                    const HomeRoute().go(context);
-                  },
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-            ),
-            child: notifier.submitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text('publishSubmit'.tr()),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _chip(String label, {VoidCallback? onTap}) {
@@ -910,6 +864,103 @@ class _PublishComposePageState extends State<PublishComposePage> {
     );
   }
 
+  /// 短视频发布页封面：首帧缩略图 + 「编辑封面」（与设计稿一致竖版比例）。
+  Widget _buildVideoCoverBlock() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenH = MediaQuery.sizeOf(context).height;
+        // 设计稿：封面占屏幕高度约 2/5，竖版 9:16 比例。
+        final h = screenH * 2 / 5;
+        final w = (h * 9 / 16).clamp(0.0, constraints.maxWidth);
+        final path = widget.media.first.path;
+        final dpr = MediaQuery.of(context).devicePixelRatio;
+        return Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: w,
+              height: h,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  FutureBuilder<Uint8List?>(
+                    future: VideoThumbnail.thumbnailData(
+                      video: path,
+                      timeMs: 0,
+                      maxWidth: (w * dpr).round().clamp(180, 720),
+                      maxHeight: (h * dpr).round().clamp(320, 1280),
+                      imageFormat: ImageFormat.JPEG,
+                      quality: 88,
+                    ),
+                    builder: (context, snap) {
+                      if (snap.hasError ||
+                          !snap.hasData ||
+                          snap.data == null) {
+                        return ColoredBox(color: Colors.grey.shade300);
+                      }
+                      return Image.memory(snap.data!, fit: BoxFit.cover);
+                    },
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.45),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 14, top: 32),
+                        child: Center(
+                          child: Material(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(20),
+                            child: InkWell(
+                              onTap: () {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('publishCoverSetDone'.tr()),
+                                  ),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                child: Text(
+                                  'publishEditCover'.tr(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _multiCarousel() {
     final bytes = _multiPreviewBytes;
     if (bytes == null) {
@@ -978,12 +1029,187 @@ class _PublishComposePageState extends State<PublishComposePage> {
     }
   }
 
+  /// 用一次性 [VideoPlayerController] 探测视频时长 / 宽高，以满足
+  /// `POST /videos/upload-done` 对 `duration_ms / width / height` 的必填校验。
+  Future<({int durationMs, int width, int height})?> _probeVideoMeta(
+    XFile xFile,
+  ) async {
+    VideoPlayerController? controller;
+    try {
+      controller = await publishVideoPreviewCreateController(xFile);
+      await controller.initialize();
+      final dur = controller.value.duration.inMilliseconds;
+      final size = controller.value.size;
+      final w = size.width.round();
+      final h = size.height.round();
+      if (dur <= 0 || w <= 0 || h <= 0) return null;
+      return (durationMs: dur, width: w, height: h);
+    } catch (_) {
+      return null;
+    } finally {
+      try {
+        await controller?.dispose();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _submitVideoPost(PublishNotifier notifier) async {
+    final desc = _descController.text.trim();
+    if (desc.characters.length > _descMax) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('publishContentTooLong'.tr())),
+      );
+      return;
+    }
+    notifier.setSubmitting(true);
+    try {
+      // 优先使用 initState 里预探测的结果；若用户极快地点了发布、Future 还没就绪，
+      // 也只是等同步等待已在执行的探测，不会重复创建 VideoPlayerController。
+      final metaFuture = _videoMetaFuture ??= _probeVideoMeta(widget.media.first);
+      final meta = await metaFuture;
+      if (!mounted) return;
+      if (meta == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('publishVideoMetaInvalid'.tr())),
+        );
+        return;
+      }
+      final tags = _tagsFromDescription(desc);
+      // OpenAPI «发布视频» 请求体不含 allow_comment / mentioned_uids / draft_id，
+      // 视频侧暂不下发，避免触发 422 校验。
+      final result = await context.read<FeedDomain>().publishVideoPost(
+            video: widget.media.first,
+            description: desc,
+            durationMs: meta.durationMs,
+            width: meta.width,
+            height: meta.height,
+            tags: tags,
+            visibility: _visibilityForApi(),
+            location: _location,
+          );
+      if (!mounted) return;
+      if (result.status != 0 || result.data == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_publishErrorMessage(result.msg))),
+        );
+        return;
+      }
+      eventBus.fire(VideoPublishedEvent(videoId: result.data!.videoId));
+      context.read<AppFeedNotifier>().createPost(
+            title: desc.isEmpty ? 'publishDefaultPostTitle'.tr() : desc,
+            content: desc.isEmpty ? 'publishDefaultPostTitle'.tr() : desc,
+          );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('publishSubmitSuccess'.tr())),
+      );
+      const HomeRoute().go(context);
+    } finally {
+      if (mounted) notifier.setSubmitting(false);
+    }
+  }
+
+  /// 把当前编辑器的设置（可见性、评论权限、话题、定位）打包成 OpenAPI «保存草稿»
+  /// 描述里的 `settings` 自由结构 JSON。
+  Json _draftSettingsPayload(String content) {
+    final tags = _tagsFromDescription(content);
+    return <String, dynamic>{
+      'visibility': _visibilityForApi(),
+      'allow_comment': _allowCommentForApi(),
+      if (tags != null && tags.isNotEmpty) 'tags': tags,
+      if (_location != null) 'location': _location!.toJson(),
+    };
+  }
+
+  /// 把当前选中的本地媒体打包成草稿的 `media_data`。
+  /// 因为草稿尚未走预签名上传，这里只能记录本地路径 / 文件名 + 必要展示元数据，
+  /// 服务端按自由 JSON 落库即可，下次回到草稿时由客户端按需取用。
+  Json _draftMediaDataPayload({
+    required bool isVideo,
+    required ({int durationMs, int width, int height})? videoMeta,
+  }) {
+    if (isVideo) {
+      final v = widget.media.first;
+      return <String, dynamic>{
+        'video_path': v.path,
+        if (v.name.isNotEmpty) 'video_name': v.name,
+        if (videoMeta != null) ...{
+          'duration_ms': videoMeta.durationMs,
+          'width': videoMeta.width,
+          'height': videoMeta.height,
+        },
+      };
+    }
+    return <String, dynamic>{
+      'images': widget.media
+          .map((e) => <String, dynamic>{
+                'path': e.path,
+                if (e.name.isNotEmpty) 'name': e.name,
+              })
+          .toList(),
+      'cover_index': _resolvedCoverImageIndex(widget.media.length),
+    };
+  }
+
+  /// 「保存草稿」按钮：调用 `POST /api/v1/drafts`，成功后退出整个发布流程
+  /// （拍摄 / 编辑 / 发布等中间页都不保留），回到首页。
+  ///
+  /// 用 `notifier.savingDraft` 单独标记，与 `submitting` 互斥，让 spinner 只出现在
+  /// 真正点击的那个按钮上——之前两个按钮共用 `submitting`，会出现「点保存草稿、
+  /// 发布按钮转圈」的错觉。
+  Future<void> _saveDraft(PublishNotifier notifier) async {
+    if (notifier.busy) return;
+    notifier.setSavingDraft(true);
+    try {
+      final desc = _descController.text;
+      final isVideo = widget.isVideo;
+      ({int durationMs, int width, int height})? videoMeta;
+      if (isVideo) {
+        try {
+          videoMeta = await (_videoMetaFuture ??=
+              _probeVideoMeta(widget.media.first));
+        } catch (_) {
+          videoMeta = null;
+        }
+      }
+      if (!mounted) return;
+      final result = await context.read<FeedDomain>().saveDraft(
+            type: isVideo ? 'video' : 'post',
+            content: desc,
+            mediaData:
+                _draftMediaDataPayload(isVideo: isVideo, videoMeta: videoMeta),
+            settings: _draftSettingsPayload(desc),
+          );
+      if (!mounted) return;
+      if (result.status != 0 || result.data == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_publishErrorMessage(result.msg))),
+        );
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('publishDraftSavedSuccess'.tr())),
+      );
+      // 与 `_submitPost` 一致——直接 go 回首页，把发布流程的所有中间页都丢掉。
+      const HomeRoute().go(context);
+    } finally {
+      if (mounted) notifier.setSavingDraft(false);
+    }
+  }
+
   String _publishErrorMessage(String? msg) {
     if (msg == null || msg.isEmpty) return 'publishApiFailed'.tr();
     const known = <String>{
       'publishNeedImage',
       'publishEmptyImage',
       'publishPresignInvalid',
+      'publishVideoEmptyFile',
+      'publishVideoFileTooLarge',
+      'publishVideoMetaInvalid',
+      'publishVideoPresignInvalid',
+      'publishVideoDoneInvalid',
+      'publishVideoTranscodeFailed',
+      'publishVideoTranscodeTimeout',
     };
     if (known.contains(msg)) return msg.tr();
     return msg;
@@ -1049,6 +1275,65 @@ class _PublishComposePageState extends State<PublishComposePage> {
     );
   }
 
+  Widget _buildVideoComposeScrollContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildVideoCoverBlock(),
+        const SizedBox(height: 20),
+        ExtendedTextField(
+          controller: _descController,
+          focusNode: _descFocus,
+          specialTextSpanBuilder: _hashtagSpanBuilder,
+          inputFormatters: _descInputFormatters,
+          maxLength: _descMax,
+          maxLines: 4,
+          minLines: 2,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF111111)),
+          decoration: InputDecoration(
+            hintText: 'publishDescPlaceholder'.tr(),
+            hintStyle: const TextStyle(color: _hintColor, fontSize: 16),
+            border: InputBorder.none,
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            counterText: '',
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'publishSettingsHeader'.tr(),
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111111),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _settingsRow(
+          icon: Icons.location_on_outlined,
+          label: 'publishAddLocation'.tr(),
+          value: _locationSummaryShort(),
+          onTap: _showLocationSheet,
+        ),
+        const Divider(height: 1, thickness: 0.5, color: Color(0xFFF0F0F0)),
+        _settingsRow(
+          icon: Icons.person_outline,
+          label: 'publishWhoCanSee'.tr(),
+          value: _visibilitySummaryShort(),
+          onTap: _showVisibilitySheet,
+        ),
+        const Divider(height: 1, thickness: 0.5, color: Color(0xFFF0F0F0)),
+        _settingsRow(
+          leading: _publishCommentRowLeading(),
+          label: 'publishAllowComment'.tr(),
+          value: _commentSummaryShort(),
+          onTap: _showCommentPolicySheet,
+        ),
+        SizedBox(height: MediaQuery.paddingOf(context).bottom + 100),
+      ],
+    );
+  }
+
   Widget _buildTopicToolBar() {
     final len = _descController.text.characters.length;
     return Padding(
@@ -1092,16 +1377,120 @@ class _PublishComposePageState extends State<PublishComposePage> {
         builder: (context, notifier, _) {
           if (widget.isVideo) {
             return Scaffold(
-              backgroundColor: AppDesign.bg,
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+              backgroundColor: Colors.white,
+              resizeToAvoidBottomInset: true,
+              body: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              child: _buildVideoComposeScrollContent(),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                            child: _buildTopicToolBar(),
+                          ),
+                          _buildTopicSuggestPanel(),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        10,
+                        20,
+                        MediaQuery.paddingOf(context).bottom + 12,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: notifier.busy
+                                  ? null
+                                  : () => _saveDraft(notifier),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.black,
+                                side: const BorderSide(color: Colors.black87),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: const StadiumBorder(),
+                              ),
+                              child: notifier.savingDraft
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.black87,
+                                      ),
+                                    )
+                                  : Text(
+                                      'publishSaveDraft'.tr(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: notifier.busy
+                                  ? null
+                                  : () => _submitVideoPost(notifier),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _publishBg,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor:
+                                    _publishBg.withValues(alpha: 0.5),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: const StadiumBorder(),
+                                elevation: 0,
+                              ),
+                              child: notifier.submitting
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'publishPostPrimary'.tr(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                title:
-                    Text('publishComposeTitle'.tr(), style: AppDesign.appBarTitle),
               ),
-              body: SafeArea(child: _buildVideoForm(notifier)),
             );
           }
 
@@ -1149,26 +1538,37 @@ class _PublishComposePageState extends State<PublishComposePage> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: _toastComingSoon,
+                            onPressed: notifier.busy
+                                ? null
+                                : () => _saveDraft(notifier),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: Colors.black,
                               side: const BorderSide(color: Colors.black87),
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: const StadiumBorder(),
                             ),
-                            child: Text(
-                              'publishSaveDraft'.tr(),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: notifier.savingDraft
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.black87,
+                                    ),
+                                  )
+                                : Text(
+                                    'publishSaveDraft'.tr(),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
-                            onPressed: notifier.submitting
+                            onPressed: notifier.busy
                                 ? null
                                 : () => _submitPost(notifier),
                             style: FilledButton.styleFrom(

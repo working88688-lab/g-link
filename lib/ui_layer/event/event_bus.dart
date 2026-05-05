@@ -24,3 +24,10 @@ class PostPublishedEvent {
 
   final int postId;
 }
+
+/// 短视频已通过 `POST /api/v1/videos/{id}/publish` 发布成功。
+class VideoPublishedEvent {
+  const VideoPublishedEvent({required this.videoId});
+
+  final int videoId;
+}

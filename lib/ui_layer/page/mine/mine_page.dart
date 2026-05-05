@@ -1,10 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/profile.dart';
+import 'package:g_link/domain/model/feed_models.dart';
 import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/profile_notifier.dart';
+import 'package:g_link/ui_layer/page/mine/drafts_page.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -69,8 +72,10 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
       providers: [
         ChangeNotifierProvider(
           create: (ctx) {
-            final n = ProfileNotifier(ctx.read<ProfileDomain>())
-              ..bootstrapMineProfile();
+            final n = ProfileNotifier(
+              ctx.read<ProfileDomain>(),
+              ctx.read<FeedDomain>(),
+            )..bootstrapMineProfile();
             _notifier = n;
             return n;
           },
@@ -479,13 +484,16 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
     final isPosts = tabIndex == 0;
     final isVideos = tabIndex == 1;
     final postLikeItems = isPosts ? notifier.posts : notifier.likes;
-    if (notifier.loadingVideos &&
-        ((isVideos && notifier.videos.isEmpty) ||
-            (!isVideos && postLikeItems.isEmpty))) {
+    final draft = isPosts
+        ? notifier.postDraft
+        : (isVideos ? notifier.videoDraft : null);
+    final mainCount =
+        isVideos ? notifier.videos.length : postLikeItems.length;
+    final totalCount = mainCount + (draft != null ? 1 : 0);
+    if (notifier.loadingVideos && totalCount == 0) {
       return const Center(child: CircularProgressIndicator());
     }
-    if ((isVideos && notifier.videos.isEmpty) ||
-        (!isVideos && postLikeItems.isEmpty)) {
+    if (totalCount == 0) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
@@ -505,7 +513,7 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(top: 2.w),
-      itemCount: isVideos ? notifier.videos.length : postLikeItems.length,
+      itemCount: totalCount,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 2,
@@ -513,40 +521,72 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
         childAspectRatio: 0.74,
       ),
       itemBuilder: (_, i) {
-        final coverUrl =
-            isVideos ? notifier.videos[i].coverUrl : postLikeItems[i].coverUrl;
-        final countText = isVideos
-            ? '${notifier.videos[i].playCount}'
-            : '${postLikeItems[i].likeCount}';
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            if (coverUrl.isNotEmpty)
-              MyImage.network(coverUrl, fit: BoxFit.cover, placeHolder: null)
-            else
-              Container(color: const Color(0xFFE5E7ED)),
-            Positioned(
-              right: 5.w,
-              bottom: 5.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.w),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(4.w),
-                ),
-                child: Text(
-                  countText,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
+        if (draft != null && i == 0) {
+          return _buildDraftCell(notifier, draft, isVideos);
+        }
+        final realIndex = draft != null ? i - 1 : i;
+        final coverUrl = isVideos
+            ? notifier.videos[realIndex].coverUrl
+            : postLikeItems[realIndex].coverUrl;
+        if (coverUrl.isEmpty) {
+          return Container(color: const Color(0xFFE5E7ED));
+        }
+        return MyImage.network(coverUrl, fit: BoxFit.cover, placeHolder: null);
+      },
+    );
+  }
+
+  /// 「作品 / 视频」tab 置顶展示的草稿卡片：封面铺满 + 左下角「草稿箱」徽标。
+  /// 点击进入草稿箱列表管理页，返回时强制刷新当前 tab，确保已删条目不再展示。
+  Widget _buildDraftCell(
+      ProfileNotifier notifier, DraftItem draft, bool isVideoTab) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openDraftsPage(notifier, isVideoTab: isVideoTab),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (draft.coverUrl.isNotEmpty)
+            MyImage.network(draft.coverUrl,
+                fit: BoxFit.cover, placeHolder: null)
+          else
+            Container(color: const Color(0xFFE5E7ED)),
+          Positioned(
+            left: 5.w,
+            bottom: 5.w,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.w),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(4.w),
+              ),
+              child: Text(
+                'mineDraftBoxBadge'.tr(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
+  }
+
+  /// 跳到草稿箱列表管理页：根据点击来源决定初始 tab，
+  /// 返回后强制刷新当前 tab——避免置顶 cell 还停留在已删除项的封面上。
+  Future<void> _openDraftsPage(
+    ProfileNotifier notifier, {
+    required bool isVideoTab,
+  }) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => DraftsPage(initialTab: isVideoTab ? 1 : 0),
+      ),
+    );
+    if (!mounted) return;
+    await notifier.reloadCurrentTab();
   }
 }
