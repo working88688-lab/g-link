@@ -9,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:g_link/ui_layer/page/media_picker_page.dart';
 import 'package:g_link/ui_layer/page/publish_compose_page.dart';
+import 'package:g_link/ui_layer/page/publish_video_record_review_page.dart';
+import 'package:g_link/ui_layer/router/approute_observer.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -22,7 +24,8 @@ class PublishPage extends StatefulWidget {
   State<PublishPage> createState() => _PublishPageState();
 }
 
-class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
+class _PublishPageState extends State<PublishPage>
+    with WidgetsBindingObserver, RouteAware {
   static const Duration _maxVideoRecord = Duration(seconds: 15);
 
   CameraController? _controller;
@@ -36,6 +39,8 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
   Timer? _recordTicker;
   Duration _recordElapsed = Duration.zero;
 
+  bool _routeAwareSubscribed = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,11 +50,40 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_routeAwareSubscribed) {
+      final route = ModalRoute.of(context);
+      if (route is PageRoute) {
+        AppRouteObserver().routeObserver.subscribe(this, route);
+        _routeAwareSubscribed = true;
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    if (_routeAwareSubscribed) {
+      AppRouteObserver().routeObserver.unsubscribe(this);
+      _routeAwareSubscribed = false;
+    }
     _recordTicker?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_disposeController());
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    unawaited(_resumeCameraPreviewIfNeeded());
+  }
+
+  Future<void> _resumeCameraPreviewIfNeeded() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized || kIsWeb) return;
+    try {
+      await c.resumePreview();
+    } catch (_) {}
   }
 
   @override
@@ -228,14 +262,19 @@ class _PublishPageState extends State<PublishPage> with WidgetsBindingObserver {
     try {
       final file = await c.stopVideoRecording();
       if (!mounted) return;
+      if (!kIsWeb) {
+        try {
+          await c.pausePreview();
+        } catch (_) {}
+      }
+      if (!mounted) return;
       setState(() {
         _recording = false;
         _recordElapsed = Duration.zero;
       });
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
-          builder: (ctx) =>
-              PublishComposePage(media: [file], isVideo: true),
+          builder: (ctx) => PublishVideoRecordReviewPage(xFile: file),
           fullscreenDialog: true,
         ),
       );
