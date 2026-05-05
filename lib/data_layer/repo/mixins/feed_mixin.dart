@@ -45,4 +45,197 @@ mixin _Feed on _BaseAppRepo implements FeedDomain {
       .unlikePost(postId: postId)
       .deserializeJsonBy((json) => LikeResult.fromJson(Json.from(json)))
       .guard;
+
+  @override
+  AsyncResult<PublishPostResult> publishImagePost({
+    required String content,
+    required List<XFile> images,
+    int coverImageIndex = 0,
+    List<String>? tags,
+    List<int>? mentionedUids,
+    int visibility = 0,
+    int allowComment = 0,
+    int? draftId,
+    PublishLocationInput? location,
+  }) async {
+    try {
+      if (images.isEmpty) {
+        return Result(status: -1, msg: 'publishNeedImage');
+      }
+      final uploadDio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+      final objectKeys = <String>[];
+      for (final x in images) {
+        final bytes = await x.readAsBytes();
+        if (bytes.isEmpty) {
+          return Result(status: -1, msg: 'publishEmptyImage');
+        }
+        final ext = _publishNormalizeImageExt(x);
+        final presignRaw = await _feedService.presignUpload(
+          fileExt: ext,
+          fileSize: bytes.length,
+          scene: 'post',
+        );
+        final presign = Json.from(presignRaw);
+        if (presign.status != 0) {
+          return Result(status: presign.status, msg: presign.msg);
+        }
+        final pdata = presign.data;
+        if (pdata is! Map<String, dynamic>) {
+          return Result(status: -1, msg: 'publishPresignInvalid');
+        }
+        final uploadUrl = pdata['upload_url'] as String?;
+        final objectKey = pdata['object_key'] as String?;
+        if (uploadUrl == null || objectKey == null || uploadUrl.isEmpty) {
+          return Result(status: -1, msg: 'publishPresignInvalid');
+        }
+        final headerRaw = pdata['headers'];
+        final reqHeaders = <String, dynamic>{
+          Headers.contentLengthHeader: bytes.length,
+        };
+        if (headerRaw is Map) {
+          headerRaw.forEach((k, v) => reqHeaders['$k'] = v);
+        }
+        reqHeaders.putIfAbsent(
+          'Content-Type',
+          () => _publishMimeForExt(ext),
+        );
+        await uploadDio.put<void>(
+          uploadUrl,
+          data: bytes,
+          options: Options(
+            headers: reqHeaders.map((k, v) => MapEntry(k, '$v')),
+            validateStatus: (s) => s != null && s >= 200 && s < 400,
+          ),
+        );
+        objectKeys.add(objectKey);
+      }
+      final maxIdx = objectKeys.length - 1;
+      final cap = maxIdx < 8 ? maxIdx : 8;
+      final cover = coverImageIndex.clamp(0, cap);
+      final body = <String, dynamic>{
+        'content': content,
+        'images': objectKeys,
+        'cover_image_index': cover,
+        'visibility': visibility,
+        'allow_comment': allowComment,
+        if (location != null) 'location': location.toJson(),
+        if (tags != null && tags.isNotEmpty) 'tags': tags,
+        if (mentionedUids != null && mentionedUids.isNotEmpty)
+          'mentioned_uids': mentionedUids,
+        if (draftId != null) 'draft_id': draftId,
+      };
+      return await _feedService
+          .publishPost(body)
+          .deserializeJsonBy(
+            (json) => PublishPostResult.fromJson(Json.from(json)),
+          )
+          .guard;
+    } catch (e, st) {
+      CommonUtils.log(e);
+      CommonUtils.log(st);
+      return Result(msg: e.toString());
+    }
+  }
+
+  List<PublishTopicRow> _parseTopicsResponseData(dynamic data) {
+    final List<dynamic> list;
+    if (data is List) {
+      list = data;
+    } else if (data is Map) {
+      list = (data['lists'] as List?) ??
+          (data['list'] as List?) ??
+          (data['items'] as List?) ??
+          (data['topics'] as List?) ??
+          (data['data'] is List ? data['data'] as List : null) ??
+          const [];
+    } else {
+      list = const [];
+    }
+    final out = <PublishTopicRow>[];
+    for (final e in list) {
+      if (e is! Map) continue;
+      final row = PublishTopicRow.tryParse(Json.from(e));
+      if (row != null) out.add(row);
+    }
+    return out;
+  }
+
+  @override
+  AsyncResult<List<PublishTopicRow>> getHotTopics() async {
+    try {
+      final raw = Json.from(await _topicService.getHotTopics());
+      if (raw.status != 0) {
+        return Result(status: raw.status, msg: raw.msg);
+      }
+      return Result(
+        data: _parseTopicsResponseData(raw.data),
+        status: 0,
+      );
+    } catch (e, st) {
+      CommonUtils.log(e);
+      CommonUtils.log(st);
+      return Result(msg: e.toString());
+    }
+  }
+
+  @override
+  AsyncResult<List<PublishTopicRow>> searchTopics(String query) async {
+    try {
+      final q = query.trim();
+      if (q.isEmpty) {
+        return Result(data: const [], status: 0);
+      }
+      final raw = Json.from(await _topicService.searchTopics(query: q));
+      if (raw.status != 0) {
+        return Result(status: raw.status, msg: raw.msg);
+      }
+      return Result(
+        data: _parseTopicsResponseData(raw.data),
+        status: 0,
+      );
+    } catch (e, st) {
+      CommonUtils.log(e);
+      CommonUtils.log(st);
+      return Result(msg: e.toString());
+    }
+  }
+}
+
+String _publishNormalizeImageExt(XFile file) {
+  var name = file.name.toLowerCase();
+  if (name.isEmpty) {
+    final p = file.path.toLowerCase();
+    final slash = p.lastIndexOf('/');
+    name = slash >= 0 ? p.substring(slash + 1) : p;
+  }
+  final dot = name.lastIndexOf('.');
+  final ext = dot >= 0 ? name.substring(dot + 1) : 'jpg';
+  switch (ext) {
+    case 'jpeg':
+      return 'jpg';
+    case 'jpg':
+    case 'png':
+    case 'webp':
+      return ext;
+    default:
+      return 'jpg';
+  }
+}
+
+String _publishMimeForExt(String ext) {
+  switch (ext) {
+    case 'jpg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    default:
+      return 'image/jpeg';
+  }
 }

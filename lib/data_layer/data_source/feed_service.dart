@@ -51,4 +51,27 @@ class FeedService extends BaseService {
         '/posts/$postId/like',
         encrypted: false,
       );
+
+  /// 获取单张图片上传预签名（直传 MinIO/OSS），参见 `POST /api/v1/upload/presign`。
+  AsyncJson presignUpload({
+    required String fileExt,
+    required int fileSize,
+    required String scene,
+  }) =>
+      post(
+        '/upload/presign',
+        data: {
+          'file_ext': fileExt,
+          'file_size': fileSize,
+          'scene': scene,
+        },
+        encrypted: false,
+      );
+
+  /// 发布帖子，参见 `POST /api/v1/posts`。
+  AsyncJson publishPost(Json body) => post(
+        '/posts',
+        data: body,
+        encrypted: false,
+      );
 }

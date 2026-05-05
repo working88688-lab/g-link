@@ -12,6 +12,7 @@ List<RouteBase> get $appRoutes => [
       $registerRoute,
       $forgotPasswordRoute,
       $statefulShellRoute,
+      $publishRoute,
       $recommendFollowListRoute,
       $editProfileRoute,
       $guideRoute,
@@ -136,14 +137,6 @@ RouteBase get $statefulShellRoute => StatefulShellRouteData.$route(
         StatefulShellBranchData.$branch(
           routes: [
             GoRouteData.$route(
-              path: '/publish',
-              factory: $PublishRouteExtension._fromState,
-            ),
-          ],
-        ),
-        StatefulShellBranchData.$branch(
-          routes: [
-            GoRouteData.$route(
               path: '/message',
               factory: $MessageRouteExtension._fromState,
             ),
@@ -200,23 +193,6 @@ extension $ShortVideoRouteExtension on ShortVideoRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-extension $PublishRouteExtension on PublishRoute {
-  static PublishRoute _fromState(GoRouterState state) => const PublishRoute();
-
-  String get location => GoRouteData.$location(
-        '/publish',
-      );
-
-  void go(BuildContext context) => context.go(location);
-
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  void replace(BuildContext context) => context.replace(location);
-}
-
 extension $MessageRouteExtension on MessageRoute {
   static MessageRoute _fromState(GoRouterState state) => const MessageRoute();
 
@@ -239,6 +215,29 @@ extension $MineRouteExtension on MineRoute {
 
   String get location => GoRouteData.$location(
         '/mine',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $publishRoute => GoRouteData.$route(
+      path: '/publish',
+      parentNavigatorKey: PublishRoute.$parentNavigatorKey,
+      factory: $PublishRouteExtension._fromState,
+    );
+
+extension $PublishRouteExtension on PublishRoute {
+  static PublishRoute _fromState(GoRouterState state) => const PublishRoute();
+
+  String get location => GoRouteData.$location(
+        '/publish',
       );
 
   void go(BuildContext context) => context.go(location);

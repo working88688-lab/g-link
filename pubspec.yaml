@@ -58,6 +58,12 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   geolocator: ^13.0.0
   geocoding: ^3.0.0
+  camera: ^0.12.0+1
+  photo_manager: ^3.9.0
+  video_player: ^2.11.1
+  extended_text_field: ^16.0.2
+  screen_brightness: ^2.1.7
+  volume_controller: ^3.4.4
 
 flutter_icons:
   android: true

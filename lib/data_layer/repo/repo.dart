@@ -38,6 +38,7 @@ import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
 import 'package:g_link/data_layer/data_source/feed_service.dart';
+import 'package:g_link/data_layer/data_source/topic_service.dart';
 import 'package:g_link/data_layer/data_source/home_service.dart';
 import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
@@ -74,6 +75,7 @@ class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _feedService = FeedService(_apiDio);
+  late final _topicService = TopicService(_apiDio);
   late final _reportService = ReportService(_apiDio);
   late final _userReportService = UserReportService(_apiDio);
   late final _profileService = ProfileService(_apiDio);

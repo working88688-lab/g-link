@@ -1,3 +1,4 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:g_link/domain/model/feed_models.dart';
 import 'package:g_link/domain/type_def.dart';
 
@@ -26,4 +27,23 @@ abstract class FeedDomain {
 
   /// 取消点赞。
   AsyncResult<LikeResult> unlikePost({required int postId});
+
+  /// 发布图文：按接口文档 `POST /api/v1/upload/presign` 逐张直传后 `POST /api/v1/posts`。
+  AsyncResult<PublishPostResult> publishImagePost({
+    required String content,
+    required List<XFile> images,
+    int coverImageIndex = 0,
+    List<String>? tags,
+    List<int>? mentionedUids,
+    int visibility = 0,
+    int allowComment = 0,
+    int? draftId,
+    PublishLocationInput? location,
+  });
+
+  /// 发布页热门话题（话题模块 `GET /api/v1/topics/hot`）。
+  AsyncResult<List<PublishTopicRow>> getHotTopics();
+
+  /// 发布页话题搜索（话题模块 `GET /api/v1/topics/search`）。
+  AsyncResult<List<PublishTopicRow>> searchTopics(String query);
 }

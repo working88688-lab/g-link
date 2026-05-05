@@ -24,6 +24,7 @@ import 'package:g_link/ui_layer/event/event_bus.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/home_config_notifier.dart';
 import 'package:g_link/ui_layer/notifier/user_notifier.dart';
+import 'package:g_link/ui_layer/router/paths.dart';
 import 'package:g_link/ui_layer/widgets/custom_bottom_nav_bar.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/theme/app_design.dart';
@@ -302,6 +303,10 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
                     return CustomBottomNavBar(
                       currentIndex: currentIndex,
                       onTap: (index) {
+                        if (index == 2) {
+                          context.push(AppRouterPaths.publish);
+                          return;
+                        }
                         homeConfigNotifier.setCurrentIndex(index);
                         _goBranch(index);
                       },
@@ -317,9 +322,10 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
   }
 
   void _goBranch(int index) {
+    final shellIndex = index < 2 ? index : index - 1;
     widget.navigationShell.goBranch(
-      index,
-      initialLocation: index == widget.navigationShell.currentIndex,
+      shellIndex,
+      initialLocation: shellIndex == widget.navigationShell.currentIndex,
     );
 
     // 获取当前路由的路径

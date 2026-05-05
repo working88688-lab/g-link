@@ -4,9 +4,14 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/profile_models.dart';
+import 'package:g_link/ui_layer/event/event_bus.dart';
 
 class ProfileNotifier extends ChangeNotifier {
-  ProfileNotifier(this._profileDomain);
+  ProfileNotifier(this._profileDomain) {
+    _postPublishedSub = eventBus.on<PostPublishedEvent>().listen((_) {
+      _onPostPublishedElsewhere();
+    });
+  }
 
   final ProfileDomain _profileDomain;
   bool _disposed = false;
@@ -34,6 +39,19 @@ class ProfileNotifier extends ChangeNotifier {
 
   /// 当前是否有"我的资料"的拉取请求在飞，避免可见性回调撞上下拉刷新各发一份。
   bool _mineFetching = false;
+
+  StreamSubscription<PostPublishedEvent>? _postPublishedSub;
+
+  /// 图文发布成功后：清空帖子列表缓存；若正在「作品」tab 则立刻重拉，避免仍看到空列表。
+  void _onPostPublishedElsewhere() {
+    if (_disposed || profile == null) return;
+    posts = const [];
+    if (tabIndex == 0) {
+      unawaited(_loadTabData(force: true));
+    } else {
+      _safeNotify();
+    }
+  }
 
   Future<void> fetchProfileAndVideos({required int uid}) async {
     loadingProfile = true;
@@ -239,6 +257,7 @@ class ProfileNotifier extends ChangeNotifier {
 
   @override
   void dispose() {
+    _postPublishedSub?.cancel();
     _disposed = true;
     super.dispose();
   }
