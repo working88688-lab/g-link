@@ -25,6 +25,7 @@ import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/home_config_notifier.dart';
 import 'package:g_link/ui_layer/notifier/user_notifier.dart';
 import 'package:g_link/ui_layer/widgets/custom_bottom_nav_bar.dart';
+import 'package:g_link/ui_layer/page/publish/publish_page.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/ui_layer/theme/app_design.dart';
 import 'package:g_link/ui_layer/theme/theme_manager.dart';
@@ -39,6 +40,7 @@ import '../../app_config.dart';
 import '../../domain/domain.dart';
 import '../../domain/enum.dart';
 import '../../domain/model/home_data_model.dart';
+import '../router/routes.dart';
 
 class BottomNaviBar extends StatefulWidget {
   const BottomNaviBar({
@@ -302,6 +304,10 @@ class _BottomNaviBarState extends State<BottomNaviBar> {
                     return CustomBottomNavBar(
                       currentIndex: currentIndex,
                       onTap: (index) {
+                        if (index == 2) {
+                          const PublishRoute().push(context);
+                          return;
+                        }
                         homeConfigNotifier.setCurrentIndex(index);
                         _goBranch(index);
                       },

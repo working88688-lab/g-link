@@ -18,6 +18,8 @@ import 'package:g_link/ui_layer/page/mine/notification_page.dart';
 import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
 import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
 import 'package:g_link/ui_layer/page/message_page_v2.dart';
+import 'package:g_link/ui_layer/page/publish/publish_album_page.dart';
+import 'package:g_link/ui_layer/page/publish/publish_composer_page.dart';
 import 'package:g_link/ui_layer/page/publish/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
@@ -122,13 +124,6 @@ class ForgotPasswordRoute extends GoRouteData {
     ),
     TypedStatefulShellBranch(
       routes: [
-        TypedGoRoute<PublishRoute>(
-          path: AppRouterPaths.publish,
-        ),
-      ],
-    ),
-    TypedStatefulShellBranch(
-      routes: [
         TypedGoRoute<MessageRoute>(
           path: AppRouterPaths.message,
         ),
@@ -166,11 +161,36 @@ class ShortVideoRoute extends GoRouteData {
   Widget build(BuildContext context, GoRouterState state) => const ShortVideoPage();
 }
 
+@TypedGoRoute<PublishRoute>(path: AppRouterPaths.publish)
 class PublishRoute extends GoRouteData {
   const PublishRoute();
 
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
   @override
-  Widget build(BuildContext context, GoRouterState state) => const PublishPage();
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: PublishPage(),
+      begin: const Offset(0, 1),
+    );
+  }
+}
+
+@TypedGoRoute<PublishAlbumRoute>(path: AppRouterPaths.publishAlbum)
+class PublishAlbumRoute extends GoRouteData {
+  const PublishAlbumRoute();
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: const PublishAlbumPage(),
+      begin: const Offset(0, 1),
+    );
+  }
 }
 
 class MessageRoute extends GoRouteData {

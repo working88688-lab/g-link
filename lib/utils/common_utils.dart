@@ -376,6 +376,7 @@ class CommonUtils {
   static Page<void> buildSlideTransitionPage({
     required GoRouterState state,
     required Widget child,
+    Offset begin = const Offset(1.0, 0.0),
     Duration transitionDuration = const Duration(milliseconds: 250),
   }) {
     bool isWebOrIOS = kIsWeb || (defaultTargetPlatform == TargetPlatform.iOS);
@@ -394,14 +395,9 @@ class CommonUtils {
         child: child,
         transitionDuration: transitionDuration,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Define the transition animation here (slide from right to left)
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOut;
-
-          var tween =
-              Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-          var offsetAnimation = animation.drive(tween);
+          final tween = Tween(begin: begin, end: Offset.zero)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final offsetAnimation = animation.drive(tween);
 
           return SlideTransition(
             position: offsetAnimation,
