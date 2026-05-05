@@ -44,6 +44,7 @@ import 'package:g_link/data_layer/data_source/report_service.dart';
 import 'package:g_link/data_layer/data_source/auth_service.dart';
 import 'package:g_link/data_layer/data_source/search_service.dart';
 import 'package:g_link/data_layer/data_source/user_report_service.dart';
+import 'package:g_link/data_layer/data_source/video_feed_service.dart';
 
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/enum.dart';
@@ -52,12 +53,16 @@ import 'package:g_link/domain/type_def.dart';
 import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/domain/domains/search.dart';
+import 'package:g_link/domain/domains/video_feed.dart';
+
+import '../../domain/model/video_feed_models.dart';
 
 part 'cache.dart';
 
 part 'mixins/chat_mixin.dart';
 
 part 'mixins/feed_mixin.dart';
+part 'mixins/video_feed_mixin.dart';
 
 part 'mixins/home_mixin.dart';
 
@@ -69,7 +74,7 @@ part 'mixins/auth_mixin.dart';
 
 part 'mixins/search_mixin.dart';
 
-class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search {}
+class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search, _VideoFeed {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
@@ -80,6 +85,7 @@ abstract class _BaseAppRepo implements AppDomain {
   late final _authService = AuthService(_apiDio);
   late final _chatService = ChatService(_v1Dio);
   late final _searchService = SearchService(_apiDio);
+  late final _videoFeedService = VideoFeedService(_v1Dio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();
@@ -107,19 +113,7 @@ abstract class _BaseAppRepo implements AppDomain {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
-  )..interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          _applyCommonHeaders(options);
-          final token = _appInfo.token?.trim();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          _printCurl(options);
-          return handler.next(options);
-        },
-      ),
-    );
+  )..interceptors.add(_buildAuthInterceptor());
 
   /// 未加密网路服务/上传资源
   late final _dio = Dio(
@@ -154,32 +148,7 @@ abstract class _BaseAppRepo implements AppDomain {
     _appInfo = await _getAppInfo();
 
     _apiDio.interceptors.add(AutoEncryptAndDecryptInterceptor(_appInfo));
-    _apiDio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) {
-          _applyCommonHeaders(options);
-          final token = _appInfo.token?.trim();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          _printCurl(options);
-          return handler.next(options);
-        },
-        onResponse: (response, handler) async {
-          if (_isAuthRequiredResponse(response.data)) {
-            await _handleAuthRequired();
-          }
-          return handler.next(response);
-        },
-        onError: (err, handler) async {
-          final statusCode = err.response?.statusCode;
-          if (statusCode == 401 || statusCode == 403) {
-            await _handleAuthRequired();
-          }
-          return handler.next(err);
-        },
-      ),
-    );
+    _apiDio.interceptors.add(_buildAuthInterceptor(withAuthRequiredHandling: true));
     _apiDio.interceptors.add(ReportTimingInterceptor());
   }
 
@@ -222,6 +191,37 @@ abstract class _BaseAppRepo implements AppDomain {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       _authRedirecting = false;
     }
+  }
+
+  InterceptorsWrapper _buildAuthInterceptor({bool withAuthRequiredHandling = false}) {
+    return InterceptorsWrapper(
+      onRequest: (options, handler) {
+        _applyCommonHeaders(options);
+        final token = _appInfo.token?.trim();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        _printCurl(options);
+        return handler.next(options);
+      },
+      onResponse: withAuthRequiredHandling
+          ? (response, handler) async {
+              if (_isAuthRequiredResponse(response.data)) {
+                await _handleAuthRequired();
+              }
+              return handler.next(response);
+            }
+          : null,
+      onError: withAuthRequiredHandling
+          ? (err, handler) async {
+              final statusCode = err.response?.statusCode;
+              if (statusCode == 401 || statusCode == 403) {
+                await _handleAuthRequired();
+              }
+              return handler.next(err);
+            }
+          : null,
+    );
   }
 
   void _applyCommonHeaders(RequestOptions options) {

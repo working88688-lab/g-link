@@ -15,6 +15,7 @@ import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/domains/search.dart';
+import 'package:g_link/domain/domains/video_feed.dart';
 import 'package:g_link/report/analytics/analytics_report.dart';
 import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/notifier/app_feed_notifier.dart';
@@ -60,6 +61,7 @@ void main() async {
         Provider<AppDomain>(lazy: false, create: (_) => appRepo),
         Provider<HomeDomain>(lazy: false, create: (_) => appRepo),
         Provider<FeedDomain>(lazy: false, create: (_) => appRepo),
+        Provider<VideoFeedDomain>(lazy: false, create: (_) => appRepo),
         Provider<ProfileDomain>(lazy: false, create: (_) => appRepo),
         Provider<ReportDomain>(lazy: false, create: (_) => appRepo),
         Provider<AuthDomain>(lazy: false, create: (_) => appRepo),

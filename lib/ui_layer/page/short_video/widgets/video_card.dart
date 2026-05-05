@@ -1,16 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/domain/model/video_feed_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
-
-import '../models/video_item_model.dart';
 
 // ──────────────────────────────────────────
 // 单个视频卡片（全屏 Stack）
 // ──────────────────────────────────────────
 class VideoCard extends StatefulWidget {
-  final VideoItemModel item;
+  final VideoFeedItem item;
+  final bool isFollowing;
+  final bool isFavorited;
+  final bool isMuted;
   final VoidCallback onToggleFollow;
   final VoidCallback onToggleLike;
   final VoidCallback onToggleFavorite;
@@ -24,6 +26,9 @@ class VideoCard extends StatefulWidget {
   const VideoCard({
     super.key,
     required this.item,
+    required this.isFollowing,
+    required this.isFavorited,
+    required this.isMuted,
     required this.onToggleFollow,
     required this.onToggleLike,
     required this.onToggleFavorite,
@@ -43,19 +48,21 @@ class _VideoCardState extends State<VideoCard> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final authorName = item.author.nickname.isNotEmpty ? item.author.nickname : item.author.username;
+    final locationLabel = item.author.username.isNotEmpty ? '@${item.author.username}' : '';
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 视频占位（后续接入播放器）
-        Container(
-          color: Colors.white,
-          child: Center(
-            child: Icon(Icons.play_circle_outline,
-                size: 72.sp, color: Colors.white24),
-          ),
+        Positioned.fill(
+          child: item.coverUrl.isNotEmpty
+              ? Image.network(item.coverUrl, fit: BoxFit.cover)
+              : Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: Icon(Icons.play_circle_outline, size: 72.sp, color: Colors.white24),
+                  ),
+                ),
         ),
-
-        // 全屏渐变遮罩（顶部 + 底部双向渐变）
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -75,13 +82,14 @@ class _VideoCardState extends State<VideoCard> {
             ),
           ),
         ),
-
-        // 右侧操作栏
         Positioned(
           right: 8.w,
           bottom: 40.w,
           child: VideoActionBar(
             item: item,
+            isFollowing: widget.isFollowing,
+            isFavorited: widget.isFavorited,
+            isMuted: widget.isMuted,
             onToggleFollow: widget.onToggleFollow,
             onToggleLike: widget.onToggleLike,
             onToggleFavorite: widget.onToggleFavorite,
@@ -91,32 +99,29 @@ class _VideoCardState extends State<VideoCard> {
             onShare: widget.onShare,
           ),
         ),
-
-        // 左下内容信息
         Positioned(
           left: 8.w,
           right: 75.w,
           bottom: 40.w,
-          child: VideoContentInfo(item: item, onExpandTap: widget.onExpandTap, onMusicTap: widget.onMusicTap),
+          child: VideoContentInfo(
+            authorName: authorName,
+            locationLabel: locationLabel,
+            item: item,
+            onExpandTap: widget.onExpandTap,
+            onMusicTap: widget.onMusicTap,
+          ),
         ),
-
-        // 底部进度条
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: VideoProgressBar(),
-        ),
+        const Positioned(left: 0, right: 0, bottom: 0, child: VideoProgressBar()),
       ],
     );
   }
 }
 
-// ──────────────────────────────────────────
-// 右侧操作栏
-// ──────────────────────────────────────────
 class VideoActionBar extends StatelessWidget {
-  final VideoItemModel item;
+  final VideoFeedItem item;
+  final bool isFollowing;
+  final bool isFavorited;
+  final bool isMuted;
   final VoidCallback onToggleFollow;
   final VoidCallback onToggleLike;
   final VoidCallback onToggleFavorite;
@@ -128,6 +133,9 @@ class VideoActionBar extends StatelessWidget {
   const VideoActionBar({
     super.key,
     required this.item,
+    required this.isFollowing,
+    required this.isFavorited,
+    required this.isMuted,
     required this.onToggleFollow,
     required this.onToggleLike,
     required this.onToggleFavorite,
@@ -142,36 +150,33 @@ class VideoActionBar extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        VideoAvatarWithFollow(item: item, onToggleFollow: onToggleFollow),
+        VideoAvatarWithFollow(item: item, isFollowing: isFollowing, onToggleFollow: onToggleFollow),
         SizedBox(height: 26.w),
         VideoActionBtn(
-          icon: MyImage.asset(
-            item.isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconLike,
-            width: 32.w,
-          ),
+          icon: MyImage.asset(item.isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconLike, width: 32.w),
           color: item.isLiked ? const Color(0xFFFF2D55) : Colors.white,
-          count: item.isLiked ? item.likes + 1 : item.likes,
+          count: item.stats.likeCount + (item.isLiked ? 1 : 0),
           onTap: onToggleLike,
         ),
         SizedBox(height: 20.w),
         VideoActionBtn(
           icon: MyImage.asset(MyImagePaths.iconComment, width: 32.w),
           color: Colors.white,
-          count: item.comments,
+          count: item.stats.commentCount,
           onTap: onComment,
         ),
         SizedBox(height: 20.w),
         VideoActionBtn(
           icon: MyImage.asset(MyImagePaths.iconCollection, width: 32.w),
-          color: item.isFavorited ? const Color(0xFFFFB800) : Colors.white,
-          count: item.isFavorited ? item.favorites + 1 : item.favorites,
+          color: isFavorited ? const Color(0xFFFFB800) : Colors.white,
+          count: item.stats.favoriteCount + (isFavorited ? 1 : 0),
           onTap: onToggleFavorite,
         ),
         SizedBox(height: 20.w),
         VideoActionBtn(
           icon: MyImage.asset(MyImagePaths.iconShare, width: 32.w),
           color: Colors.white,
-          count: item.shares,
+          count: item.stats.shareCount,
           onTap: onShare,
           flipHorizontal: true,
         ),
@@ -187,7 +192,7 @@ class VideoActionBar extends StatelessWidget {
           child: SizedBox(
             width: 30.w,
             height: 30.w,
-            child: MyImage.asset(MyImagePaths.iconMute, width: 30.w),
+            child: MyImage.asset(isMuted ? MyImagePaths.iconVolumeOff : MyImagePaths.iconMute, width: 30.w),
           ),
         ),
       ],
@@ -195,15 +200,12 @@ class VideoActionBar extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 头像 + 关注按钮
-// ──────────────────────────────────────────
 class VideoAvatarWithFollow extends StatelessWidget {
-  final VideoItemModel item;
+  final VideoFeedItem item;
+  final bool isFollowing;
   final VoidCallback onToggleFollow;
 
-  const VideoAvatarWithFollow(
-      {super.key, required this.item, required this.onToggleFollow});
+  const VideoAvatarWithFollow({super.key, required this.item, required this.isFollowing, required this.onToggleFollow});
 
   @override
   Widget build(BuildContext context) {
@@ -219,18 +221,16 @@ class VideoAvatarWithFollow extends StatelessWidget {
             color: const Color(0xFF444444),
             border: Border.all(color: Colors.white, width: 2.w),
           ),
-          child: item.authorAvatar.isNotEmpty
-              ? ClipOval(
-                  child: Image.network(item.authorAvatar, fit: BoxFit.cover))
+          child: item.author.avatarUrl.isNotEmpty
+              ? ClipOval(child: Image.network(item.author.avatarUrl, fit: BoxFit.cover))
               : Icon(Icons.person, color: Colors.white, size: 26.sp),
         ),
-        if (!item.isFollowing)
+        if (!isFollowing)
           Positioned(
             bottom: -8.w,
             child: GestureDetector(
               onTap: onToggleFollow,
-              child:
-                  MyImage.asset(MyImagePaths.iconShortVideoFollow, width: 16.w),
+              child: MyImage.asset(MyImagePaths.iconShortVideoFollow, width: 16.w),
             ),
           ),
       ],
@@ -238,9 +238,6 @@ class VideoAvatarWithFollow extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 通用操作按钮（图标 + 数字）
-// ──────────────────────────────────────────
 class VideoActionBtn extends StatelessWidget {
   final Widget icon;
   final Color color;
@@ -272,17 +269,7 @@ class VideoActionBtn extends StatelessWidget {
           icon,
           if (count != null) ...[
             SizedBox(height: 2.w),
-            Text(
-              _formatCount(count!),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                shadows: [
-                  Shadow(color: const Color(0x43000000), blurRadius: 4.w)
-                ],
-              ),
-            ),
+            Text(_formatCount(count!), style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x43000000), blurRadius: 4.w)])),
           ],
         ],
       ),
@@ -290,15 +277,14 @@ class VideoActionBtn extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 左下内容信息（位置、标题、标签、描述、音乐）
-// ──────────────────────────────────────────
 class VideoContentInfo extends StatelessWidget {
-  final VideoItemModel item;
+  final VideoFeedItem item;
+  final String authorName;
+  final String locationLabel;
   final VoidCallback? onExpandTap;
   final VoidCallback? onMusicTap;
 
-  const VideoContentInfo({super.key, required this.item, this.onExpandTap, this.onMusicTap});
+  const VideoContentInfo({super.key, required this.item, required this.authorName, required this.locationLabel, this.onExpandTap, this.onMusicTap});
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +292,6 @@ class VideoContentInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 地址
         Container(
           padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 5.w),
           decoration: BoxDecoration(
@@ -318,100 +303,44 @@ class VideoContentInfo extends StatelessWidget {
             children: [
               MyImage.asset(MyImagePaths.iconLocate, width: 16.w),
               SizedBox(width: 3.w),
-              Text(
-                item.location,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12.sp,
-                  shadows: [
-                    Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
-                  ],
-                ),
-              ),
+              Text(locationLabel, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
             ],
           ),
         ),
         SizedBox(height: 8.w),
-        // 标题
-        Text(
-          item.title,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)],
-          ),
-        ),
+        Text(authorName, style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
         SizedBox(height: 8.w),
-        // 标签
         Wrap(
           spacing: 6.w,
-          children: item.tags
-              .map((t) => Text(
-                    t,
-                    style: TextStyle(
-                      color: const Color(0xFFFAB200),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      shadows: [
-                        Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
-                      ],
-                    ),
-                  ))
-              .toList(),
+          children: item.tags.map((t) => Text('#$t', style: TextStyle(color: const Color(0xFFFAB200), fontSize: 14.sp, fontWeight: FontWeight.w600, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]))).toList(),
         ),
         SizedBox(height: 2.w),
-        // 描述（可展开）
         VideoExpandableText(
-          text: item.desc,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 13.sp,
-            shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)],
-          ),
-          moreStyle: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 14.sp,
-            shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)],
-          ),
+          text: item.description,
+          style: TextStyle(color: Colors.white, fontSize: 13.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
+          moreStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
           onExpandTap: onExpandTap,
         ),
         SizedBox(height: 16.w),
-        // 音乐
         GestureDetector(
           onTap: onMusicTap,
           child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(6.w),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black45,
-                  blurRadius: 4.w,
-                  offset: Offset(0, 2.w))
-            ],
-          ),
-          padding:
-              EdgeInsets.only(left: 6.w, top: 7.w, bottom: 7.w, right: 17.w),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              MyImage.asset(MyImagePaths.iconMusical, width: 16.w),
-              SizedBox(width: 4.w),
-              Flexible(
-                child: Text(
-                  item.music,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(6.w),
+              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 4.w, offset: Offset(0, 2.w))],
+            ),
+            padding: EdgeInsets.only(left: 6.w, top: 7.w, bottom: 7.w, right: 17.w),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MyImage.asset(MyImagePaths.iconMusical, width: 16.w),
+                SizedBox(width: 4.w),
+                Flexible(
+                  child: Text(item.videoUrl, style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ],
@@ -419,22 +348,13 @@ class VideoContentInfo extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────
-// 可展开文本（超出一行才显示展开按钮）
-// ──────────────────────────────────────────
 class VideoExpandableText extends StatefulWidget {
   final String text;
   final TextStyle style;
   final TextStyle moreStyle;
   final VoidCallback? onExpandTap;
 
-  const VideoExpandableText({
-    super.key,
-    required this.text,
-    required this.style,
-    required this.moreStyle,
-    this.onExpandTap,
-  });
+  const VideoExpandableText({super.key, required this.text, required this.style, required this.moreStyle, this.onExpandTap});
 
   @override
   State<VideoExpandableText> createState() => _VideoExpandableTextState();
@@ -446,36 +366,15 @@ class _VideoExpandableTextState extends State<VideoExpandableText> {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final textDir = Directionality.of(ctx);
-        final tp = TextPainter(
-          text: TextSpan(text: widget.text, style: widget.style),
-          maxLines: 1,
-          textDirection: textDir,
-        )..layout(maxWidth: constraints.maxWidth);
-
-        if (!tp.didExceedMaxLines) {
-          return Text(widget.text, style: widget.style);
-        }
-
+        final tp = TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)..layout(maxWidth: constraints.maxWidth);
+        if (!tp.didExceedMaxLines) return Text(widget.text, style: widget.style);
         final moreText = '...  ${'shortVideoExpand'.tr()} ';
-        final moreTp = TextPainter(
-          text: TextSpan(text: moreText, style: widget.moreStyle),
-          maxLines: 1,
-          textDirection: textDir,
-        )..layout();
+        final moreTp = TextPainter(text: TextSpan(text: moreText, style: widget.moreStyle), maxLines: 1, textDirection: textDir)..layout();
         const iconWidth = 16.0;
-
         final availableWidth = constraints.maxWidth - moreTp.width - iconWidth;
-        final mainTp = TextPainter(
-          text: TextSpan(text: widget.text, style: widget.style),
-          maxLines: 1,
-          textDirection: textDir,
-        )..layout(maxWidth: availableWidth);
-
-        final offset = mainTp
-            .getPositionForOffset(Offset(availableWidth, mainTp.height / 2))
-            .offset;
+        final mainTp = TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)..layout(maxWidth: availableWidth);
+        final offset = mainTp.getPositionForOffset(Offset(availableWidth, mainTp.height / 2)).offset;
         final truncated = widget.text.substring(0, offset);
-
         return RichText(
           maxLines: 1,
           overflow: TextOverflow.clip,
@@ -504,9 +403,6 @@ class _VideoExpandableTextState extends State<VideoExpandableText> {
   }
 }
 
-// ──────────────────────────────────────────
-// 底部进度条（占位）
-// ──────────────────────────────────────────
 class VideoProgressBar extends StatelessWidget {
   const VideoProgressBar({super.key});
 

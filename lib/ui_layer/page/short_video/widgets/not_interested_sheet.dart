@@ -1,11 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-import '../models/video_item_model.dart';
+import 'package:g_link/domain/model/video_feed_models.dart';
 
 class NotInterestedSheet extends StatefulWidget {
-  final VideoItemModel item;
+  final VideoFeedItem item;
 
   const NotInterestedSheet({super.key, required this.item});
 
@@ -25,10 +24,10 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    // 构建带标签的选项列表：作者 + 音乐 + 所有话题
+    final authorName = item.author.nickname.isNotEmpty ? item.author.nickname : item.author.username;
     final chips = <({String label, String value})>[
-      (label: 'shortVideoNotInterestedLabelAuthor'.tr(), value: item.authorName),
-      (label: 'shortVideoNotInterestedLabelMusic'.tr(), value: item.music),
+      (label: 'shortVideoNotInterestedLabelAuthor'.tr(), value: authorName),
+      (label: 'shortVideoNotInterestedLabelMusic'.tr(), value: item.videoUrl),
       ...item.tags.map((t) => (label: 'shortVideoNotInterestedLabelTopic'.tr(), value: t)),
     ];
 
@@ -43,7 +42,6 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── 标题行 ─────────────────────────────
           Container(
             width: double.infinity,
             child: Stack(
@@ -73,9 +71,7 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
               ],
             ),
           ),
-
           SizedBox(height: 6.w),
-          // ── 副标题 ─────────────────────────────
           Center(
             child: Text(
               'shortVideoNotInterestedSubtitle'.tr(),
@@ -83,7 +79,6 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
             ),
           ),
           SizedBox(height: 24.w),
-          // ── 我不想看 ───────────────────────────
           Text(
             'shortVideoNotInterestedWhy'.tr(),
             style: TextStyle(
@@ -108,7 +103,7 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Color(0xFFF8F9FE),
+                  color: const Color(0xFFF8F9FE),
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Column(
@@ -125,7 +120,7 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Text(
                       chip.label,
                       overflow: TextOverflow.ellipsis,
@@ -140,7 +135,6 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
             },
           ),
           SizedBox(height: 20.w),
-          // ── 关键词屏蔽 ─────────────────────────
           Text(
             'shortVideoNotInterestedKeyword'.tr(),
             style: TextStyle(
@@ -186,7 +180,6 @@ class _NotInterestedSheetState extends State<NotInterestedSheet> {
             ),
           ),
           SizedBox(height: 28.w),
-          // ── 提交按钮 ───────────────────────────
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
