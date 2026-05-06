@@ -40,6 +40,23 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       }).guard;
 
   @override
+  AsyncResult<FeedPage<FeedPost>> getUserPostsFeed({
+    required int uid,
+    String? cursor,
+    int? limit,
+    String? sort,
+  }) =>
+      _profileService
+          .getUserPosts(uid: uid, cursor: cursor, limit: limit, sort: sort)
+          .deserializeJsonBy(
+            (json) => FeedPage<FeedPost>.fromJson(
+              Json.from(json),
+              FeedPost.fromJson,
+            ),
+          )
+          .guard;
+
+  @override
   AsyncResult<List<UserPostItem>> getUserLikes({
     required int uid,
     String? cursor,
@@ -191,6 +208,49 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
   @override
   AsyncResult<FollowResult> unfollowUser({required int uid}) =>
       _profileService.unfollowUser(uid: uid).deserializeJsonBy((json) => FollowResult.fromJson(Json.from(json))).guard;
+
+  @override
+  AsyncResult blockUser({required int uid}) =>
+      _profileService.blockUser(uid: uid).deserialize().guard;
+
+  @override
+  AsyncResult unblockUser({required int uid}) =>
+      _profileService.unblockUser(uid: uid).deserialize().guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserFollowings({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      _profileService
+          .getUserFollowings(uid: uid, cursor: cursor, limit: limit)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserFollowers({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      _profileService
+          .getUserFollowers(uid: uid, cursor: cursor, limit: limit)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserMutualFollows({required int uid}) =>
+      _profileService
+          .getUserMutualFollows(uid: uid)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
 
   @override
   AsyncResult updateMyProfile({

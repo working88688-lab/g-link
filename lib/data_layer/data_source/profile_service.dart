@@ -79,12 +79,14 @@ class ProfileService extends BaseService {
     required int uid,
     String? cursor,
     int? limit,
+    String? sort,
   }) =>
       get(
         '/users/$uid/posts',
         queryParameters: {
           if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
           if (limit != null) 'limit': limit,
+          if (sort != null && sort.isNotEmpty) 'sort': sort,
         },
         encrypted: false,
       );
@@ -230,6 +232,58 @@ class ProfileService extends BaseService {
 
   AsyncJson unfollowUser({required int uid}) => delete(
         '/users/$uid/follow',
+        encrypted: false,
+      );
+
+  /// 拉黑用户：`POST /api/v1/users/{uid}/block`。重复拉黑幂等，
+  /// 拉黑自己会返回 -10630（在调用方 toast 用户）。
+  AsyncJson blockUser({required int uid}) => post(
+        '/users/$uid/block',
+        data: const <String, dynamic>{},
+        encrypted: false,
+      );
+
+  /// 解除拉黑：`DELETE /api/v1/users/{uid}/block`。
+  AsyncJson unblockUser({required int uid}) => delete(
+        '/users/$uid/block',
+        encrypted: false,
+      );
+
+  /// 关注列表，参见 `GET /api/v1/users/{uid}/followings`。
+  /// 游标分页：`cursor = 上一页最后一条 follow_id`，`limit` 1-50（默认 30）。
+  AsyncJson getUserFollowings({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      get(
+        '/users/$uid/followings',
+        queryParameters: {
+          if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          'limit': limit,
+        },
+        encrypted: false,
+      );
+
+  /// 粉丝列表，参见 `GET /api/v1/users/{uid}/followers`。游标分页同 followings。
+  AsyncJson getUserFollowers({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      get(
+        '/users/$uid/followers',
+        queryParameters: {
+          if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          'limit': limit,
+        },
+        encrypted: false,
+      );
+
+  /// 互关列表，参见 `GET /api/v1/users/{uid}/mutual`。
+  /// 不分页，最多 20 条；按粉丝数倒序（头部大 V 优先）。
+  AsyncJson getUserMutualFollows({required int uid}) => get(
+        '/users/$uid/mutual',
         encrypted: false,
       );
   AsyncJson submitOnboardingInterests({

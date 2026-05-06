@@ -11,12 +11,15 @@ import 'package:g_link/ui_layer/page/complaint/complaint_page.dart';
 import 'package:g_link/ui_layer/page/forgot_password_page.dart';
 import 'package:g_link/ui_layer/page/guide/guide_page.dart';
 import 'package:g_link/ui_layer/page/home/home_page.dart';
+import 'package:g_link/ui_layer/notifier/follow_list_notifier.dart';
 import 'package:g_link/ui_layer/page/mine/mine_page.dart';
 import 'package:g_link/ui_layer/page/mine/feedback_submit_page.dart';
+import 'package:g_link/ui_layer/page/mine/follow_list_page.dart';
 import 'package:g_link/ui_layer/page/mine/notification_detail_page.dart';
 import 'package:g_link/ui_layer/page/mine/notification_page.dart';
 import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
 import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
+import 'package:g_link/ui_layer/page/mine/user_posts_page.dart';
 import 'package:g_link/ui_layer/page/message_page_v2.dart';
 import 'package:g_link/ui_layer/page/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
@@ -131,6 +134,14 @@ class ForgotPasswordRoute extends GoRouteData {
       routes: [
         TypedGoRoute<MineRoute>(
           path: AppRouterPaths.mine,
+          routes: [
+            // 关注列表页是 Mine 分支的子路由——保留底部主 tab 栏可见。
+            // 不显式设置 $parentNavigatorKey，go_router 默认推到 Mine 分支自己的
+            // Navigator 上，外层 BottomNaviBar 的 tab 栏不会被覆盖。
+            TypedGoRoute<MineFollowListRoute>(
+              path: AppRouterPaths.mineFollowList,
+            ),
+          ],
         ),
       ],
     ),
@@ -187,6 +198,88 @@ class MineRoute extends GoRouteData {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const MinePage();
+}
+
+/// 关注列表页路由（互关 / 关注 / 粉丝）。
+///
+/// 设计稿中是独立的全屏页面：顶部 AppBar 带 3 个文本 tab（互关 / 关注 / 粉丝），
+/// 底部不展示 app 主 tab 栏（首页 / 短视频 / 消息 / 我）。所以这里把
+/// `$parentNavigatorKey` 指向根 Navigator，push 时直接覆盖掉外层 [BottomNaviBar]
+/// 的 Scaffold——和其他 Mine 详情页（[RecommendFollowListRoute] /
+/// [EditProfileRoute] 等）的全屏行为保持一致。
+class MineFollowListRoute extends GoRouteData {
+  const MineFollowListRoute({
+    required this.uid,
+    this.tab = 'followings',
+  });
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final int uid;
+
+  /// 序列化后写到 query：`mutual` / `followings` / `followers`，
+  /// 默认 `followings`。空字符串或非法值在 [buildPage] 里兜底回退到默认 tab。
+  final String tab;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    final initial = switch (tab) {
+      'mutual' => FollowListTab.mutual,
+      'followers' => FollowListTab.followers,
+      _ => FollowListTab.followings,
+    };
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: FollowListPage(uid: uid, initialTab: initial),
+    );
+  }
+}
+
+/// 他人主页路由：与个人主页 [MineRoute] 复用同一份 [MinePage]，
+/// 通过 [MinePage.targetUid] 区分模式——
+/// - 顶部左侧自动加返回键，右侧把「设置抽屉」换成「投诉 / 拉黑」三点菜单；
+/// - 资料卡右侧从「编辑资料」换成「关注 + 发消息」；
+/// - 「作品 / 视频」tab 不再置顶展示草稿；
+/// - 拉黑后正文区域换成「对方已被你拉黑 / 无法查看其作品」占位。
+///
+/// 走根 Navigator（[$parentNavigatorKey]）以覆盖底部主 tab 栏，呈现全屏体验。
+@TypedGoRoute<OtherProfileRoute>(path: AppRouterPaths.userProfile)
+class OtherProfileRoute extends GoRouteData {
+  const OtherProfileRoute({required this.uid});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final int uid;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: MinePage(targetUid: uid),
+    );
+  }
+}
+
+/// 用户最新帖子列表页：从首页顶部头像故事条点击进入。和 [OtherProfileRoute]
+/// 同样走根 Navigator，覆盖底部 tab 栏。
+@TypedGoRoute<UserPostsRoute>(path: AppRouterPaths.userPosts)
+class UserPostsRoute extends GoRouteData {
+  const UserPostsRoute({required this.uid});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final int uid;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: UserPostsPage(uid: uid),
+    );
+  }
 }
 
 @TypedGoRoute<RecommendFollowListRoute>(path: AppRouterPaths.mineRecommendFollow)

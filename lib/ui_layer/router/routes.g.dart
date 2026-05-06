@@ -13,6 +13,8 @@ List<RouteBase> get $appRoutes => [
       $forgotPasswordRoute,
       $statefulShellRoute,
       $publishRoute,
+      $otherProfileRoute,
+      $userPostsRoute,
       $recommendFollowListRoute,
       $editProfileRoute,
       $guideRoute,
@@ -147,6 +149,13 @@ RouteBase get $statefulShellRoute => StatefulShellRouteData.$route(
             GoRouteData.$route(
               path: '/mine',
               factory: $MineRouteExtension._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'follow_list',
+                  parentNavigatorKey: MineFollowListRoute.$parentNavigatorKey,
+                  factory: $MineFollowListRouteExtension._fromState,
+                ),
+              ],
             ),
           ],
         ),
@@ -227,6 +236,31 @@ extension $MineRouteExtension on MineRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
+extension $MineFollowListRouteExtension on MineFollowListRoute {
+  static MineFollowListRoute _fromState(GoRouterState state) =>
+      MineFollowListRoute(
+        uid: int.parse(state.uri.queryParameters['uid']!),
+        tab: state.uri.queryParameters['tab'] ?? 'followings',
+      );
+
+  String get location => GoRouteData.$location(
+        '/mine/follow_list',
+        queryParams: {
+          'uid': uid.toString(),
+          if (tab != 'followings') 'tab': tab,
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
 RouteBase get $publishRoute => GoRouteData.$route(
       path: '/publish',
       parentNavigatorKey: PublishRoute.$parentNavigatorKey,
@@ -238,6 +272,62 @@ extension $PublishRouteExtension on PublishRoute {
 
   String get location => GoRouteData.$location(
         '/publish',
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $otherProfileRoute => GoRouteData.$route(
+      path: '/user_profile',
+      parentNavigatorKey: OtherProfileRoute.$parentNavigatorKey,
+      factory: $OtherProfileRouteExtension._fromState,
+    );
+
+extension $OtherProfileRouteExtension on OtherProfileRoute {
+  static OtherProfileRoute _fromState(GoRouterState state) => OtherProfileRoute(
+        uid: int.parse(state.uri.queryParameters['uid']!),
+      );
+
+  String get location => GoRouteData.$location(
+        '/user_profile',
+        queryParams: {
+          'uid': uid.toString(),
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+RouteBase get $userPostsRoute => GoRouteData.$route(
+      path: '/user_posts',
+      parentNavigatorKey: UserPostsRoute.$parentNavigatorKey,
+      factory: $UserPostsRouteExtension._fromState,
+    );
+
+extension $UserPostsRouteExtension on UserPostsRoute {
+  static UserPostsRoute _fromState(GoRouterState state) => UserPostsRoute(
+        uid: int.parse(state.uri.queryParameters['uid']!),
+      );
+
+  String get location => GoRouteData.$location(
+        '/user_posts',
+        queryParams: {
+          'uid': uid.toString(),
+        },
       );
 
   void go(BuildContext context) => context.go(location);
