@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/ui_layer/page/bottom_navi_bar.dart';
 import 'package:g_link/ui_layer/page/auth_page.dart';
@@ -179,15 +180,17 @@ class PublishRoute extends GoRouteData {
 
 @TypedGoRoute<PublishAlbumRoute>(path: AppRouterPaths.publishAlbum)
 class PublishAlbumRoute extends GoRouteData {
-  const PublishAlbumRoute();
+  const PublishAlbumRoute({this.initialSelectedAssets = const []});
 
   static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+
+  final List<AssetEntity> initialSelectedAssets;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
-      child: const PublishAlbumPage(),
+      child: PublishAlbumPage(initialSelectedAssets: initialSelectedAssets),
       begin: const Offset(0, 1),
     );
   }

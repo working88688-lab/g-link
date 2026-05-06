@@ -77,9 +77,11 @@ class MyImagePaths {
   static const iconPublishBack = './assets/images/icon_publish_back.png';
   static const iconPublishBeauty = './assets/images/icon_publish_beauty.png';
   static const iconPublishClose = './assets/images/icon_publish_close.png';
+  static const iconPublishCloseBlack = './assets/images/icon_publish_close_black.png';
   static const iconPublishFilter = './assets/images/icon_publish_filter.png';
   static const iconPublishFlashlight = './assets/images/icon_publish_flashlight.png';
   static const iconPublishNone = './assets/images/icon_publish_none.png';
+  static const iconPublishPlusWhite = './assets/images/icon_publish_plus_white.png';
   static const iconPublishReverse = './assets/images/icon_publish_reverse.png';
   static const iconPublishShoot = './assets/images/icon_publish_shoot.png';
   static const iconPublishSpecialEffects = './assets/images/icon_publish_special_effects.png';

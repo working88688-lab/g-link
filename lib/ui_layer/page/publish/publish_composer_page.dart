@@ -14,19 +14,6 @@ class PublishMediaDraft {
   final String? sourceLabel;
 }
 
-class PublishDraftRegistry {
-  static PublishMediaDraft? _draft;
-
-  static void set(PublishMediaDraft draft) {
-    _draft = draft;
-  }
-
-  static PublishMediaDraft? take() {
-    final draft = _draft;
-    _draft = null;
-    return draft;
-  }
-}
 
 class PublishComposerPage extends StatefulWidget {
   const PublishComposerPage({super.key, this.initialDraft});

@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:photo_manager/photo_manager.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
-import 'package:g_link/ui_layer/page/publish/publish_composer_page.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 
@@ -21,27 +22,38 @@ class _PublishPageState extends State<PublishPage> {
   String? _errorText;
   String? _lastCapturedLabel;
   String? _capturedPhotoPath;
+  List<AssetEntity>? _capturedAlbumAssets;
+  final Map<String, Future<Uint8List?>> _capturedAlbumThumbnails = {};
+  int _selectedAlbumPreviewIndex = 0;
   CameraState? _currentCameraState;
   int _publishModeIndex = 0;
   bool _flashBusy = false;
-  bool _showSpecialEffectsPanel = true;
+  bool _showSpecialEffectsPanel = false;
   int _selectedEffectIndex = 0;
 
   Future<void> _openAlbum() async {
-    final result = await const PublishAlbumRoute().push<Map<String, Object?>>(context);
+    final result = await PublishAlbumRoute(initialSelectedAssets: _capturedAlbumAssets ?? const []).push<List<AssetEntity>>(context);
     if (!mounted || result == null) return;
+    if (result.isEmpty) {
+      setState(() {
+        _capturedPhotoPath = null;
+        _showSpecialEffectsPanel = false;
+        _capturedAlbumAssets = [];
+        _capturedAlbumThumbnails.clear();
+        _selectedAlbumPreviewIndex = 0;
+      });
+      return;
+    }
+    final first = await result.first.file;
+
     setState(() {
-      _capturedPhotoPath = result['path']?.toString();
-      _showSpecialEffectsPanel = true;
+      _capturedPhotoPath = first?.path;
+      _capturedAlbumAssets = result;
+      _showSpecialEffectsPanel = false;
+      _capturedAlbumThumbnails.clear();
+      _selectedAlbumPreviewIndex = 0;
+      _currentCameraState?.setState(CaptureMode.preview);
     });
-    final draft = PublishMediaDraft(
-      mediaType: result['type']?.toString() ?? 'image',
-      title: result['name']?.toString(),
-      coverLabel: '编辑封面',
-      sourceLabel: '相册选择',
-    );
-    PublishDraftRegistry.set(draft);
-    _currentCameraState?.setState(CaptureMode.preview);
   }
 
   void _openComposer() {
@@ -515,38 +527,151 @@ class _PublishPageState extends State<PublishPage> {
                 ),
               )),
               SizedBox(height: 14.w),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          _currentCameraState?.setState(CaptureMode.photo);
-                          setState(() => _capturedPhotoPath = null);
-                        },
-                        child: Container(
-                          height: 43.w,
-                          decoration: BoxDecoration(
-                            color: const Color(0x1A494949),
-                            borderRadius: BorderRadius.circular(100),
-                            border: Border.all(color: const Color(0xFF4C4C4C), width: 1.w),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '重拍',
-                            style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w500),
+              if (_capturedAlbumAssets != null && _capturedAlbumAssets!.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 50.w,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _capturedAlbumAssets!.length + 1,
+                            separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                            itemBuilder: (context, index) {
+                              if (index == _capturedAlbumAssets!.length) {
+                                return GestureDetector(
+                                  onTap: () async {
+                                    final result = await PublishAlbumRoute(
+                                      initialSelectedAssets: _capturedAlbumAssets!,
+                                    ).push<List<AssetEntity>>(context);
+                                    if (!mounted || result == null) return;
+                                    if (result.isEmpty) return;
+                                    File? first = await result.first.file;
+                                    setState(() {
+                                      _capturedPhotoPath = first?.path;
+                                      _capturedAlbumAssets = result;
+                                      _selectedAlbumPreviewIndex = 0;
+                                    });
+                                  },
+                                  child: Container(
+                                    width: 50.w,
+                                    height: 50.w,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(6.r),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                        width: 1.w,
+                                      ),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Align(
+                                      child: MyImage.asset(
+                                        MyImagePaths.iconPublishPlusWhite,
+                                        width: 24.w,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final asset = _capturedAlbumAssets![index];
+                              return GestureDetector(
+                                onTap: () async {
+                                  File? first = await asset.file;
+                                  setState(() {
+                                    _selectedAlbumPreviewIndex = index;
+                                    _capturedPhotoPath = first?.path;
+                                  });
+                                },
+                                child: Container(
+                                  width: 50.w,
+                                  height: 50.w,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6.r),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 1.w,
+                                    ),
+                                  ),
+                                  clipBehavior: Clip.hardEdge,
+                                  child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(6.w),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          FutureBuilder<Uint8List?>(
+                                            future: _capturedAlbumThumbnails.putIfAbsent(
+                                              asset.id,
+                                              () => asset.thumbnailDataWithSize(
+                                                const ThumbnailSize(200, 200),
+                                                quality: 85,
+                                              ),
+                                            ),
+                                            builder: (context, snapshot) {
+                                              final bytes = snapshot.data;
+                                              if (bytes != null) {
+                                                return Image.memory(
+                                                  bytes,
+                                                  fit: BoxFit.cover,
+                                                  gaplessPlayback: true,
+                                                );
+                                              }
+                                              return const SizedBox.shrink();
+                                            },
+                                          ),
+                                          Positioned(
+                                            top: 0,
+                                            right: 0,
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                final nextAssets = List<AssetEntity>.from(_capturedAlbumAssets!..removeAt(index));
+                                                setState(() {
+                                                  _capturedAlbumAssets = nextAssets;
+                                                  _capturedAlbumThumbnails.remove(asset.id);
+                                                  if (_capturedAlbumAssets!.isEmpty) {
+                                                    _capturedPhotoPath = null;
+                                                    _selectedAlbumPreviewIndex = 0;
+                                                    _currentCameraState?.setState(CaptureMode.photo);
+                                                    return;
+                                                  }
+                                                  if (_selectedAlbumPreviewIndex >= _capturedAlbumAssets!.length) {
+                                                    _selectedAlbumPreviewIndex = _capturedAlbumAssets!.length - 1;
+                                                  }
+                                                });
+                                              },
+                                              behavior: HitTestBehavior.opaque,
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(horizontal: 3.5.w, vertical: 1.5.w),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(.9),
+                                                  borderRadius: BorderRadius.only(
+                                                    bottomLeft: Radius.circular(6.w),
+                                                  ),
+                                                ),
+                                                child: MyImage.asset(
+                                                  MyImagePaths.iconPublishCloseBlack,
+                                                  width: 12.w,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(width: 13.w),
-                    Expanded(
-                      child: GestureDetector(
+                      SizedBox(width: 23.w),
+                      GestureDetector(
                         onTap: _openComposer,
                         child: Container(
-                          height: 43.w,
+                          height: 50.w,
+                          width: 88.w,
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8F9FE),
                             borderRadius: BorderRadius.circular(100),
@@ -558,11 +683,59 @@ class _PublishPageState extends State<PublishPage> {
                                 TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w500),
                           ),
                         ),
+                      )
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            _currentCameraState?.setState(CaptureMode.photo);
+                            setState(() => _capturedPhotoPath = null);
+                          },
+                          child: Container(
+                            height: 43.w,
+                            decoration: BoxDecoration(
+                              color: const Color(0x1A494949),
+                              borderRadius: BorderRadius.circular(100),
+                              border: Border.all(color: const Color(0xFF4C4C4C), width: 1.w),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '重拍',
+                              style: TextStyle(color: Colors.white, fontSize: 14.sp, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 13.w),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _openComposer,
+                          child: Container(
+                            height: 43.w,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FE),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '下一步',
+                              style: TextStyle(
+                                  color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 220),
                 switchInCurve: Curves.easeOut,
