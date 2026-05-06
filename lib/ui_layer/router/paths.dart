@@ -30,6 +30,20 @@ class AppRouterPaths {
   static const mineEditProfile = '/mine/edit_profile';
   static const mineRecommendFollow = '/mine/recommend_follow';
 
+  /// 关注列表页（互关 / 关注 / 粉丝）。
+  /// 设计上是 Mine 分支内的子路由——保留底部主 tab 栏可见，与典型社交 app 的
+  /// 「粉丝/关注」二级页一致。配合 [MineFollowListRoute] 使用。
+  /// 路径相对值（child route）：实际地址为 `/mine/follow_list`。
+  static const mineFollowList = 'follow_list';
+
+  /// 他人主页：和个人主页共用 [MinePage]，但通过 [OtherProfileRoute]
+  /// 入口推到根 Navigator 上 —— 不展示底部主 tab 栏，左上角是返回键。
+  static const userProfile = '/user_profile';
+
+  /// 用户最新帖子列表页：← + 「最新帖子」+ 卡片列表（数据源 `/users/{uid}/posts`）。
+  /// 走根 Navigator 全屏覆盖，从首页顶部 stories 头像点击进入。
+  static const userPosts = '/user_posts';
+
   /// 引导页
   static const guide = '/guide';
 

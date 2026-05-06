@@ -1,5 +1,13 @@
 part of '../repo.dart';
 
+/// 个人主页分页接口（帖子 / 视频 / 点赞等）的 `data` 节点使用 `lists`，
+/// 旧代码误读 `list` 会导致列表恒为空。
+List<Json> _profilePagedList(Json data) {
+  final raw = data['lists'] ?? data['list'];
+  if (raw is! List) return const [];
+  return List<Json>.from(raw);
+}
+
 mixin _Profile on _BaseAppRepo implements ProfileDomain {
   @override
   AsyncResult<UserProfile> getUserProfile({required int uid}) =>
@@ -16,7 +24,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getUserVideos(uid: uid, cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserVideoItem.fromJson).toList();
       }).guard;
 
@@ -27,9 +35,26 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getUserPosts(uid: uid, cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserPostItem.fromJson).toList();
       }).guard;
+
+  @override
+  AsyncResult<FeedPage<FeedPost>> getUserPostsFeed({
+    required int uid,
+    String? cursor,
+    int? limit,
+    String? sort,
+  }) =>
+      _profileService
+          .getUserPosts(uid: uid, cursor: cursor, limit: limit, sort: sort)
+          .deserializeJsonBy(
+            (json) => FeedPage<FeedPost>.fromJson(
+              Json.from(json),
+              FeedPost.fromJson,
+            ),
+          )
+          .guard;
 
   @override
   AsyncResult<List<UserPostItem>> getUserLikes({
@@ -38,7 +63,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getUserLikes(uid: uid, cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserPostItem.fromJson).toList();
       }).guard;
 
@@ -48,7 +73,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getMyVideos(cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserVideoItem.fromJson).toList();
       }).guard;
 
@@ -58,7 +83,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getMyPosts(cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserPostItem.fromJson).toList();
       }).guard;
 
@@ -68,7 +93,7 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
     int? limit,
   }) =>
       _profileService.getMyLikes(cursor: cursor, limit: limit).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['list'] ?? []) as List);
+        final list = _profilePagedList(json);
         return list.map(UserPostItem.fromJson).toList();
       }).guard;
 
@@ -183,6 +208,49 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
   @override
   AsyncResult<FollowResult> unfollowUser({required int uid}) =>
       _profileService.unfollowUser(uid: uid).deserializeJsonBy((json) => FollowResult.fromJson(Json.from(json))).guard;
+
+  @override
+  AsyncResult blockUser({required int uid}) =>
+      _profileService.blockUser(uid: uid).deserialize().guard;
+
+  @override
+  AsyncResult unblockUser({required int uid}) =>
+      _profileService.unblockUser(uid: uid).deserialize().guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserFollowings({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      _profileService
+          .getUserFollowings(uid: uid, cursor: cursor, limit: limit)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserFollowers({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  }) =>
+      _profileService
+          .getUserFollowers(uid: uid, cursor: cursor, limit: limit)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
+  AsyncResult<FollowedUsersPage> getUserMutualFollows({required int uid}) =>
+      _profileService
+          .getUserMutualFollows(uid: uid)
+          .deserializeJsonBy(
+            (json) => FollowedUsersPage.fromJson(Json.from(json)),
+          )
+          .guard;
 
   @override
   AsyncResult updateMyProfile({

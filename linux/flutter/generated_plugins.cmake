@@ -3,9 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  analytics_sdk
   file_selector_linux
   url_launcher_linux
+  volume_controller
   webcrypto
 )
 

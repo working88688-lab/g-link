@@ -10,6 +10,7 @@ class FeedAuthor {
     required this.nickname,
     required this.avatarUrl,
     required this.isVerified,
+    this.isFollowing,
   });
 
   final int uid;
@@ -17,12 +18,22 @@ class FeedAuthor {
   final String avatarUrl;
   final bool isVerified;
 
+  /// 服务器是否在 feed 里带了关注关系；无字段时为 null（由客户端覆盖表补全）。
+  final bool? isFollowing;
+
   factory FeedAuthor.fromJson(Json json) {
+    final bool? following;
+    if (json.containsKey('is_following')) {
+      following = json['is_following'] == true;
+    } else {
+      following = null;
+    }
     return FeedAuthor(
       uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,
       nickname: '${json['nickname'] ?? ''}',
       avatarUrl: '${json['avatar_url'] ?? ''}',
       isVerified: json['is_verified'] == true,
+      isFollowing: following,
     );
   }
 }
@@ -176,6 +187,312 @@ class LikeResult {
     return LikeResult(
       liked: json['liked'] == true,
       likeCount: int.tryParse('${json['like_count'] ?? 0}') ?? 0,
+    );
+  }
+}
+
+/// 发布帖子 `location` 字段（OpenAPI `POST /api/v1/posts`）。
+class PublishLocationInput {
+  const PublishLocationInput({
+    required this.name,
+    this.address,
+    this.latitude,
+    this.longitude,
+  });
+
+  final String name;
+  final String? address;
+  final double? latitude;
+  final double? longitude;
+
+  Json toJson() => {
+        'name': name,
+        if (address != null && address!.trim().isNotEmpty) 'address': address,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
+      };
+}
+
+/// 发布页话题推荐 / 搜索（话题模块：`GET /api/v1/topics/hot`、`GET /api/v1/topics/search`）。
+class PublishTopicRow {
+  const PublishTopicRow({
+    required this.tag,
+    required this.statLabel,
+  });
+
+  /// 话题词，不含 `#`。
+  final String tag;
+
+  /// 右侧统计文案（如 `5.8亿次播放`）；接口未给时可为空。
+  final String statLabel;
+
+  /// 列表左侧展示用，带 `#`。
+  String get lineTitle => tag.startsWith('#') ? tag : '#$tag';
+
+  static PublishTopicRow? tryParse(Json m) {
+    final raw = m['name'] ??
+        m['title'] ??
+        m['topic'] ??
+        m['keyword'] ??
+        m['tag'];
+    if (raw == null) return null;
+    var tag = '$raw'.trim();
+    if (tag.isEmpty) return null;
+    if (tag.startsWith('#')) tag = tag.substring(1);
+    if (tag.length > 30) tag = tag.substring(0, 30);
+    final stat = _topicStatFromJson(m);
+    return PublishTopicRow(tag: tag, statLabel: stat);
+  }
+}
+
+String _topicStatFromJson(Json m) {
+  final pre = m['play_count_display'] ??
+      m['view_display'] ??
+      m['hot_display'] ??
+      m['stat_text'];
+  if (pre != null && '$pre'.trim().isNotEmpty) {
+    return '$pre';
+  }
+  final v = m['play_count'] ??
+      m['view_count'] ??
+      m['hot'] ??
+      m['views'];
+  var stat = formatTopicPlayCount(v);
+  if (stat.isEmpty) {
+    final cc = int.tryParse('${m['content_count'] ?? ''}');
+    if (cc != null && cc > 0) {
+      stat = '$cc条内容';
+    }
+  }
+  return stat;
+}
+
+/// 将接口数值格式化为中文「次播放」文案（与设计稿类似）。
+String formatTopicPlayCount(dynamic v) {
+  if (v == null) return '';
+  if (v is String) {
+    final t = v.trim();
+    if (t.isEmpty) return '';
+    return t.contains('播放') ? t : '$t次播放';
+  }
+  final n = v is int
+      ? v.toDouble()
+      : (v is double ? v : double.tryParse('$v'));
+  if (n == null || n <= 0) return '';
+  if (n >= 1e8) {
+    final s = (n / 1e8).toStringAsFixed(n >= 1e9 ? 1 : 1);
+    return '${_trimTrivialZero(s)}亿次播放';
+  }
+  if (n >= 1e4) {
+    final s = (n / 1e4).toStringAsFixed(1);
+    return '${_trimTrivialZero(s)}w次播放';
+  }
+  return '${n.toInt()}次播放';
+}
+
+String _trimTrivialZero(String s) {
+  if (s.endsWith('.0')) return s.substring(0, s.length - 2);
+  return s;
+}
+
+/// 草稿列表接口 `GET /api/v1/drafts` 单条返回的摘要节点。
+///
+/// 列表项只返摘要：封面 + 前 50 字预览；编辑时再用 `GET /drafts/{id}` 拉详情。
+class DraftItem {
+  const DraftItem({
+    required this.draftId,
+    required this.type,
+    required this.coverUrl,
+    this.title,
+    this.preview,
+    this.imagesCount = 0,
+    this.updatedAt,
+  });
+
+  final int draftId;
+
+  /// `post` / `video`，对应发布编辑器的两条链路。
+  final String type;
+  final String coverUrl;
+  final String? title;
+  final String? preview;
+  final int imagesCount;
+  final String? updatedAt;
+
+  bool get isVideo => type == 'video';
+
+  factory DraftItem.fromJson(Json json) {
+    return DraftItem(
+      draftId: int.tryParse('${json['draft_id'] ?? json['id'] ?? 0}') ?? 0,
+      type: '${json['type'] ?? 'post'}',
+      coverUrl: '${json['cover_url'] ?? ''}',
+      title: json['title']?.toString(),
+      preview: json['preview']?.toString(),
+      imagesCount:
+          int.tryParse('${json['images_count'] ?? 0}') ?? 0,
+      updatedAt: json['updated_at']?.toString(),
+    );
+  }
+}
+
+/// 保存草稿接口 `POST /api/v1/drafts` 成功后的 `data` 摘要。
+class SaveDraftResult {
+  const SaveDraftResult({
+    required this.draftId,
+    this.savedAt,
+  });
+
+  final int draftId;
+  final String? savedAt;
+
+  factory SaveDraftResult.fromJson(Json json) {
+    return SaveDraftResult(
+      draftId: int.tryParse('${json['draft_id'] ?? json['id'] ?? 0}') ?? 0,
+      savedAt: json['saved_at']?.toString(),
+    );
+  }
+}
+
+/// 发布帖子接口 `POST /api/v1/posts` 成功后的 `data` 摘要。
+class PublishPostResult {
+  const PublishPostResult({
+    required this.postId,
+    this.shareUrl,
+  });
+
+  final int postId;
+  final String? shareUrl;
+
+  factory PublishPostResult.fromJson(Json json) {
+    return PublishPostResult(
+      postId: int.tryParse('${json['post_id'] ?? 0}') ?? 0,
+      shareUrl: json['share_url'] != null ? '${json['share_url']}' : null,
+    );
+  }
+}
+
+/// `POST /api/v1/videos/upload-presign` 响应数据节点。
+class VideoUploadPresign {
+  const VideoUploadPresign({
+    required this.uploadUrl,
+    required this.objectKey,
+    this.headers,
+    this.method,
+    this.expiresIn,
+    this.maxSize,
+  });
+
+  final String uploadUrl;
+  final String objectKey;
+  final Map<String, String>? headers;
+  final String? method;
+  final int? expiresIn;
+  final int? maxSize;
+
+  factory VideoUploadPresign.fromJson(Json json) {
+    final h = json['headers'];
+    return VideoUploadPresign(
+      uploadUrl: '${json['upload_url'] ?? ''}',
+      objectKey:
+          '${json['object_key'] ?? json['video_key'] ?? json['key'] ?? ''}',
+      headers: h is Map ? h.map((k, v) => MapEntry('$k', '$v')) : null,
+      method: json['method']?.toString(),
+      expiresIn: int.tryParse('${json['expires_in'] ?? ''}'),
+      maxSize: int.tryParse('${json['max_size'] ?? ''}'),
+    );
+  }
+}
+
+/// `POST /api/v1/videos/upload-done` 响应数据节点。
+class VideoUploadDoneResult {
+  const VideoUploadDoneResult({
+    required this.videoId,
+    this.transcodeStatus,
+  });
+
+  final int videoId;
+  final int? transcodeStatus;
+
+  factory VideoUploadDoneResult.fromJson(Json json) {
+    return VideoUploadDoneResult(
+      videoId: int.tryParse('${json['video_id'] ?? json['id'] ?? 0}') ?? 0,
+      transcodeStatus:
+          int.tryParse('${json['transcode_status'] ?? ''}'),
+    );
+  }
+}
+
+/// `GET /api/v1/videos/{videoId}/transcode-status` 响应数据节点。
+///
+/// `transcode_status`：0 排队 / 1 转码中 / 2 完成 / 3 失败。
+class VideoTranscodeStatusResult {
+  const VideoTranscodeStatusResult({
+    required this.transcodeStatus,
+    this.progress,
+    this.coverUrl,
+    this.playUrl,
+    this.errorMessage,
+  });
+
+  final int transcodeStatus;
+  final int? progress;
+  final String? coverUrl;
+  final String? playUrl;
+  final String? errorMessage;
+
+  bool get isPending => transcodeStatus == 0 || transcodeStatus == 1;
+  bool get isDone => transcodeStatus == 2;
+  bool get isFailed => transcodeStatus == 3;
+
+  factory VideoTranscodeStatusResult.fromJson(Json json) {
+    return VideoTranscodeStatusResult(
+      transcodeStatus:
+          int.tryParse('${json['transcode_status'] ?? -1}') ?? -1,
+      progress: int.tryParse('${json['progress'] ?? ''}'),
+      coverUrl: json['cover_url']?.toString(),
+      playUrl:
+          json['play_url']?.toString() ?? json['video_url']?.toString(),
+      errorMessage: json['error_message']?.toString() ??
+          json['fail_reason']?.toString(),
+    );
+  }
+}
+
+/// `POST /api/v1/publish/video/cover-from-frame` 响应数据节点。
+class VideoCoverFromFrameResult {
+  const VideoCoverFromFrameResult({
+    required this.coverUrl,
+    required this.coverKey,
+    this.estimatedMs,
+  });
+
+  final String coverUrl;
+  final String coverKey;
+  final int? estimatedMs;
+
+  factory VideoCoverFromFrameResult.fromJson(Json json) {
+    return VideoCoverFromFrameResult(
+      coverUrl: '${json['cover_url'] ?? ''}',
+      coverKey: '${json['cover_key'] ?? ''}',
+      estimatedMs: int.tryParse('${json['estimated_ms'] ?? ''}'),
+    );
+  }
+}
+
+/// `POST /api/v1/videos/{videoId}/publish` 响应数据节点。
+class PublishVideoResult {
+  const PublishVideoResult({
+    required this.videoId,
+    this.shareUrl,
+  });
+
+  final int videoId;
+  final String? shareUrl;
+
+  factory PublishVideoResult.fromJson(Json json) {
+    return PublishVideoResult(
+      videoId: int.tryParse('${json['video_id'] ?? json['id'] ?? 0}') ?? 0,
+      shareUrl: json['share_url']?.toString(),
     );
   }
 }

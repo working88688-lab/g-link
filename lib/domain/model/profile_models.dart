@@ -21,6 +21,11 @@ class UserProfile {
     required this.postCountDisplay,
     required this.videoCount,
     required this.videoCountDisplay,
+    this.isFollowing = false,
+    this.isFollowedBy = false,
+    this.isFriend = false,
+    this.isBlocked = false,
+    this.isBlockedBy = false,
   });
 
   final int uid;
@@ -43,10 +48,28 @@ class UserProfile {
   final int videoCount;
   final String videoCountDisplay;
 
+  /// 当前登录用户是否已关注该 profile。本人页不下发，恒 false。
+  final bool isFollowing;
+
+  /// 该 profile 是否已关注当前登录用户（用于判断「回关」状态）。
+  final bool isFollowedBy;
+
+  /// 互相关注。本人页不下发，恒 false。
+  final bool isFriend;
+
+  /// 我已经把对方拉黑了——拉黑后他人主页正文区会被替换成「对方已被你拉黑」。
+  final bool isBlocked;
+
+  /// 对方把我拉黑了——非本人接口才返回；本人页恒 false。
+  final bool isBlockedBy;
+
   factory UserProfile.fromJson(Json json) {
     final stats = Json.from(json['stats'] ?? {});
     String displayOf(String key, int value) =>
         '${stats['${key}_display'] ?? value}';
+    final relation = json['relation'] is Map
+        ? Json.from(json['relation'] as Map)
+        : const <String, dynamic>{};
     return UserProfile(
       uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,
       username: '${json['username'] ?? ''}',
@@ -73,6 +96,11 @@ class UserProfile {
       videoCount: int.tryParse('${stats['video_count'] ?? 0}') ?? 0,
       videoCountDisplay: displayOf(
           'video_count', int.tryParse('${stats['video_count'] ?? 0}') ?? 0),
+      isFollowing: relation['is_following'] == true,
+      isFollowedBy: relation['is_followed_by'] == true,
+      isFriend: relation['is_friend'] == true,
+      isBlocked: relation['is_blocked'] == true,
+      isBlockedBy: relation['is_blocked_by'] == true,
     );
   }
 
@@ -102,7 +130,53 @@ class UserProfile {
         'video_count': videoCount,
         'video_count_display': videoCountDisplay,
       },
+      // 缓存里只记自己的资料，relation 字段始终是默认值，写不写都行；写出去
+      // 是为了 fromJson roundtrip 不丢字段——他人主页不进缓存，无需考虑。
+      'relation': <String, dynamic>{
+        'is_following': isFollowing,
+        'is_followed_by': isFollowedBy,
+        'is_friend': isFriend,
+        'is_blocked': isBlocked,
+        'is_blocked_by': isBlockedBy,
+      },
     };
+  }
+
+  UserProfile copyWith({
+    int? followerCount,
+    String? followerCountDisplay,
+    bool? isFollowing,
+    bool? isFollowedBy,
+    bool? isFriend,
+    bool? isBlocked,
+    bool? isBlockedBy,
+  }) {
+    return UserProfile(
+      uid: uid,
+      username: username,
+      nickname: nickname,
+      avatarUrl: avatarUrl,
+      coverUrl: coverUrl,
+      bio: bio,
+      location: location,
+      professionTags: professionTags,
+      isSelf: isSelf,
+      followingCount: followingCount,
+      followingCountDisplay: followingCountDisplay,
+      followerCount: followerCount ?? this.followerCount,
+      followerCountDisplay: followerCountDisplay ?? this.followerCountDisplay,
+      likeCount: likeCount,
+      likeCountDisplay: likeCountDisplay,
+      postCount: postCount,
+      postCountDisplay: postCountDisplay,
+      videoCount: videoCount,
+      videoCountDisplay: videoCountDisplay,
+      isFollowing: isFollowing ?? this.isFollowing,
+      isFollowedBy: isFollowedBy ?? this.isFollowedBy,
+      isFriend: isFriend ?? this.isFriend,
+      isBlocked: isBlocked ?? this.isBlocked,
+      isBlockedBy: isBlockedBy ?? this.isBlockedBy,
+    );
   }
 }
 
@@ -309,6 +383,104 @@ class RecommendedUser {
       isVerified: json['is_verified'] == true,
       followerCount: int.tryParse('${json['follower_count'] ?? 0}') ?? 0,
       isFollowing: json['is_following'] == true,
+    );
+  }
+}
+
+/// `GET /users/{uid}/followings` / `/followers` / `/mutual` 返回的列表项。
+///
+/// 三条接口字段大体一致——`mutual` 没有 `is_friend / followed_at`，
+/// `followers` 与 `followings` 多一个 `followed_at` 时间戳。这里取并集表达。
+class FollowedUser {
+  const FollowedUser({
+    required this.uid,
+    required this.username,
+    required this.nickname,
+    required this.avatarUrl,
+    required this.bio,
+    required this.isVerified,
+    required this.isFollowing,
+    required this.isFriend,
+    this.followedAt,
+  });
+
+  final int uid;
+  final String username;
+  final String nickname;
+  final String avatarUrl;
+  final String bio;
+  final bool isVerified;
+
+  /// 当前登录用户是否已关注该 user。
+  /// - followings 列表恒为 true；
+  /// - followers 列表为是否「回关」状态；
+  /// - mutual 列表恒为 true。
+  final bool isFollowing;
+
+  /// 是否互相关注。`mutual` 接口没有该字段，取 `is_following && is_friend` 兜底。
+  final bool isFriend;
+
+  /// 关注时间，仅 followings/followers 返回。
+  final String? followedAt;
+
+  factory FollowedUser.fromJson(Json json) {
+    return FollowedUser(
+      uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,
+      username: '${json['username'] ?? ''}',
+      nickname: '${json['nickname'] ?? ''}',
+      avatarUrl: '${json['avatar_url'] ?? ''}',
+      bio: json['bio']?.toString() ?? '',
+      isVerified: json['is_verified'] == true,
+      isFollowing: json['is_following'] == true,
+      isFriend: json['is_friend'] == true,
+      followedAt: json['followed_at']?.toString(),
+    );
+  }
+
+  FollowedUser copyWith({
+    bool? isFollowing,
+    bool? isFriend,
+  }) =>
+      FollowedUser(
+        uid: uid,
+        username: username,
+        nickname: nickname,
+        avatarUrl: avatarUrl,
+        bio: bio,
+        isVerified: isVerified,
+        isFollowing: isFollowing ?? this.isFollowing,
+        isFriend: isFriend ?? this.isFriend,
+        followedAt: followedAt,
+      );
+}
+
+/// 关注 / 粉丝 列表的分页结果（mutual 没有分页字段，[hasMore] 永远 false）。
+class FollowedUsersPage {
+  const FollowedUsersPage({
+    required this.lists,
+    this.nextCursor,
+    this.hasMore = false,
+    this.total,
+  });
+
+  final List<FollowedUser> lists;
+  final String? nextCursor;
+  final bool hasMore;
+  final int? total;
+
+  factory FollowedUsersPage.fromJson(Json json) {
+    final raw = json['lists'];
+    final list = <FollowedUser>[];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is Map) list.add(FollowedUser.fromJson(Json.from(e)));
+      }
+    }
+    return FollowedUsersPage(
+      lists: list,
+      nextCursor: json['next_cursor']?.toString(),
+      hasMore: json['has_more'] == true,
+      total: int.tryParse('${json['total'] ?? json['count'] ?? ''}'),
     );
   }
 }

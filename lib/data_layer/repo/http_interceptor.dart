@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart' as fd;
 import 'package:flutter/material.dart';
 import 'package:g_link/app_global.dart';
 import 'package:g_link/data_layer/repo/repo.dart';
-import 'package:g_link/ui_layer/dialog/regular_dialog.dart';
 import 'package:g_link/ui_layer/theme.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';
@@ -122,16 +121,16 @@ class AutoEncryptAndDecryptInterceptor extends Interceptor {
             AbsorbPointer(
               child: Container(),
             ),
-            RegularDialog(
-              title: '',
-              content: Text('sjjysb'.tr(), style: MyTheme.gray153_14),
-              cancelText: 'qx'.tr(),
-              cancelOnTap: () => cancelFunc(),
-              buttonText: 'qr'.tr(),
-              confirmOnTap: () {
-                CommonUtils.launchUrl(officeSite);
-              },
-            ),
+            // RegularDialog(
+            //   title: '',
+            //   content: Text('sjjysb'.tr(), style: MyTheme.gray153_14),
+            //   cancelText: 'qx'.tr(),
+            //   cancelOnTap: () => cancelFunc(),
+            //   buttonText: 'qr'.tr(),
+            //   confirmOnTap: () {
+            //     CommonUtils.launchUrl(officeSite);
+            //   },
+            // ),
           ],
         ),
       );

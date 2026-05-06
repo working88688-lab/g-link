@@ -18,6 +18,17 @@ abstract class ProfileDomain {
     String? cursor,
     int? limit,
   });
+
+  /// 用户帖子列表「富数据」版本——直接返 [FeedPost]，复用 home feed 的卡片渲染。
+  /// 同样命中 `GET /api/v1/users/{uid}/posts`，但保留 `images / content / tags
+  /// / counts / is_liked / created_at` 全字段，配合「最新帖子」全屏列表页使用。
+  AsyncResult<FeedPage<FeedPost>> getUserPostsFeed({
+    required int uid,
+    String? cursor,
+    int? limit,
+    String? sort,
+  });
+
   AsyncResult<List<UserPostItem>> getUserLikes({
     required int uid,
     String? cursor,
@@ -74,6 +85,29 @@ abstract class ProfileDomain {
 
   /// 取消关注指定用户。幂等接口：未关注调用也返回成功。
   AsyncResult<FollowResult> unfollowUser({required int uid});
+
+  /// 拉黑用户。重复拉黑幂等，拉黑自己返回业务错误码 -10630。
+  AsyncResult blockUser({required int uid});
+
+  /// 解除拉黑。目标不在黑名单时由后端返回错误。
+  AsyncResult unblockUser({required int uid});
+
+  /// 关注列表。游标分页，`cursor = 上一页最后一条 follow_id`，首页留空。
+  AsyncResult<FollowedUsersPage> getUserFollowings({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  });
+
+  /// 粉丝列表。游标分页同 followings。
+  AsyncResult<FollowedUsersPage> getUserFollowers({
+    required int uid,
+    String? cursor,
+    int limit = 30,
+  });
+
+  /// 互关列表，最多 20 条；不分页。
+  AsyncResult<FollowedUsersPage> getUserMutualFollows({required int uid});
 
   AsyncResult updateMyProfile({
     String? nickname,

@@ -3,12 +3,13 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  analytics_sdk
   file_selector_windows
   flutter_inappwebview_windows
   geolocator_windows
   permission_handler_windows
+  screen_brightness_windows
   url_launcher_windows
+  volume_controller
   webcrypto
 )
 

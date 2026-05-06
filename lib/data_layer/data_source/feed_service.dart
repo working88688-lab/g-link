@@ -51,4 +51,64 @@ class FeedService extends BaseService {
         '/posts/$postId/like',
         encrypted: false,
       );
+
+  /// 获取单张图片上传预签名（直传 MinIO/OSS），参见 `POST /api/v1/upload/presign`。
+  AsyncJson presignUpload({
+    required String fileExt,
+    required int fileSize,
+    required String scene,
+  }) =>
+      post(
+        '/upload/presign',
+        data: {
+          'file_ext': fileExt,
+          'file_size': fileSize,
+          'scene': scene,
+        },
+        encrypted: false,
+      );
+
+  /// 发布帖子，参见 `POST /api/v1/posts`。
+  AsyncJson publishPost(Json body) => post(
+        '/posts',
+        data: body,
+        encrypted: false,
+      );
+
+  /// 保存草稿，参见 `POST /api/v1/drafts`。
+  ///
+  /// `type` 为必填（`post` / `video`），其它字段全部可选——服务端按现状落库，
+  /// 客户端无需自行管理 id 映射，每次都建一条新记录即可。
+  AsyncJson saveDraft(Json body) => post(
+        '/drafts',
+        data: body,
+        encrypted: false,
+      );
+
+  /// 草稿列表，参见 `GET /api/v1/drafts`。
+  ///
+  /// `type`：`post` / `video` / `all`（默认 all）。游标分页按 id 倒序，
+  /// 列表项只返摘要（封面 + 前 50 字预览）。
+  AsyncJson getDrafts({
+    String? type,
+    String? cursor,
+    int limit = 20,
+  }) =>
+      get(
+        '/drafts',
+        queryParameters: {
+          if (type != null && type.isNotEmpty) 'type': type,
+          if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          'limit': limit,
+        },
+        encrypted: false,
+      );
+
+  /// 删除草稿，参见 `DELETE /api/v1/drafts/{id}`。
+  ///
+  /// 仅允许删除本人草稿；他人草稿返回 `DRAFT_NO_PERMISSION` 而不是 404。
+  AsyncJson deleteDraft({required int draftId}) => delete(
+        '/drafts/$draftId',
+        encrypted: false,
+      );
 }

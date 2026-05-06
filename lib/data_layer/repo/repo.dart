@@ -14,7 +14,6 @@ import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/result.dart';
-import 'package:g_link/report/ui_layer/report_timing_interceptor.dart';
 import 'package:g_link/ui_layer/router/paths.dart';
 import 'package:g_link/ui_layer/router/router.dart';
 import 'package:g_link/utils/common_utils.dart';
@@ -38,6 +37,8 @@ import 'package:g_link/domain/model/search_models.dart';
 import 'package:g_link/data_layer/repo/r2_uploader.dart';
 
 import 'package:g_link/data_layer/data_source/feed_service.dart';
+import 'package:g_link/data_layer/data_source/topic_service.dart';
+import 'package:g_link/data_layer/data_source/video_publish_service.dart';
 import 'package:g_link/data_layer/data_source/home_service.dart';
 import 'package:g_link/data_layer/data_source/profile_service.dart';
 import 'package:g_link/data_layer/data_source/report_service.dart';
@@ -79,6 +80,8 @@ class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
   late final _feedService = FeedService(_apiDio);
+  late final _videoPublishService = VideoPublishService(_apiDio);
+  late final _topicService = TopicService(_apiDio);
   late final _reportService = ReportService(_apiDio);
   late final _userReportService = UserReportService(_apiDio);
   late final _profileService = ProfileService(_apiDio);
@@ -150,6 +153,32 @@ abstract class _BaseAppRepo implements AppDomain {
     _apiDio.interceptors.add(AutoEncryptAndDecryptInterceptor(_appInfo));
     _apiDio.interceptors.add(_buildAuthInterceptor(withAuthRequiredHandling: true));
     _apiDio.interceptors.add(ReportTimingInterceptor());
+    _apiDio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _applyCommonHeaders(options);
+          final token = _appInfo.token?.trim();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          _printCurl(options);
+          return handler.next(options);
+        },
+        onResponse: (response, handler) async {
+          if (_isAuthRequiredResponse(response.data)) {
+            await _handleAuthRequired();
+          }
+          return handler.next(response);
+        },
+        onError: (err, handler) async {
+          final statusCode = err.response?.statusCode;
+          if (statusCode == 401 || statusCode == 403) {
+            await _handleAuthRequired();
+          }
+          return handler.next(err);
+        },
+      ),
+    );
   }
 
   Future _cleanToken() async {
