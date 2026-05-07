@@ -15,7 +15,6 @@ import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/domain/domains/auth.dart';
 import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/domains/video_feed.dart';
-import 'package:g_link/report/analytics/analytics_report.dart';
 import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/notifier/app_feed_notifier.dart';
 import 'package:g_link/ui_layer/notifier/guide_page_notifier.dart';

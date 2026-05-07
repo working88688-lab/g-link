@@ -63,7 +63,7 @@ class AppBottomSheet {
             ),
           );
         }
-        return content;
+        return SafeArea(top: false, child: content);
       },
     );
   }

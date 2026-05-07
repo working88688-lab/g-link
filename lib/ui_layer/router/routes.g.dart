@@ -13,7 +13,6 @@ List<RouteBase> get $appRoutes => [
       $forgotPasswordRoute,
       $statefulShellRoute,
       $publishRoute,
-      $publishAlbumRoute,
       $otherProfileRoute,
       $userPostsRoute,
       $recommendFollowListRoute,
@@ -285,18 +284,6 @@ extension $PublishRouteExtension on PublishRoute {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $publishAlbumRoute => GoRouteData.$route(
-      path: '/publish_album',
-      parentNavigatorKey: PublishAlbumRoute.$parentNavigatorKey,
-      factory: $PublishAlbumRouteExtension._fromState,
-    );
-
-extension $PublishAlbumRouteExtension on PublishAlbumRoute {
-  static PublishAlbumRoute _fromState(GoRouterState state) =>
-      const PublishAlbumRoute();
-
-  String get location => GoRouteData.$location(
-        '/publish_album',
 RouteBase get $otherProfileRoute => GoRouteData.$route(
       path: '/user_profile',
       parentNavigatorKey: OtherProfileRoute.$parentNavigatorKey,

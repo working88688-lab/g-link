@@ -22,9 +22,6 @@ import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
 import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
 import 'package:g_link/ui_layer/page/mine/user_posts_page.dart';
 import 'package:g_link/ui_layer/page/message_page_v2.dart';
-import 'package:g_link/ui_layer/page/publish/publish_album_page.dart';
-import 'package:g_link/ui_layer/page/publish/publish_composer_page.dart';
-import 'package:g_link/ui_layer/page/publish/publish_page.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
 import 'package:g_link/ui_layer/page/welcome_page.dart';
@@ -34,6 +31,7 @@ import 'package:g_link/domain/domains/report.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../page/publish_page.dart';
 import 'router.dart';
 import 'paths.dart';
 
@@ -189,24 +187,24 @@ class PublishRoute extends GoRouteData {
     );
   }
 }
-
-@TypedGoRoute<PublishAlbumRoute>(path: AppRouterPaths.publishAlbum)
-class PublishAlbumRoute extends GoRouteData {
-  const PublishAlbumRoute({this.initialSelectedAssets = const []});
-
-  static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
-
-  final List<AssetEntity> initialSelectedAssets;
-
-  @override
-  Page<void> buildPage(BuildContext context, GoRouterState state) {
-    return CommonUtils.buildSlideTransitionPage(
-      state: state,
-      child: PublishAlbumPage(initialSelectedAssets: initialSelectedAssets),
-      begin: const Offset(0, 1),
-    );
-  }
-}
+//
+// @TypedGoRoute<PublishAlbumRoute>(path: AppRouterPaths.publishAlbum)
+// class PublishAlbumRoute extends GoRouteData {
+//   const PublishAlbumRoute({this.initialSelectedAssets = const []});
+//
+//   static final GlobalKey<NavigatorState> $parentNavigatorKey = AppRouter.rootNavigatorKey;
+//
+//   final List<AssetEntity> initialSelectedAssets;
+//
+//   @override
+//   Page<void> buildPage(BuildContext context, GoRouterState state) {
+//     return CommonUtils.buildSlideTransitionPage(
+//       state: state,
+//       child: PublishAlbumPage(),
+//       begin: const Offset(0, 1),
+//     );
+//   }
+// }
 
 class MessageRoute extends GoRouteData {
   const MessageRoute();

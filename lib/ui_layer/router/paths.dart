@@ -20,7 +20,6 @@ class AppRouterPaths {
 
   /// 发布
   static const publish = '/publish';
-  static const publishAlbum = '/publish_album';
 
   /// 消息
   static const message = '/message';

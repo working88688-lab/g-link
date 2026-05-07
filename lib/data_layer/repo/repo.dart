@@ -63,6 +63,7 @@ part 'cache.dart';
 part 'mixins/chat_mixin.dart';
 
 part 'mixins/feed_mixin.dart';
+
 part 'mixins/video_feed_mixin.dart';
 
 part 'mixins/home_mixin.dart';
@@ -116,7 +117,19 @@ abstract class _BaseAppRepo implements AppDomain {
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
     ),
-  )..interceptors.add(_buildAuthInterceptor());
+  )..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          _applyCommonHeaders(options);
+          final token = _appInfo.token?.trim();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          _printCurl(options);
+          return handler.next(options);
+        },
+      ),
+    );
 
   /// 未加密网路服务/上传资源
   late final _dio = Dio(
@@ -151,8 +164,6 @@ abstract class _BaseAppRepo implements AppDomain {
     _appInfo = await _getAppInfo();
 
     _apiDio.interceptors.add(AutoEncryptAndDecryptInterceptor(_appInfo));
-    _apiDio.interceptors.add(_buildAuthInterceptor(withAuthRequiredHandling: true));
-    _apiDio.interceptors.add(ReportTimingInterceptor());
     _apiDio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
@@ -220,37 +231,6 @@ abstract class _BaseAppRepo implements AppDomain {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       _authRedirecting = false;
     }
-  }
-
-  InterceptorsWrapper _buildAuthInterceptor({bool withAuthRequiredHandling = false}) {
-    return InterceptorsWrapper(
-      onRequest: (options, handler) {
-        _applyCommonHeaders(options);
-        final token = _appInfo.token?.trim();
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        _printCurl(options);
-        return handler.next(options);
-      },
-      onResponse: withAuthRequiredHandling
-          ? (response, handler) async {
-              if (_isAuthRequiredResponse(response.data)) {
-                await _handleAuthRequired();
-              }
-              return handler.next(response);
-            }
-          : null,
-      onError: withAuthRequiredHandling
-          ? (err, handler) async {
-              final statusCode = err.response?.statusCode;
-              if (statusCode == 401 || statusCode == 403) {
-                await _handleAuthRequired();
-              }
-              return handler.next(err);
-            }
-          : null,
-    );
   }
 
   void _applyCommonHeaders(RequestOptions options) {
