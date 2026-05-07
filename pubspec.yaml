@@ -60,7 +60,6 @@ dependencies:
   camerawesome: ^2.5.0
   camera: ^0.12.0+1
   photo_manager: ^3.9.0
-  video_player: ^2.11.1
   extended_text_field: ^16.0.2
   screen_brightness: ^2.1.7
   volume_controller: ^3.4.4
