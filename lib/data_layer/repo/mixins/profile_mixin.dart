@@ -177,10 +177,9 @@ mixin _Profile on _BaseAppRepo implements ProfileDomain {
       }).guard;
 
   @override
-  AsyncResult<List<NotificationItem>> getNotifications({String? category}) =>
-      _profileService.getNotifications(category: category).deserializeJsonBy((json) {
-        final list = List<Json>.from((json['lists'] ?? json['list'] ?? json['data'] ?? []) as List);
-        return list.map(NotificationItem.fromJson).toList();
+  AsyncResult<NotificationPage> getNotifications({String? category, String? cursor, int? limit}) =>
+      _profileService.getNotifications(category: category, cursor: cursor, limit: limit).deserializeJsonBy((json) {
+        return NotificationPage.fromJson(Json.from(json));
       }).guard;
 
   @override

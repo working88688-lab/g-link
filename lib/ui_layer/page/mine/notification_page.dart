@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/profile.dart';
@@ -143,16 +144,14 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Widget _buildTabContent({Key? key}) {
-    switch (_tabIndex) {
-      case 0:
-        return const _SystemNotificationList();
-      case 1:
-        return const _InteractionNotificationList();
-      case 2:
-        return const _FanNotificationList();
-      default:
-        return const SizedBox.shrink();
-    }
+    return IndexedStack(
+      index: _tabIndex,
+      children: const [
+        _SystemNotificationList(key: PageStorageKey('notification-system')),
+        _InteractionNotificationList(key: PageStorageKey('notification-interaction')),
+        _FanNotificationList(key: PageStorageKey('notification-follower')),
+      ],
+    );
   }
 
   Future<void> _markAllRead() async {
@@ -160,81 +159,180 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 }
 
-_SystemNotificationItem _systemFromModel(models.NotificationItem item) {
-  return _SystemNotificationItem(
-    iconColor: const Color(0xFFFFD88D),
-    icon: Icons.notifications_active_rounded,
-    title: item.title,
-    desc: item.detailContent ?? item.desc,
-    time: item.detailTime ?? item.time,
-    unread: item.unread,
-  );
-}
-
-_InteractionNotificationItem _interactionFromModel(models.NotificationItem item) {
-  return _InteractionNotificationItem(
-    avatarColor: const Color(0xFFEAB67B),
-    title: item.title,
-    action: item.desc,
-    time: item.time,
-    message: item.desc,
-    reaction: NotificationReaction.comment,
-  );
-}
-
-_FanNotificationItem _fanFromModel(models.NotificationItem item) {
-  return _FanNotificationItem(
-    name: item.title,
-    time: item.time,
-    buttonText: '已互关',
-    selected: false,
-  );
-}
-
-class NotificationScrollList extends StatefulWidget {
-  const NotificationScrollList({
-    super.key,
-    required this.controller,
-    required this.itemCount,
+class _NotificationsPagedList extends StatefulWidget {
+  const _NotificationsPagedList({
+    required this.category,
     required this.itemBuilder,
-    required this.separator,
-    required this.loadingMore,
-    required this.hasMore,
-    required this.onLoadMore,
-    required this.padding,
+    super.key,
   });
 
-  final ScrollController? controller;
-  final int itemCount;
-  final IndexedWidgetBuilder itemBuilder;
-  final Widget separator;
-  final bool loadingMore;
-  final bool hasMore;
-  final Future<void> Function()? onLoadMore;
-  final EdgeInsets padding;
+  final String category;
+  final Widget Function(BuildContext context, models.NotificationItem item) itemBuilder;
 
   @override
-  State<NotificationScrollList> createState() => _NotificationScrollListState();
+  State<_NotificationsPagedList> createState() => _NotificationsPagedListState();
 }
 
-class _NotificationScrollListState extends State<NotificationScrollList> {
+class _NotificationsPagedListState extends State<_NotificationsPagedList>
+    with AutomaticKeepAliveClientMixin {
+  static const int _pageSize = 20;
+
+  final List<models.NotificationItem> _items = [];
+  final ScrollController _controller = ScrollController();
+
+  bool _loading = false;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  String? _cursor;
+  Object? _error;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadFirstPage();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onScroll);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
+  void _onScroll() {
+    if (!_controller.hasClients || _loading || _loadingMore || !_hasMore) return;
+    final position = _controller.position;
+    if (position.maxScrollExtent - position.pixels <= 240) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadFirstPage() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+      _cursor = null;
+      _hasMore = true;
+      _items.clear();
+    });
+    try {
+      final result = await context.read<ProfileDomain>().getNotifications(
+            category: widget.category,
+            limit: _pageSize,
+          );
+      if (!mounted) return;
+      final nextPage = result.data;
+      final pageItems = nextPage?.items ?? const [];
+      setState(() {
+        _items.addAll(pageItems);
+        _cursor = nextPage?.nextCursor ?? _nextCursor(pageItems);
+        _hasMore = nextPage?.hasMore ?? pageItems.length >= _pageSize;
+        _initialized = true;
+      });
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _error = err;
+        _initialized = true;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final result = await context.read<ProfileDomain>().getNotifications(
+            category: widget.category,
+            cursor: _cursor,
+            limit: _pageSize,
+          );
+      if (!mounted) return;
+      final nextPage = result.data;
+      final nextItems = nextPage?.items ?? const [];
+      if (nextItems.isEmpty) {
+        setState(() => _hasMore = false);
+      } else {
+        setState(() {
+          _items.addAll(nextItems);
+          _cursor = nextPage?.nextCursor ?? _nextCursor(nextItems);
+          _hasMore = nextPage?.hasMore ?? nextItems.length >= _pageSize;
+        });
+      }
+    } catch (err) {
+      if (!mounted) return;
+      setState(() => _error = err);
+    } finally {
+      if (mounted) {
+        setState(() => _loadingMore = false);
+      }
+    }
+  }
+
+  String? _nextCursor(List<models.NotificationItem> items) {
+    if (items.isEmpty) return null;
+    return items.last.id.toString();
+  }
+
+  Future<void> _refresh() => _loadFirstPage();
+
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      controller: widget.controller,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: widget.padding,
-      itemCount: widget.itemCount + (widget.loadingMore ? 1 : 0),
-      separatorBuilder: (_, __) => widget.separator,
-      itemBuilder: (context, index) {
-        if (index >= widget.itemCount) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.w),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
-        return widget.itemBuilder(context, index);
-      },
+    super.build(context);
+    if (!_initialized && _loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null && _items.isEmpty) {
+      return _EmptyState(
+        message: '加载失败，请下拉重试',
+        onRetry: _loadFirstPage,
+      );
+    }
+
+    if (_initialized && _items.isEmpty) {
+      return _EmptyState(
+        message: '暂无通知',
+        onRetry: _loadFirstPage,
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      color: const Color(0xFF1A1F2C),
+      child: ListView.separated(
+        key: widget.key,
+        controller: _controller,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(8.w, 5.w, 8.w, 16.w),
+        itemBuilder: (context, index) {
+          if (index >= _items.length) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.w),
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          }
+          return widget.itemBuilder(context, _items[index]);
+        },
+        separatorBuilder: (_, __) => Container(
+          height: 1.w,
+          margin: EdgeInsets.only(left: 72.w),
+          color: const Color(0xFFF8F9FE),
+        ),
+        itemCount: _items.length + (_loadingMore ? 1 : 0),
+      ),
     );
   }
 }
@@ -244,7 +342,10 @@ class _SystemNotificationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('系统通知'));
+    return _NotificationsPagedList(
+      category: 'system',
+      itemBuilder: (context, item) => _SystemNotificationTile(item: item),
+    );
   }
 }
 
@@ -253,7 +354,10 @@ class _InteractionNotificationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('互动通知'));
+    return _NotificationsPagedList(
+      category: 'interaction',
+      itemBuilder: (context, item) => _InteractionNotificationTile(item: item),
+    );
   }
 }
 
@@ -262,78 +366,23 @@ class _FanNotificationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('新增粉丝'));
+    return _NotificationsPagedList(
+      category: 'follower',
+      itemBuilder: (context, item) => _FanNotificationTile(item: item),
+    );
   }
-}
-
-class _SystemNotificationItem {
-  const _SystemNotificationItem({
-    required this.iconColor,
-    required this.icon,
-    required this.title,
-    required this.desc,
-    required this.time,
-    this.unread = false,
-  });
-
-  final Color iconColor;
-  final IconData icon;
-  final String title;
-  final String desc;
-  final String time;
-  final bool unread;
-}
-
-class _InteractionNotificationItem {
-  const _InteractionNotificationItem({
-    required this.avatarColor,
-    required this.title,
-    required this.action,
-    required this.time,
-    required this.message,
-    required this.reaction,
-    this.thumbVisible = false,
-    this.quote,
-    this.footerActions = false,
-  });
-
-  final Color avatarColor;
-  final String title;
-  final String action;
-  final String time;
-  final String message;
-  final NotificationReaction reaction;
-  final bool thumbVisible;
-  final String? quote;
-  final bool footerActions;
-}
-
-enum NotificationReaction { like, comment, mention }
-
-class _FanNotificationItem {
-  const _FanNotificationItem({
-    required this.name,
-    required this.time,
-    required this.buttonText,
-    this.selected = false,
-  });
-
-  final String name;
-  final String time;
-  final String buttonText;
-  final bool selected;
 }
 
 class _SystemNotificationTile extends StatelessWidget {
   const _SystemNotificationTile({required this.item});
 
-  final _SystemNotificationItem item;
+  final models.NotificationItem item;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        SystemNotificationDetailRoute(title: item.desc).push(context);
+        SystemNotificationDetailRoute(title: item.detailContent ?? item.desc).push(context);
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16.w),
@@ -350,7 +399,7 @@ class _SystemNotificationTile extends StatelessWidget {
                       width: 9.w,
                       height: 9.w,
                       decoration: BoxDecoration(
-                        color: Color(0xFFFF2056),
+                        color: const Color(0xFFFF2056),
                         shape: BoxShape.circle,
                         border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.w)),
                       ),
@@ -362,10 +411,10 @@ class _SystemNotificationTile extends StatelessWidget {
                   width: 50.w,
                   height: 50.w,
                   decoration: BoxDecoration(
-                    color: item.iconColor.withValues(alpha: 0.35),
+                    color: const Color(0xFFBFD0FF).withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: Icon(item.icon, color: item.iconColor.withValues(alpha: 0.95), size: 28.w),
+                  child: Icon(Icons.notifications_active_rounded, color: const Color(0xFFBFD0FF).withValues(alpha: 0.95), size: 28.w),
                 ),
               ],
             ),
@@ -380,8 +429,7 @@ class _SystemNotificationTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.title,
-                          style:
-                              TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
                         ),
                       ),
                       Text(
@@ -417,7 +465,7 @@ class _SystemNotificationTile extends StatelessWidget {
 class _InteractionNotificationTile extends StatelessWidget {
   const _InteractionNotificationTile({required this.item});
 
-  final _InteractionNotificationItem item;
+  final models.NotificationItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -433,24 +481,19 @@ class _InteractionNotificationTile extends StatelessWidget {
                 width: 50.w,
                 height: 50.w,
                 decoration: BoxDecoration(
-                  color: item.avatarColor.withValues(alpha: 0.22),
+                  color: const Color(0xFFEAB67B).withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
-                child: Icon(Icons.person, color: item.avatarColor, size: 24.w),
+                child: Icon(Icons.person, color: const Color(0xFFEAB67B), size: 24.w),
               ),
               Positioned(
-                  right: -5.w,
-                  bottom: 0.w,
-                  child: MyImage.asset(
-                    item.reaction == NotificationReaction.like
-                        ? MyImagePaths.iconNoticeLike
-                        : item.reaction == NotificationReaction.comment
-                            ? MyImagePaths.iconNoticeComment
-                            : item.reaction == NotificationReaction.mention
-                                ? MyImagePaths.iconNoticeMention
-                                : "",
-                    width: 17.w,
-                  ))
+                right: -5.w,
+                bottom: 0.w,
+                child: MyImage.asset(
+                  _interactionIcon(item),
+                  width: 17.w,
+                ),
+              )
             ],
           ),
           SizedBox(width: 12.w),
@@ -469,25 +512,25 @@ class _InteractionNotificationTile extends StatelessWidget {
                             text: TextSpan(
                               children: [
                                 TextSpan(
-                                  text: "${item.title}  ",
+                                  text: '${item.title}  ',
                                   style: TextStyle(
                                       color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
                                 ),
                                 TextSpan(
-                                  text: ' ${item.action}',
+                                  text: ' ${item.desc}',
                                   style: TextStyle(
                                       color: const Color(0xFF314158), fontSize: 12.sp, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
                           ),
-                          if (item.message.isNotEmpty) ...[
+                          if ((item.detailContent ?? '').isNotEmpty) ...[
                             SizedBox(height: 4.w),
                             SizedBox(
                               width: double.infinity,
                               child: Text(
-                                item.quote ?? item.message,
-                                maxLines: item.quote == null ? 2 : 1,
+                                item.detailContent ?? item.desc,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: const Color(0xFF314158),
@@ -496,43 +539,6 @@ class _InteractionNotificationTile extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            SizedBox(
-                              height: 8.w,
-                            ),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: double.infinity,
-                              ),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 5.w),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A1F2C).withAlpha(4),
-                                  borderRadius: BorderRadius.circular(4.r),
-                                ),
-                                child: IntrinsicHeight(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Container(
-                                        width: 2.w,
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEAEAEA),
-                                          borderRadius: BorderRadius.circular(100),
-                                        ),
-                                      ),
-                                      SizedBox(width: 7.w),
-                                      Flexible(
-                                        child: Text(
-                                          "英伦风，很不错，挺赞的穿搭英伦风，",
-                                          style: TextStyle(color: Color(0xFF1A1F2C), fontSize: 12.sp),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            )
                           ],
                           SizedBox(height: 4.w),
                           Row(
@@ -545,27 +551,13 @@ class _InteractionNotificationTile extends StatelessWidget {
                                   fontSize: 12.sp,
                                 ),
                               ),
-                              Spacer(),
-                              if (item.footerActions) ...[
-                                SizedBox(height: 8.w),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    _ActionButton(label: '屏蔽', selected: true),
-                                    SizedBox(width: 8.w),
-                                    _ActionButton(label: '展示'),
-                                  ],
-                                ),
-                              ],
                             ],
                           )
                         ],
                       ),
                     ),
-                    if (item.thumbVisible) ...[
-                      SizedBox(width: 11.w),
-                      _ThumbPreview(),
-                    ],
+                    SizedBox(width: 11.w),
+                    const _ThumbPreview(),
                   ],
                 ),
               ],
@@ -575,12 +567,23 @@ class _InteractionNotificationTile extends StatelessWidget {
       ),
     );
   }
+
+  String _interactionIcon(models.NotificationItem item) {
+    final category = item.category.toLowerCase();
+    if (category.contains('comment') || category.contains('reply')) {
+      return MyImagePaths.iconNoticeComment;
+    }
+    if (category.contains('mention')) {
+      return MyImagePaths.iconNoticeMention;
+    }
+    return MyImagePaths.iconNoticeLike;
+  }
 }
 
 class _FanNotificationTile extends StatelessWidget {
   const _FanNotificationTile({required this.item});
 
-  final _FanNotificationItem item;
+  final models.NotificationItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -603,7 +606,7 @@ class _FanNotificationTile extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    item.name,
+                    item.title,
                     style: TextStyle(
                       color: const Color(0xFF0F172B),
                       fontSize: 16.sp,
@@ -628,13 +631,15 @@ class _FanNotificationTile extends StatelessWidget {
           ),
         ),
         SizedBox(width: 10.w),
-        _FollowButton(selected: item.selected, label: item.buttonText),
+        _FollowButton(selected: item.unread, label: item.unread ? '回关' : '已互关'),
       ],
     );
   }
 }
 
 class _ThumbPreview extends StatelessWidget {
+  const _ThumbPreview();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -683,7 +688,7 @@ class _ActionButton extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          color: Color(0xFFF8F9FE),
+          color: const Color(0xFFF8F9FE),
           fontSize: 10.sp,
         ),
       ),
@@ -706,7 +711,7 @@ class _FollowButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected ? const Color(0xFF1A1F2C) : Colors.transparent,
         borderRadius: BorderRadius.circular(999.r),
-        border: !selected? Border.all(color: const Color(0xFFCCCCCC)):null,
+        border: !selected ? Border.all(color: const Color(0xFFCCCCCC)) : null,
       ),
       child: Text(
         label,
@@ -716,6 +721,30 @@ class _FollowButton extends StatelessWidget {
           height: 0,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            message,
+            style: TextStyle(color: const Color(0xFF62748E), fontSize: 14.sp),
+          ),
+          SizedBox(height: 12.w),
+          TextButton(onPressed: onRetry, child: const Text('重试')),
+        ],
       ),
     );
   }

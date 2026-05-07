@@ -339,7 +339,7 @@ class NotificationItem {
 
   factory NotificationItem.fromJson(Json json) {
     return NotificationItem(
-      id: int.tryParse('${json['id'] ?? 0}') ?? 0,
+      id: int.tryParse('${json['id'] ?? json['notification_id'] ?? 0}') ?? 0,
       category: '${json['category'] ?? json['type'] ?? ''}',
       title: '${json['title'] ?? json['name'] ?? ''}',
       desc: '${json['desc'] ?? json['content'] ?? json['message'] ?? ''}',
@@ -348,6 +348,28 @@ class NotificationItem {
       detailTitle: '${json['detail_title'] ?? json['title'] ?? ''}',
       detailContent: '${json['detail_content'] ?? json['content'] ?? json['message'] ?? ''}',
       detailTime: '${json['detail_time'] ?? json['time'] ?? json['created_at'] ?? ''}',
+    );
+  }
+}
+
+class NotificationPage {
+  const NotificationPage({
+    required this.items,
+    required this.nextCursor,
+    required this.hasMore,
+  });
+
+  final List<NotificationItem> items;
+  final String? nextCursor;
+  final bool hasMore;
+
+  factory NotificationPage.fromJson(Json json) {
+    final list = (json['lists'] as List?) ?? const [];
+    final nextCursorRaw = json['next_cursor'];
+    return NotificationPage(
+      items: list.map((e) => NotificationItem.fromJson(Json.from(e))).toList(),
+      nextCursor: nextCursorRaw is String && nextCursorRaw.isNotEmpty ? nextCursorRaw : null,
+      hasMore: json['has_more'] == true,
     );
   }
 }

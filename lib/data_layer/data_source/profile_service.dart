@@ -187,10 +187,12 @@ class ProfileService extends BaseService {
   AsyncJson getFaqCategories() => get('/faqs', encrypted: false);
   AsyncJson getBlockedKeywords() => get('/settings/content-blocked-keywords', encrypted: false);
   AsyncJson getNotificationUnreadCount() => get('/notifications/unread-count', encrypted: false);
-  AsyncJson getNotifications({String? category}) => get(
+  AsyncJson getNotifications({String? category, String? cursor, int? limit}) => get(
         '/notifications',
         queryParameters: {
           if (category != null && category.isNotEmpty) 'category': category,
+          if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+          if (limit != null) 'limit': limit,
         },
         encrypted: false,
       );
