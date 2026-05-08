@@ -166,6 +166,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
                   isAuthorFollowed: n.isFollowing(post.author.uid, fallback: post.author.isFollowing ?? false,),
                 onToggleAuthorFollow: () => _toggleFollow(context, n, post.author.uid),
                 onToggleLike: () => _onToggleLike(context, n, post),
+                onToggleFavorite: () => _onToggleFavorite(context, n, post),
               );
             },
             separatorBuilder: (_, __) => SizedBox(height: 10.h),
@@ -195,6 +196,18 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin 
     if (!mounted || !context.mounted) return;
     if (!ok) {
       MyToast.showText(text: 'homeLikeFailed'.tr());
+    }
+  }
+
+  Future<void> _onToggleFavorite(
+    BuildContext context,
+    HomeFeedNotifier n,
+    FeedPost post,
+  ) async {
+    final ok = await n.toggleFavorite(post.postId);
+    if (!mounted || !context.mounted) return;
+    if (!ok) {
+      MyToast.showText(text: 'homeFavoriteFailed'.tr());
     }
   }
 

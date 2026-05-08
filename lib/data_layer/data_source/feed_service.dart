@@ -52,6 +52,23 @@ class FeedService extends BaseService {
         encrypted: false,
       );
 
+  AsyncJson favoritePost({required int postId}) => post(
+        '/posts/$postId/favorite',
+        data: const <String, dynamic>{},
+        encrypted: false,
+      );
+
+  AsyncJson unfavoritePost({required int postId}) => delete(
+        '/posts/$postId/favorite',
+        encrypted: false,
+      );
+
+  /// 帖子详情：`GET /api/v1/posts/{id}`。
+  AsyncJson getPost({required int postId}) => get(
+        '/posts/$postId',
+        encrypted: false,
+      );
+
   /// 获取单张图片上传预签名（直传 MinIO/OSS），参见 `POST /api/v1/upload/presign`。
   AsyncJson presignUpload({
     required String fileExt,

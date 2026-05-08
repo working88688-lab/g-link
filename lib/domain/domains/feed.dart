@@ -28,6 +28,15 @@ abstract class FeedDomain {
   /// 取消点赞。
   AsyncResult<LikeResult> unlikePost({required int postId});
 
+  /// 单条帖子详情（图文完整字段 + author）。
+  AsyncResult<FeedPost> getPostById({required int postId});
+
+  /// 收藏帖子。
+  AsyncResult<FavoriteResult> favoritePost({required int postId});
+
+  /// 取消收藏帖子。
+  AsyncResult<FavoriteResult> unfavoritePost({required int postId});
+
   /// 发布图文：按接口文档 `POST /api/v1/upload/presign` 逐张直传后 `POST /api/v1/posts`。
   AsyncResult<PublishPostResult> publishImagePost({
     required String content,

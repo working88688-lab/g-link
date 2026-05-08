@@ -80,7 +80,9 @@ class FeedPost {
     required this.commentCount,
     required this.shareCount,
     required this.viewCount,
+    required this.favoriteCount,
     required this.isLiked,
+    required this.isFavorited,
     required this.createdAt,
   });
 
@@ -96,7 +98,9 @@ class FeedPost {
   final int commentCount;
   final int shareCount;
   final int viewCount;
+  final int favoriteCount;
   final bool isLiked;
+  final bool isFavorited;
   final DateTime? createdAt;
 
   factory FeedPost.fromJson(Json json) {
@@ -116,7 +120,9 @@ class FeedPost {
       commentCount: int.tryParse('${json['comment_count'] ?? 0}') ?? 0,
       shareCount: int.tryParse('${json['share_count'] ?? 0}') ?? 0,
       viewCount: int.tryParse('${json['view_count'] ?? 0}') ?? 0,
+      favoriteCount: int.tryParse('${json['favorite_count'] ?? 0}') ?? 0,
       isLiked: json['is_liked'] == true,
+      isFavorited: json['is_favorited'] == true || json['favorited'] == true,
       createdAt: createdAtRaw is String
           ? DateTime.tryParse(createdAtRaw)?.toLocal()
           : null,
@@ -126,6 +132,8 @@ class FeedPost {
   FeedPost copyWith({
     bool? isLiked,
     int? likeCount,
+    bool? isFavorited,
+    int? favoriteCount,
   }) {
     return FeedPost(
       postId: postId,
@@ -140,7 +148,9 @@ class FeedPost {
       commentCount: commentCount,
       shareCount: shareCount,
       viewCount: viewCount,
+      favoriteCount: favoriteCount ?? this.favoriteCount,
       isLiked: isLiked ?? this.isLiked,
+      isFavorited: isFavorited ?? this.isFavorited,
       createdAt: createdAt,
     );
   }
@@ -187,6 +197,26 @@ class LikeResult {
     return LikeResult(
       liked: json['liked'] == true,
       likeCount: int.tryParse('${json['like_count'] ?? 0}') ?? 0,
+    );
+  }
+}
+
+/// 收藏/取消收藏帖子响应：`POST` / `DELETE /api/v1/posts/{postId}/favorite`。
+class FavoriteResult {
+  const FavoriteResult({
+    required this.favorited,
+    required this.favoriteCount,
+  });
+
+  final bool favorited;
+  final int favoriteCount;
+
+  factory FavoriteResult.fromJson(Json json) {
+    final fav =
+        json['favorited'] == true || json['is_favorited'] == true;
+    return FavoriteResult(
+      favorited: fav,
+      favoriteCount: int.tryParse('${json['favorite_count'] ?? 0}') ?? 0,
     );
   }
 }

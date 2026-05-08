@@ -18,9 +18,11 @@ import 'package:g_link/ui_layer/page/mine/feedback_submit_page.dart';
 import 'package:g_link/ui_layer/page/mine/follow_list_page.dart';
 import 'package:g_link/ui_layer/page/mine/notification_detail_page.dart';
 import 'package:g_link/ui_layer/page/mine/notification_page.dart';
+import 'package:g_link/ui_layer/page/mine/drafts_page.dart';
 import 'package:g_link/ui_layer/page/mine/profile_edit_page.dart';
 import 'package:g_link/ui_layer/page/mine/recommend_follow_list_page.dart';
 import 'package:g_link/ui_layer/page/mine/user_posts_page.dart';
+import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 import 'package:g_link/ui_layer/page/message_page_v2.dart';
 import 'package:g_link/ui_layer/page/short_video/short_video_page.dart';
 import 'package:g_link/ui_layer/page/register/register_page.dart';
@@ -286,18 +288,55 @@ class OtherProfileRoute extends GoRouteData {
 /// 同样走根 Navigator，覆盖底部 tab 栏。
 @TypedGoRoute<UserPostsRoute>(path: AppRouterPaths.userPosts)
 class UserPostsRoute extends GoRouteData {
-  const UserPostsRoute({required this.uid});
+  const UserPostsRoute({
+    required this.uid,
+    this.anchorPostId,
+  });
 
   static final GlobalKey<NavigatorState> $parentNavigatorKey =
       AppRouter.rootNavigatorKey;
 
   final int uid;
+  final int? anchorPostId;
+
+  @override
+  Page<void> buildPage(BuildContext context, GoRouterState state) {
+    final seed = state.extra is UserPostsListSeed
+        ? state.extra! as UserPostsListSeed
+        : null;
+    return CommonUtils.buildSlideTransitionPage(
+      state: state,
+      child: UserPostsPage(
+        uid: uid,
+        anchorPostId: anchorPostId,
+        listSeed: seed,
+      ),
+    );
+  }
+}
+
+/// 草稿箱列表管理页路由：从个人主页「作品 / 视频」tab 顶部置顶的草稿 cell 进入。
+///
+/// 设计稿是独立的全屏页面 —— 不展示 app 主 tab 栏（首页/短视频/消息/我），所以
+/// `$parentNavigatorKey` 指向根 Navigator，push 时直接覆盖外层 [BottomNaviBar]。
+/// 与 [OtherProfileRoute] / [UserPostsRoute] / [MineFollowListRoute] 同款全屏行为。
+///
+/// `initialTab` 通过 query 参数透传：`0` = 帖子、`1` = 短视频；从「作品」cell
+/// 进入是 `0`，从「视频」cell 进入是 `1`。
+@TypedGoRoute<MineDraftsRoute>(path: AppRouterPaths.mineDrafts)
+class MineDraftsRoute extends GoRouteData {
+  const MineDraftsRoute({this.initialTab = 0});
+
+  static final GlobalKey<NavigatorState> $parentNavigatorKey =
+      AppRouter.rootNavigatorKey;
+
+  final int initialTab;
 
   @override
   Page<void> buildPage(BuildContext context, GoRouterState state) {
     return CommonUtils.buildSlideTransitionPage(
       state: state,
-      child: UserPostsPage(uid: uid),
+      child: DraftsPage(initialTab: initialTab.clamp(0, 1)),
     );
   }
 }

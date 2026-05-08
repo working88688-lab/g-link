@@ -47,6 +47,30 @@ mixin _Feed on _BaseAppRepo implements FeedDomain {
       .guard;
 
   @override
+  AsyncResult<FeedPost> getPostById({required int postId}) => _feedService
+      .getPost(postId: postId)
+      .deserializeJsonBy((json) => FeedPost.fromJson(Json.from(json)))
+      .guard;
+
+  @override
+  AsyncResult<FavoriteResult> favoritePost({required int postId}) =>
+      _feedService
+          .favoritePost(postId: postId)
+          .deserializeJsonBy(
+            (json) => FavoriteResult.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
+  AsyncResult<FavoriteResult> unfavoritePost({required int postId}) =>
+      _feedService
+          .unfavoritePost(postId: postId)
+          .deserializeJsonBy(
+            (json) => FavoriteResult.fromJson(Json.from(json)),
+          )
+          .guard;
+
+  @override
   AsyncResult<PublishPostResult> publishImagePost({
     required String content,
     required List<XFile> images,
