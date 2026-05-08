@@ -26,8 +26,7 @@ class ShortVideoPage extends StatefulWidget {
   State<ShortVideoPage> createState() => _ShortVideoPageState();
 }
 
-class _ShortVideoPageState extends State<ShortVideoPage>
-    with SingleTickerProviderStateMixin {
+class _ShortVideoPageState extends State<ShortVideoPage> with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
   int _tabIndex = 1;
 
@@ -87,8 +86,7 @@ class _ShortVideoTabPage extends StatefulWidget {
   State<_ShortVideoTabPage> createState() => _ShortVideoTabPageState();
 }
 
-class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
-    with AutomaticKeepAliveClientMixin {
+class _ShortVideoTabPageState extends State<_ShortVideoTabPage> with AutomaticKeepAliveClientMixin {
   final PageController _pageCtrl = PageController();
   final _FeedTabState _tabState = _FeedTabState();
   final Map<int, VideoFeedItem> _detailCache = {};
@@ -128,12 +126,10 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
         _tabState.loaded = true;
         _tabState.hasMore = result.hasMore;
         _tabState.nextCursor = result.nextCursor;
-        _tabState.videos =
-            refresh ? result.items : [..._tabState.videos, ...result.items];
+        _tabState.videos = refresh ? result.items : [..._tabState.videos, ...result.items];
       });
       if (_tabState.videos.isNotEmpty) {
-        _requestVideoDetail(_tabState
-            .videos[_activeIndex.clamp(0, _tabState.videos.length - 1)].id);
+        _requestVideoDetail(_tabState.videos[_activeIndex.clamp(0, _tabState.videos.length - 1)].id);
       }
     } catch (_) {
       if (!mounted) return;
@@ -142,26 +138,21 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
   }
 
   Future<void> _loadMore() async {
-    if (_tabState.loading || !_tabState.hasMore || _tabState.nextCursor == null)
-      return;
+    if (_tabState.loading || !_tabState.hasMore || _tabState.nextCursor == null) return;
     final cursor = _tabState.nextCursor;
     final beforeCount = _tabState.videos.length;
     await _loadTab();
-    if (mounted &&
-        cursor == _tabState.nextCursor &&
-        beforeCount == _tabState.videos.length) {
+    if (mounted && cursor == _tabState.nextCursor && beforeCount == _tabState.videos.length) {
       setState(() => _tabState.hasMore = false);
     }
   }
 
   Future<void> _requestVideoDetail(int videoId) async {
-    if (_detailCache.containsKey(videoId) ||
-        _loadingDetailIds.contains(videoId)) return;
+    if (_detailCache.containsKey(videoId) || _loadingDetailIds.contains(videoId)) return;
     _loadingDetailIds.add(videoId);
     if (mounted) setState(() {});
     try {
-      final detail =
-          await context.read<VideoFeedDomain>().getVideoDetail(videoId);
+      final detail = await context.read<VideoFeedDomain>().getVideoDetail(videoId);
       if (!mounted) return;
       setState(() {
         _detailCache[videoId] = detail;
@@ -189,8 +180,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
           NotificationListener<ScrollNotification>(
             onNotification: (notification) {
               if (notification is ScrollEndNotification &&
-                  notification.metrics.pixels >=
-                      notification.metrics.maxScrollExtent - 80) {
+                  notification.metrics.pixels >= notification.metrics.maxScrollExtent - 80) {
                 _loadMore();
               }
               return false;
@@ -238,9 +228,9 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
       child: Column(
         children: [
           CommentContent(
-            authorName: item.author.nickname.isNotEmpty
-                ? item.author.nickname
-                : item.author.username,
+            targetId: item.id,
+            targetType: 'video',
+            authorName: item.author.nickname.isNotEmpty ? item.author.nickname : item.author.username,
             showTitle: false,
             scrollTopChild: _buildDescHeader(item),
           ),
@@ -264,30 +254,20 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
                 border: Border.all(color: Colors.white, width: 2.w),
               ),
               child: item.author.avatarUrl.isNotEmpty
-                  ? ClipOval(
-                      child: Image.network(item.author.avatarUrl,
-                          fit: BoxFit.cover))
+                  ? ClipOval(child: Image.network(item.author.avatarUrl, fit: BoxFit.cover))
                   : Icon(Icons.person, color: Colors.white, size: 26.sp),
             ),
             SizedBox(width: 6.w),
             Text(item.title,
-                style: TextStyle(
-                    color: const Color(0xFF1A1F2C),
-                    fontSize: 16.w,
-                    fontWeight: FontWeight.w600)),
+                style: TextStyle(color: const Color(0xFF1A1F2C), fontSize: 16.w, fontWeight: FontWeight.w600)),
             const Spacer(),
             GestureDetector(
               onTap: () {},
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 17.w, vertical: 8.w),
-                decoration: BoxDecoration(
-                    color: const Color(0xFF1A1F2C),
-                    borderRadius: BorderRadius.circular(100.w)),
+                decoration: BoxDecoration(color: const Color(0xFF1A1F2C), borderRadius: BorderRadius.circular(100.w)),
                 child: Text('关注',
-                    style: TextStyle(
-                        color: const Color(0xFFF8F9FE),
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500)),
+                    style: TextStyle(color: const Color(0xFFF8F9FE), fontSize: 13.sp, fontWeight: FontWeight.w500)),
               ),
             ),
           ],
@@ -297,33 +277,22 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
           spacing: 6.w,
           children: item.tags
               .map((t) => Text(t,
-                  style: TextStyle(
-                      color: const Color(0xFF1A1F2C),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600)))
+                  style: TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600)))
               .toList(),
         ),
         SizedBox(height: 2.w),
-        Text(item.description,
-            style: TextStyle(color: const Color(0xFF62748E), fontSize: 14.sp)),
+        Text(item.description, style: TextStyle(color: const Color(0xFF62748E), fontSize: 14.sp)),
         SizedBox(height: 10.w),
         Row(
           children: [
             _buildDescChip(
-                MyImagePaths.iconDescLocate,
-                item.author.username.isNotEmpty
-                    ? '@${item.author.username}'
-                    : ''),
+                MyImagePaths.iconDescLocate, item.author.username.isNotEmpty ? '@${item.author.username}' : ''),
             SizedBox(width: 10.w),
             _buildDescChip(MyImagePaths.iconDescMusical, item.videoUrl),
           ],
         ),
         SizedBox(height: 10.w),
-        Text('2月4日',
-            style: TextStyle(
-                color: const Color(0xFF90A1B9),
-                fontWeight: FontWeight.w500,
-                fontSize: 12.w)),
+        Text('2月4日', style: TextStyle(color: const Color(0xFF90A1B9), fontWeight: FontWeight.w500, fontSize: 12.w)),
         SizedBox(height: 10.w),
         Divider(color: const Color(0xFFF8F9FE), thickness: 1.w),
         SizedBox(height: 16.w),
@@ -333,9 +302,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
 
   Widget _buildDescChip(String iconPath, String label) {
     return Container(
-      decoration: BoxDecoration(
-          color: const Color(0xFFE3E7ED),
-          borderRadius: BorderRadius.circular(30.w)),
+      decoration: BoxDecoration(color: const Color(0xFFE3E7ED), borderRadius: BorderRadius.circular(30.w)),
       padding: EdgeInsets.only(left: 6.w, top: 5.w, bottom: 5.w, right: 6.w),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -344,10 +311,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
           SizedBox(width: 3.w),
           Flexible(
             child: Text(label,
-                style: TextStyle(
-                    color: const Color(0xFF45556C),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600),
+                style: TextStyle(color: const Color(0xFF45556C), fontSize: 12.sp, fontWeight: FontWeight.w600),
                 overflow: TextOverflow.ellipsis),
           ),
         ],
@@ -362,27 +326,21 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
       blurSigma: 22.1,
       showHandle: false,
       decoration: BoxDecoration(
-          color: const Color(0xE51B1C1F),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16.w))),
+          color: const Color(0xE51B1C1F), borderRadius: BorderRadius.vertical(top: Radius.circular(16.w))),
       child: StatefulBuilder(
         builder: (_, setModalState) => Padding(
           padding: EdgeInsets.all(16.w),
           child: Column(
             children: [
               _buildMoreCard([
+                _buildMoreItem(MyImage.asset(MyImagePaths.iconClearScreen, width: 18.w),
+                    'shortVideoMoreClearScreen'.tr(), const SizedBox(), () {}),
                 _buildMoreItem(
-                    MyImage.asset(MyImagePaths.iconClearScreen, width: 18.w),
-                    'shortVideoMoreClearScreen'.tr(),
-                    const SizedBox(),
-                    () {}),
-                _buildMoreItem(
-                    MyImage.asset(MyImagePaths.iconDowload, width: 18.w),
-                    'shortVideoMoreCache'.tr(),
-                    const SizedBox(), () {
+                    MyImage.asset(MyImagePaths.iconDowload, width: 18.w), 'shortVideoMoreCache'.tr(), const SizedBox(),
+                    () {
                   Navigator.of(context, rootNavigator: true).pop();
                   ShortVideoToast.show(context,
-                      icon:
-                          MyImage.asset(MyImagePaths.iconSuccess, width: 22.w),
+                      icon: MyImage.asset(MyImagePaths.iconSuccess, width: 22.w),
                       title: 'shortVideoToastCached'.tr(),
                       onTap: () {});
                 }),
@@ -396,9 +354,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
                         SizedBox(width: 10.w),
                         ...speeds.map((s) {
                           final selected = s == _speedFor(index: i);
-                          final label = s == s.truncateToDouble()
-                              ? '${s.toInt()}x'
-                              : '${s}x';
+                          final label = s == s.truncateToDouble() ? '${s.toInt()}x' : '${s}x';
                           return Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -408,13 +364,9 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
                               child: Text(label,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                      color: selected
-                                          ? const Color(0xFFF8F9FE)
-                                          : const Color(0xFF999999),
+                                      color: selected ? const Color(0xFFF8F9FE) : const Color(0xFF999999),
                                       fontSize: 12.sp,
-                                      fontWeight: selected
-                                          ? FontWeight.w600
-                                          : FontWeight.w500)),
+                                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500)),
                             ),
                           );
                         }),
@@ -426,21 +378,13 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
               ]),
               SizedBox(height: 20.w),
               _buildMoreCard([
-                _buildMoreItem(
-                    MyImage.asset(MyImagePaths.iconNotInterested, width: 18.w),
-                    'shortVideoMoreNotInterested'.tr(),
-                    const SizedBox(), () {
+                _buildMoreItem(MyImage.asset(MyImagePaths.iconNotInterested, width: 18.w),
+                    'shortVideoMoreNotInterested'.tr(), const SizedBox(), () {
                   Navigator.of(context, rootNavigator: true).pop();
-                  AppBottomSheet.show(
-                      context: context,
-                      child: NotInterestedSheet(item: _videos[i]));
+                  AppBottomSheet.show(context: context, child: NotInterestedSheet(item: _videos[i]));
                 }),
-                _buildMoreItem(
-                    MyImage.asset(MyImagePaths.iconReport, width: 18.w),
-                    'shortVideoReport'.tr(),
-                    const SizedBox(),
-                    () => const ComplaintRoute(targetId: 1, targetType: 'video')
-                        .push(context)),
+                _buildMoreItem(MyImage.asset(MyImagePaths.iconReport, width: 18.w), 'shortVideoReport'.tr(),
+                    const SizedBox(), () => const ComplaintRoute(targetId: 1, targetType: 'video').push(context)),
               ]),
             ],
           ),
@@ -450,6 +394,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
   }
 
   final Map<int, double> _speedMap = {};
+
   double _speedFor({required int index, double? value}) {
     if (value != null) _speedMap[index] = value;
     return _speedMap[index] ?? 1.0;
@@ -458,15 +403,12 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
   Widget _buildMoreCard(List<Widget> items) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 6.w),
-      decoration: BoxDecoration(
-          color: const Color(0xB2232529),
-          borderRadius: BorderRadius.circular(10.w)),
+      decoration: BoxDecoration(color: const Color(0xB2232529), borderRadius: BorderRadius.circular(10.w)),
       child: Column(children: items),
     );
   }
 
-  Widget _buildMoreItem(
-      Widget icon, String title, Widget trailing, VoidCallback onTap) {
+  Widget _buildMoreItem(Widget icon, String title, Widget trailing, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -474,11 +416,7 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
         child: Row(children: [
           icon,
           SizedBox(width: 12.w),
-          Text(title,
-              style: TextStyle(
-                  color: const Color(0xFFF8F9FE),
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500)),
+          Text(title, style: TextStyle(color: const Color(0xFFF8F9FE), fontSize: 15.sp, fontWeight: FontWeight.w500)),
           trailing
         ]),
       ),
@@ -488,9 +426,14 @@ class _ShortVideoTabPageState extends State<_ShortVideoTabPage>
   Future<void> _openComment(int i) async {
     final item = _videos[i];
     await AppBottomSheet.show(
-        context: context,
-        child:
-            CommentContent(authorName: item.author.nickname, showTitle: true));
+      context: context,
+      child: CommentContent(
+        targetId: item.id,
+        targetType: 'video',
+        authorName: item.author.nickname,
+        showTitle: true,
+      ),
+    );
   }
 
   Future<void> _toggleFollow(VideoFeedItem item) async {

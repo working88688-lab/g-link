@@ -46,6 +46,7 @@ import 'package:g_link/data_layer/data_source/auth_service.dart';
 import 'package:g_link/data_layer/data_source/search_service.dart';
 import 'package:g_link/data_layer/data_source/user_report_service.dart';
 import 'package:g_link/data_layer/data_source/video_feed_service.dart';
+import 'package:g_link/data_layer/data_source/comment_service.dart';
 
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/enum.dart';
@@ -55,7 +56,9 @@ import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/home.dart';
 import 'package:g_link/domain/domains/search.dart';
 import 'package:g_link/domain/domains/video_feed.dart';
+import 'package:g_link/domain/domains/comment.dart';
 
+import '../../domain/model/comment_models.dart';
 import '../../domain/model/video_feed_models.dart';
 
 part 'cache.dart';
@@ -66,6 +69,7 @@ part 'mixins/feed_mixin.dart';
 
 part 'mixins/video_feed_mixin.dart';
 
+part 'mixins/comment_mixin.dart';
 part 'mixins/home_mixin.dart';
 
 part 'mixins/report_mixin.dart';
@@ -76,7 +80,7 @@ part 'mixins/auth_mixin.dart';
 
 part 'mixins/search_mixin.dart';
 
-class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search, _VideoFeed {}
+class AppRepo extends _BaseAppRepo with _Home, _Feed, _Report, _Profile, _Auth, _Chat, _Search, _VideoFeed, _Comment {}
 
 abstract class _BaseAppRepo implements AppDomain {
   late final _homeService = HomeService(_apiDio);
@@ -90,6 +94,7 @@ abstract class _BaseAppRepo implements AppDomain {
   late final _chatService = ChatService(_v1Dio);
   late final _searchService = SearchService(_apiDio);
   late final _videoFeedService = VideoFeedService(_v1Dio);
+  late final _commentService = CommentService(_v1Dio);
 
   final _cacheManager = _CacheManager();
   final _tokenValidStreamController = StreamController<MyTokenStatus?>();

@@ -28,6 +28,8 @@ import 'package:provider/provider.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:utils/utils.dart';
 
+import 'domain/domains/comment.dart';
+
 void disableZoomOnWeb() {
   html.document.documentElement?.style.overflow = 'hidden';
   html.document.documentElement?.style.touchAction = 'manipulation';
@@ -59,6 +61,7 @@ void main() async {
         Provider<HomeDomain>(lazy: false, create: (_) => appRepo),
         Provider<FeedDomain>(lazy: false, create: (_) => appRepo),
         Provider<VideoFeedDomain>(lazy: false, create: (_) => appRepo),
+        Provider<CommentDomain>(lazy: false, create: (_) => appRepo),
         Provider<ProfileDomain>(lazy: false, create: (_) => appRepo),
         Provider<ReportDomain>(lazy: false, create: (_) => appRepo),
         Provider<AuthDomain>(lazy: false, create: (_) => appRepo),
