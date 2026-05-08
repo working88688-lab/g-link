@@ -8,9 +8,10 @@ import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/profile_notifier.dart';
 import 'package:g_link/ui_layer/notifier/follow_list_notifier.dart';
-import 'package:g_link/ui_layer/page/mine/drafts_page.dart';
+import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:provider/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -585,7 +586,19 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
         if (coverUrl.isEmpty) {
           return Container(color: const Color(0xFFE5E7ED));
         }
-        return MyImage.network(coverUrl, fit: BoxFit.cover, placeHolder: null);
+        final postCell = MyImage.network(coverUrl,
+            fit: BoxFit.cover, placeHolder: null);
+        if (isPosts) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _openPostFeedList(
+              notifier,
+              postLikeItems[realIndex].id,
+            ),
+            child: postCell,
+          );
+        }
+        return postCell;
       },
     );
   }
@@ -629,6 +642,24 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
     );
   }
 
+  /// 「作品」网格某一格 → 全屏帖子列表：带上与网格同源的 [UserPostsListSeed]，
+  /// 避免重复拉首屏；再用 `GET /posts/{id}` 在列表页合并详情并滚动锚定。
+  void _openPostFeedList(ProfileNotifier notifier, int postId) {
+    final profile = notifier.profile;
+    if (profile == null || postId <= 0) return;
+    final entries = notifier.postFeedEntries;
+    if (entries.isEmpty) return;
+    final seed = UserPostsListSeed(
+      posts: List<FeedPost>.from(entries),
+      nextCursor: notifier.postsNextCursor,
+      hasMore: notifier.postsHasMore,
+    );
+    context.push(
+      UserPostsRoute(uid: profile.uid, anchorPostId: postId).location,
+      extra: seed,
+    );
+  }
+
   /// 跳到「关注列表页」：根据点击的指标决定 tab——
   /// `mineFansCount`（粉丝）→ followers tab；`mineFollowCount`（关注）→ followings tab。
   ///
@@ -650,15 +681,15 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
 
   /// 跳到草稿箱列表管理页：根据点击来源决定初始 tab，
   /// 返回后强制刷新当前 tab——避免置顶 cell 还停留在已删除项的封面上。
+  ///
+  /// 走 [MineDraftsRoute]（push 到根 Navigator），覆盖底部主 tab 栏，
+  /// 与设计稿「独立全屏页」一致——和 [OtherProfileRoute]/[UserPostsRoute]
+  /// 的全屏行为保持一致。
   Future<void> _openDraftsPage(
     ProfileNotifier notifier, {
     required bool isVideoTab,
   }) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => DraftsPage(initialTab: isVideoTab ? 1 : 0),
-      ),
-    );
+    await MineDraftsRoute(initialTab: isVideoTab ? 1 : 0).push<void>(context);
     if (!mounted) return;
     await notifier.reloadCurrentTab();
   }
@@ -882,8 +913,16 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
     if (!mounted || selected == null) return;
     switch (selected) {
       case _OtherProfileAction.report:
+        final reportTargetId = widget.targetUid ?? profile.uid;
+        if (reportTargetId <= 0) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('complaintInvalidTarget'.tr())),
+          );
+          break;
+        }
         await ComplaintRoute(
-          targetId: profile.uid,
+          targetId: reportTargetId,
           targetType: 'user',
         ).push(context);
         break;

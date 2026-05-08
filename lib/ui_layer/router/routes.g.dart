@@ -15,6 +15,7 @@ List<RouteBase> get $appRoutes => [
       $publishRoute,
       $otherProfileRoute,
       $userPostsRoute,
+      $mineDraftsRoute,
       $recommendFollowListRoute,
       $editProfileRoute,
       $guideRoute,
@@ -321,12 +322,54 @@ RouteBase get $userPostsRoute => GoRouteData.$route(
 extension $UserPostsRouteExtension on UserPostsRoute {
   static UserPostsRoute _fromState(GoRouterState state) => UserPostsRoute(
         uid: int.parse(state.uri.queryParameters['uid']!),
+        anchorPostId: _$convertMapValue(
+            'anchor-post-id', state.uri.queryParameters, int.parse),
       );
 
   String get location => GoRouteData.$location(
         '/user_posts',
         queryParams: {
           'uid': uid.toString(),
+          if (anchorPostId != null) 'anchor-post-id': anchorPostId!.toString(),
+        },
+      );
+
+  void go(BuildContext context) => context.go(location);
+
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  void replace(BuildContext context) => context.replace(location);
+}
+
+T? _$convertMapValue<T>(
+  String key,
+  Map<String, String> map,
+  T Function(String) converter,
+) {
+  final value = map[key];
+  return value == null ? null : converter(value);
+}
+
+RouteBase get $mineDraftsRoute => GoRouteData.$route(
+      path: '/mine_drafts',
+      parentNavigatorKey: MineDraftsRoute.$parentNavigatorKey,
+      factory: $MineDraftsRouteExtension._fromState,
+    );
+
+extension $MineDraftsRouteExtension on MineDraftsRoute {
+  static MineDraftsRoute _fromState(GoRouterState state) => MineDraftsRoute(
+        initialTab: _$convertMapValue(
+                'initial-tab', state.uri.queryParameters, int.parse) ??
+            0,
+      );
+
+  String get location => GoRouteData.$location(
+        '/mine_drafts',
+        queryParams: {
+          if (initialTab != 0) 'initial-tab': initialTab.toString(),
         },
       );
 
@@ -369,15 +412,6 @@ extension $RecommendFollowListRouteExtension on RecommendFollowListRoute {
       context.pushReplacement(location);
 
   void replace(BuildContext context) => context.replace(location);
-}
-
-T? _$convertMapValue<T>(
-  String key,
-  Map<String, String> map,
-  T Function(String) converter,
-) {
-  final value = map[key];
-  return value == null ? null : converter(value);
 }
 
 RouteBase get $editProfileRoute => GoRouteData.$route(

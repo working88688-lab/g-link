@@ -43,6 +43,12 @@ class AppRouterPaths {
   /// 走根 Navigator 全屏覆盖，从首页顶部 stories 头像点击进入。
   static const userPosts = '/user_posts';
 
+  /// 草稿箱列表管理页：从个人主页「作品/视频」tab 顶部置顶的草稿 cell 点进入。
+  /// 设计稿是独立的全屏页面（顶部 AppBar + 帖子/短视频 双 tab + 横向滑动切换），
+  /// 底部不展示 app 主 tab 栏（首页/短视频/消息/我）——所以走根 Navigator。
+  /// 配合 [MineDraftsRoute] 使用。
+  static const mineDrafts = '/mine_drafts';
+
   /// 引导页
   static const guide = '/guide';
 

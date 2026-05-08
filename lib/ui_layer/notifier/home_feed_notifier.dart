@@ -78,6 +78,8 @@ class HomeFeedNotifier extends ChangeNotifier {
   final Set<int> _followInflight = <int>{};
   // 点赞请求 inflight 防抖（同一 postId 不重复并发）
   final Set<int> _likeInflight = <int>{};
+  // 收藏请求 inflight 防抖（同一 postId 不重复并发）
+  final Set<int> _favoriteInflight = <int>{};
   StreamSubscription<FollowStatusChangedEvent>? _followStatusSubscription;
   StreamSubscription<PostPublishedEvent>? _postPublishedSubscription;
 
@@ -306,6 +308,69 @@ class HomeFeedNotifier extends ChangeNotifier {
       return true;
     } else {
       // 回滚
+      for (final entry in originals.entries) {
+        final original = entry.value;
+        if (original == null) continue;
+        final list = _posts[entry.key];
+        if (list == null) continue;
+        final idx = list.indexWhere((p) => p.postId == postId);
+        if (idx == -1) continue;
+        list[idx] = original;
+      }
+      _safeNotify();
+      return false;
+    }
+  }
+
+  /// 收藏 / 取消收藏帖子。乐观更新本地状态与收藏计数，失败回滚。
+  Future<bool> toggleFavorite(int postId) async {
+    if (_favoriteInflight.contains(postId)) return false;
+    _favoriteInflight.add(postId);
+
+    final originals = <HomeFeedTab, FeedPost?>{};
+    for (final tab in HomeFeedTab.values) {
+      final list = _posts[tab];
+      if (list == null) continue;
+      final idx = list.indexWhere((p) => p.postId == postId);
+      if (idx == -1) {
+        originals[tab] = null;
+        continue;
+      }
+      final original = list[idx];
+      originals[tab] = original;
+      final delta = original.isFavorited ? -1 : 1;
+      final nextCount = original.favoriteCount + delta;
+      list[idx] = original.copyWith(
+        isFavorited: !original.isFavorited,
+        favoriteCount: nextCount < 0 ? 0 : nextCount,
+      );
+    }
+    _safeNotify();
+
+    final favoritedNow = originals.values
+        .firstWhere((p) => p != null, orElse: () => null)
+        ?.isFavorited;
+    final result = favoritedNow == true
+        ? await _feedDomain.unfavoritePost(postId: postId)
+        : await _feedDomain.favoritePost(postId: postId);
+
+    if (_disposed) return false;
+    _favoriteInflight.remove(postId);
+
+    if (result.status == 0 && result.data != null) {
+      for (final tab in HomeFeedTab.values) {
+        final list = _posts[tab];
+        if (list == null) continue;
+        final idx = list.indexWhere((p) => p.postId == postId);
+        if (idx == -1) continue;
+        list[idx] = list[idx].copyWith(
+          isFavorited: result.data!.favorited,
+          favoriteCount: result.data!.favoriteCount,
+        );
+      }
+      _safeNotify();
+      return true;
+    } else {
       for (final entry in originals.entries) {
         final original = entry.value;
         if (original == null) continue;

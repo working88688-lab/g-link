@@ -19,7 +19,8 @@ import 'package:g_link/utils/my_toast.dart';
 /// 复用注意：
 /// - [showAuthorFollowButton]：调用方根据「作者是否当前用户」决定是否展示关注按钮。
 ///   关注按钮存在时也用同一条件判断头像点击是否打开他人主页（避免点自己头像跳到自己）。
-/// - [onToggleAuthorFollow] / [onToggleLike] 均为可选；为 null 时点击降级为 toast。
+/// - [onToggleAuthorFollow] / [onToggleLike] / [onToggleFavorite] 均为可选；
+///   为 null 时点击降级为 toast。
 /// - [onAvatarTap] 优先级高于内置「点头像跳他人主页」行为；不传时按
 ///   `showAuthorFollowButton == true` 跳 [OtherProfileRoute]，
 ///   `false` 时点击不响应。
@@ -31,6 +32,7 @@ class FeedPostCard extends StatefulWidget {
     this.isAuthorFollowed = false,
     this.onToggleAuthorFollow,
     this.onToggleLike,
+    this.onToggleFavorite,
     this.onAvatarTap,
   });
 
@@ -39,6 +41,7 @@ class FeedPostCard extends StatefulWidget {
   final bool isAuthorFollowed;
   final VoidCallback? onToggleAuthorFollow;
   final VoidCallback? onToggleLike;
+  final VoidCallback? onToggleFavorite;
 
   /// 点击作者头像时的覆盖动作；`null` 时按内置规则跳他人主页。
   final VoidCallback? onAvatarTap;
@@ -273,10 +276,17 @@ class _FeedPostCardState extends State<FeedPostCard> {
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            onPressed: () =>
-                MyToast.showText(text: 'homeFavoriteComingSoon'.tr()),
-            icon: Icon(Icons.star_border_rounded,
-                color: const Color(0xFF1A1F2C)),
+            onPressed: widget.onToggleFavorite ??
+                () =>
+                    MyToast.showText(text: 'homeFavoriteComingSoon'.tr()),
+            icon: Icon(
+              post.isFavorited
+                  ? Icons.star_rounded
+                  : Icons.star_border_rounded,
+              color: post.isFavorited
+                  ? const Color(0xFFFFB020)
+                  : const Color(0xFF1A1F2C),
+            ),
           ),
           SizedBox(width: 14.w),
           IconButton(

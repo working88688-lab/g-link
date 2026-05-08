@@ -71,7 +71,10 @@ class UserProfile {
         ? Json.from(json['relation'] as Map)
         : const <String, dynamic>{};
     return UserProfile(
-      uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,
+      uid: int.tryParse(
+            '${json['uid'] ?? json['id'] ?? json['user_id'] ?? 0}',
+          ) ??
+          0,
       username: '${json['username'] ?? ''}',
       nickname: '${json['nickname'] ?? ''}',
       avatarUrl: '${json['avatar_url'] ?? ''}',
@@ -515,8 +518,8 @@ class ReportTypeItem {
 
   factory ReportTypeItem.fromJson(Json json) {
     return ReportTypeItem(
-      id: json['id'] as int,
-      name: '${json['name'] ?? ''}',
+      id: int.tryParse('${json['id'] ?? 0}') ?? 0,
+      name: '${json['name'] ?? json['title'] ?? ''}',
     );
   }
 }

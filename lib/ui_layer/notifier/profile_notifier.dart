@@ -40,6 +40,12 @@ class ProfileNotifier extends ChangeNotifier {
 
   UserProfile? profile;
   List<UserPostItem> posts = const [];
+
+  /// 「作品」tab 首屏富数据（与网格同源），用于跳进 [UserPostsPage] 时零请求复用列表。
+  List<FeedPost> postFeedEntries = const [];
+  String? postsNextCursor;
+  bool postsHasMore = false;
+
   List<UserVideoItem> videos = const [];
   List<UserPostItem> likes = const [];
   List<InterestTag> interestTags = const [];
@@ -68,6 +74,9 @@ class ProfileNotifier extends ChangeNotifier {
   void _onPostPublishedElsewhere() {
     if (_disposed || profile == null) return;
     posts = const [];
+    postFeedEntries = const [];
+    postsNextCursor = null;
+    postsHasMore = false;
     if (tabIndex == 0) {
       unawaited(_loadTabData(force: true));
     } else {
@@ -270,16 +279,34 @@ class ProfileNotifier extends ChangeNotifier {
     _safeNotify();
     if (tabIndex == 0) {
       // 列表与「最新一条草稿」并行拉取——草稿失败/为空都不影响主列表展示。
-      // 他人主页不下发草稿。
-      final postsFuture =
-          _profileDomain.getUserPosts(uid: profile!.uid, limit: 21);
+      // 他人主页不下发草稿。首屏走富数据接口，便于与「帖子列表页」共享 [FeedPost] + 翻页游标。
+      final postsFuture = _profileDomain.getUserPostsFeed(
+        uid: profile!.uid,
+        limit: 21,
+        sort: 'new',
+      );
       final draftFuture = isOwnProfile
           ? _feedDomain.getDrafts(type: 'post', limit: 1)
           : null;
       final postResult = await postsFuture;
       if (postResult.status == 0 && postResult.data != null) {
-        posts = postResult.data!;
+        final page = postResult.data!;
+        postFeedEntries = page.items;
+        postsNextCursor = page.nextCursor;
+        postsHasMore = page.hasMore;
+        posts = page.items
+            .map(
+              (e) => UserPostItem(
+                id: e.postId,
+                coverUrl: e.images.isNotEmpty ? e.images.first.url : '',
+                likeCount: e.likeCount,
+              ),
+            )
+            .toList();
       } else {
+        postFeedEntries = const [];
+        postsNextCursor = null;
+        postsHasMore = false;
         _handleError(postResult.status, postResult.msg,
             fallback: 'Load posts failed');
       }
@@ -391,6 +418,9 @@ class ProfileNotifier extends ChangeNotifier {
     if (result.status == 0) {
       // 拉黑后清掉列表：被拉黑用户的内容不再展示。
       posts = const [];
+      postFeedEntries = const [];
+      postsNextCursor = null;
+      postsHasMore = false;
       videos = const [];
       likes = const [];
       profile = p.copyWith(isBlocked: true, isFollowing: false);

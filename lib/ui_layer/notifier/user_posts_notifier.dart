@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/feed_models.dart';
+import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 
 /// 单个用户最新帖子列表的状态机：
 /// - 入口：[load] / 下拉刷新走 [refresh] 强刷一次；
@@ -12,10 +14,19 @@ class UserPostsNotifier extends ChangeNotifier {
   UserPostsNotifier({
     required this.uid,
     required ProfileDomain profileDomain,
-  }) : _profileDomain = profileDomain;
+    required FeedDomain feedDomain,
+    UserPostsListSeed? listSeed,
+  })  : _profileDomain = profileDomain,
+        _feedDomain = feedDomain,
+        _initialSeed = listSeed;
 
   final int uid;
   final ProfileDomain _profileDomain;
+  final FeedDomain _feedDomain;
+  final UserPostsListSeed? _initialSeed;
+
+  final Set<int> _likeInflight = {};
+  final Set<int> _favoriteInflight = {};
 
   bool _disposed = false;
   bool _loading = false;
@@ -39,6 +50,18 @@ class UserPostsNotifier extends ChangeNotifier {
   Future<void> load({bool force = false}) async {
     if (_loading) return;
     if (_loaded && !force) return;
+
+    final seed = _initialSeed;
+    if (!force && seed != null && seed.posts.isNotEmpty) {
+      _posts = List<FeedPost>.from(seed.posts);
+      _nextCursor = seed.nextCursor;
+      _hasMore = seed.hasMore;
+      _loaded = true;
+      _error = null;
+      _safeNotify();
+      return;
+    }
+
     _loading = true;
     _error = null;
     _safeNotify();
@@ -58,6 +81,111 @@ class UserPostsNotifier extends ChangeNotifier {
       _error = result.msg ?? 'Load posts failed';
     }
     _safeNotify();
+  }
+
+  /// 用详情接口返回的完整帖替换列表中同 id 项（锚点滚动前合并富字段）。
+  void replacePostById(int postId, FeedPost post) {
+    final i = _posts.indexWhere((p) => p.postId == postId);
+    if (i < 0) return;
+    final next = List<FeedPost>.from(_posts);
+    next[i] = post;
+    _posts = next;
+    _safeNotify();
+  }
+
+  /// 点赞 / 取消点赞：乐观更新，接口失败回滚（同首页 [HomeFeedNotifier.toggleLike]）。
+  Future<bool> toggleLike(int postId) async {
+    if (_likeInflight.contains(postId)) return false;
+    final idx = _posts.indexWhere((p) => p.postId == postId);
+    if (idx < 0) return false;
+    _likeInflight.add(postId);
+    final original = _posts[idx];
+    final optimistic = original.copyWith(
+      isLiked: !original.isLiked,
+      likeCount:
+          (original.likeCount + (original.isLiked ? -1 : 1)).clamp(0, 1 << 30),
+    );
+    final next = List<FeedPost>.from(_posts);
+    next[idx] = optimistic;
+    _posts = next;
+    _safeNotify();
+
+    final wasLiked = original.isLiked;
+    final result = wasLiked
+        ? await _feedDomain.unlikePost(postId: postId)
+        : await _feedDomain.likePost(postId: postId);
+
+    if (_disposed) return false;
+    _likeInflight.remove(postId);
+
+    final i = _posts.indexWhere((p) => p.postId == postId);
+    if (i < 0) {
+      _safeNotify();
+      return false;
+    }
+    if (result.status == 0 && result.data != null) {
+      final list = List<FeedPost>.from(_posts);
+      list[i] = list[i].copyWith(
+        isLiked: result.data!.liked,
+        likeCount: result.data!.likeCount,
+      );
+      _posts = list;
+      _safeNotify();
+      return true;
+    }
+    final rollback = List<FeedPost>.from(_posts);
+    rollback[i] = original;
+    _posts = rollback;
+    _safeNotify();
+    return false;
+  }
+
+  /// 收藏 / 取消收藏：乐观更新，接口失败回滚。
+  Future<bool> toggleFavorite(int postId) async {
+    if (_favoriteInflight.contains(postId)) return false;
+    final idx = _posts.indexWhere((p) => p.postId == postId);
+    if (idx < 0) return false;
+    _favoriteInflight.add(postId);
+    final original = _posts[idx];
+    final delta = original.isFavorited ? -1 : 1;
+    final nextCount = (original.favoriteCount + delta).clamp(0, 1 << 30);
+    final optimistic = original.copyWith(
+      isFavorited: !original.isFavorited,
+      favoriteCount: nextCount,
+    );
+    final next = List<FeedPost>.from(_posts);
+    next[idx] = optimistic;
+    _posts = next;
+    _safeNotify();
+
+    final wasFav = original.isFavorited;
+    final result = wasFav
+        ? await _feedDomain.unfavoritePost(postId: postId)
+        : await _feedDomain.favoritePost(postId: postId);
+
+    if (_disposed) return false;
+    _favoriteInflight.remove(postId);
+
+    final i = _posts.indexWhere((p) => p.postId == postId);
+    if (i < 0) {
+      _safeNotify();
+      return false;
+    }
+    if (result.status == 0 && result.data != null) {
+      final list = List<FeedPost>.from(_posts);
+      list[i] = list[i].copyWith(
+        isFavorited: result.data!.favorited,
+        favoriteCount: result.data!.favoriteCount,
+      );
+      _posts = list;
+      _safeNotify();
+      return true;
+    }
+    final rollback = List<FeedPost>.from(_posts);
+    rollback[i] = original;
+    _posts = rollback;
+    _safeNotify();
+    return false;
   }
 
   /// 下拉刷新：force=true 走 [load]，并把 loaded 重置为 false 让首次/再次都能拉。

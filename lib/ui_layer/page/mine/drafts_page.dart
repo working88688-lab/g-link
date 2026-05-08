@@ -27,6 +27,19 @@ class _DraftsPageState extends State<DraftsPage> {
   static const Color _selectionFill = Color(0xFF1AAEFF);
   static const Color _badgeBg = Color(0x99000000);
 
+  /// 横向滑动切 tab 的 controller。和 [DraftsNotifier.tabIndex] 双向同步：
+  /// 点击 tab → [_animateToTab]（驱动 [PageController.animateToPage]）；
+  /// 左右滑 → [PageView.onPageChanged] → [DraftsNotifier.changeTab]。
+  /// 这样所有 tab 切换都收敛到 [PageView.onPageChanged] 一处，不会重复触发。
+  late final PageController _pageController =
+      PageController(initialPage: widget.initialTab.clamp(0, 1));
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<DraftsNotifier>(
@@ -48,7 +61,7 @@ class _DraftsPageState extends State<DraftsPage> {
                 child: Column(
                   children: [
                     _buildTabBar(n),
-                    Expanded(child: _buildBody(n)),
+                    Expanded(child: _buildPageView(n)),
                   ],
                 ),
               ),
@@ -57,6 +70,20 @@ class _DraftsPageState extends State<DraftsPage> {
           );
         },
       ),
+    );
+  }
+
+  /// 把目标 tab 同步到 [PageController]：用 jump/animate 都会触发 [PageView.onPageChanged]，
+  /// 它再回调 [DraftsNotifier.changeTab] 完成 notifier 侧状态更新。
+  void _animateToTab(int index) {
+    final clamped = index.clamp(0, 1);
+    if (!_pageController.hasClients) return;
+    final current = _pageController.page?.round() ?? widget.initialTab;
+    if (current == clamped) return;
+    _pageController.animateToPage(
+      clamped,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -125,7 +152,7 @@ class _DraftsPageState extends State<DraftsPage> {
   }) {
     final selected = n.tabIndex == index;
     return InkWell(
-      onTap: () => n.changeTab(index),
+      onTap: () => _animateToTab(index),
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 10.w),
         child: Column(
@@ -154,11 +181,30 @@ class _DraftsPageState extends State<DraftsPage> {
     );
   }
 
-  Widget _buildBody(DraftsNotifier n) {
-    if (n.currentLoading && n.currentList.isEmpty) {
+  /// 横向 [PageView]：左右滑动切 `帖子` ↔ `短视频`。每页内部独立用自己 tab 的
+  /// loading/list 数据渲染（不依赖 [DraftsNotifier.tabIndex]，否则 swipe 过程中
+  /// 两页内容会同时变成 active tab 的内容）。
+  Widget _buildPageView(DraftsNotifier n) {
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: 2,
+      physics: const ClampingScrollPhysics(),
+      onPageChanged: (i) {
+        // 切 tab → notifier 内部会清空多选并触发懒加载新 tab 的数据。
+        n.changeTab(i);
+      },
+      itemBuilder: (_, tab) => _buildBodyForTab(n, tab),
+    );
+  }
+
+  Widget _buildBodyForTab(DraftsNotifier n, int tab) {
+    final loading = tab == 0 ? n.loadingPost : n.loadingVideo;
+    final list = tab == 0 ? n.postDrafts : n.videoDrafts;
+
+    if (loading && list.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (n.currentList.isEmpty) {
+    if (list.isEmpty) {
       return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 32.w),
@@ -178,9 +224,9 @@ class _DraftsPageState extends State<DraftsPage> {
         mainAxisSpacing: 2,
         childAspectRatio: 0.74,
       ),
-      itemCount: n.currentList.length,
+      itemCount: list.length,
       itemBuilder: (_, i) {
-        final draft = n.currentList[i];
+        final draft = list[i];
         return _draftCell(context, n, draft);
       },
     );
