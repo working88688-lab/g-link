@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:g_link/data_layer/repo/repo.dart';
+import 'package:g_link/domain/domains/comment.dart';
 import 'package:g_link/domain/model/comment_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
@@ -64,7 +64,7 @@ class _CommentContentState extends State<CommentContent> {
       _error = null;
     });
     try {
-      final page = await context.read<AppRepo>().getComments(
+      final page = await context.read<CommentDomain>().getComments(
             targetType: widget.targetType,
             targetId: widget.targetId,
           );
@@ -91,7 +91,8 @@ class _CommentContentState extends State<CommentContent> {
     if (_loadingReplyIds.contains(commentId)) return;
     _loadingReplyIds.add(commentId);
     try {
-      final page = await context.read<AppRepo>().getCommentReplies(commentId: commentId);
+      final page =
+          await context.read<CommentDomain>().getCommentReplies(commentId: commentId);
       if (!mounted) return;
       final index = _comments.indexWhere((e) => e.id == commentId);
       if (index == -1) return;
@@ -110,8 +111,8 @@ class _CommentContentState extends State<CommentContent> {
     _likedIds.add(comment.id);
     try {
       final result = comment.isLiked
-          ? await context.read<AppRepo>().unlikeComment(comment.id)
-          : await context.read<AppRepo>().likeComment(comment.id);
+          ? await context.read<CommentDomain>().unlikeComment(comment.id)
+          : await context.read<CommentDomain>().likeComment(comment.id);
       if (!mounted) return;
       final index = _comments.indexWhere((e) => e.id == comment.id);
       if (index != -1) {
@@ -134,8 +135,8 @@ class _CommentContentState extends State<CommentContent> {
     _likedIds.add(reply.id);
     try {
       final result = reply.isLiked
-          ? await context.read<AppRepo>().unlikeComment(reply.id)
-          : await context.read<AppRepo>().likeComment(reply.id);
+          ? await context.read<CommentDomain>().unlikeComment(reply.id)
+          : await context.read<CommentDomain>().likeComment(reply.id);
       if (!mounted) return;
       final index = _comments.indexWhere((e) => e.id == commentId);
       if (index == -1) return;
@@ -164,7 +165,8 @@ class _CommentContentState extends State<CommentContent> {
         children: [
           if (widget.showTitle) ...[
             Text(
-              'shortVideoCommentTitle'.tr(namedArgs: {'count': '${_comments.length}'}),
+              'shortVideoCommentTitle'
+                  .tr(namedArgs: {'count': '${_comments.length}'}),
               style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 16.w),
@@ -195,8 +197,10 @@ class _CommentContentState extends State<CommentContent> {
                         formatCount: _formatCount,
                         formatTime: _formatTime,
                         onLike: () => _toggleLike(_comments[i]),
-                        onReplyLike: (reply) => _toggleReplyLike(_comments[i].id, reply),
-                        onLoadMoreReplies: _comments[i].replyCount > _comments[i].replies.length
+                        onReplyLike: (reply) =>
+                            _toggleReplyLike(_comments[i].id, reply),
+                        onLoadMoreReplies: _comments[i].replyCount >
+                                _comments[i].replies.length
                             ? () => _loadReplies(_comments[i].id)
                             : null,
                       ),
@@ -255,7 +259,9 @@ class CommentItem extends StatelessWidget {
                             color: const Color(0xFF45556C))),
                     if (comment.isAuthor) ...[
                       SizedBox(width: 6.w),
-                      Text('作者', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF90A1B9))),
+                      Text('作者',
+                          style: TextStyle(
+                              fontSize: 12.sp, color: const Color(0xFF90A1B9))),
                     ],
                     SizedBox(width: 6.w),
                     Text(formatTime(comment.createdAt),
@@ -294,7 +300,8 @@ class CommentItem extends StatelessWidget {
                     onTap: onLoadMoreReplies,
                     child: Text(
                       'shortVideoMoreReplies'.tr(namedArgs: {
-                        'count': '${comment.replyCount - comment.replies.length}'
+                        'count':
+                            '${comment.replyCount - comment.replies.length}'
                       }),
                       style: TextStyle(
                         fontSize: 12.sp,
@@ -353,11 +360,15 @@ class CommentReplyItem extends StatelessWidget {
                           color: const Color(0xFF45556C))),
                   if (reply.isAuthor) ...[
                     SizedBox(width: 6.w),
-                    Text('作者', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF90A1B9))),
+                    Text('作者',
+                        style: TextStyle(
+                            fontSize: 12.sp, color: const Color(0xFF90A1B9))),
                   ],
                   if (replyToName.isNotEmpty) ...[
                     SizedBox(width: 6.w),
-                    Text('回复 $replyToName', style: TextStyle(fontSize: 12.sp, color: const Color(0xFF90A1B9))),
+                    Text('回复 $replyToName',
+                        style: TextStyle(
+                            fontSize: 12.sp, color: const Color(0xFF90A1B9))),
                   ],
                   SizedBox(width: 6.w),
                   Text(formatTime(reply.createdAt),
@@ -431,7 +442,9 @@ class CommentActions extends StatelessWidget {
           child: Row(
             children: [
               MyImage.asset(
-                isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconOmmentUnlike,
+                isLiked
+                    ? MyImagePaths.iconLiked
+                    : MyImagePaths.iconOmmentUnlike,
                 width: 18.w,
               ),
               SizedBox(width: 3.w),

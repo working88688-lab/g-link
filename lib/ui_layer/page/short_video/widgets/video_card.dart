@@ -64,7 +64,8 @@ class _VideoCardState extends State<VideoCard> {
   @override
   void didUpdateWidget(covariant VideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.videoUrl != widget.item.videoUrl || oldWidget.isCurrentPage != widget.isCurrentPage) {
+    if (oldWidget.item.videoUrl != widget.item.videoUrl ||
+        oldWidget.isCurrentPage != widget.isCurrentPage) {
       unawaited(_syncPlayback());
     }
   }
@@ -90,7 +91,9 @@ class _VideoCardState extends State<VideoCard> {
       if (mounted) setState(() {});
       return;
     }
-    if (_controller != null && _controller!.dataSource == widget.item.videoUrl && _controller!.value.isInitialized) {
+    if (_controller != null &&
+        _controller!.dataSource == widget.item.videoUrl &&
+        _controller!.value.isInitialized) {
       if (!_controller!.value.isPlaying) {
         await _controller!.play();
       }
@@ -199,7 +202,8 @@ class _VideoCardState extends State<VideoCard> {
             onMusicTap: widget.onMusicTap,
           ),
         ),
-        const Positioned(left: 0, right: 0, bottom: 0, child: VideoProgressBar()),
+        const Positioned(
+            left: 0, right: 0, bottom: 0, child: VideoProgressBar()),
       ],
     );
   }
@@ -231,7 +235,8 @@ class _VideoCardState extends State<VideoCard> {
         : Container(
             color: Colors.black,
             child: Center(
-              child: Icon(Icons.play_circle_outline, size: 72.sp, color: Colors.white24),
+              child: Icon(Icons.play_circle_outline,
+                  size: 72.sp, color: Colors.white24),
             ),
           );
   }
@@ -270,10 +275,15 @@ class VideoActionBar extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        VideoAvatarWithFollow(item: item, isFollowing: isFollowing, onToggleFollow: onToggleFollow),
+        VideoAvatarWithFollow(
+            item: item,
+            isFollowing: isFollowing,
+            onToggleFollow: onToggleFollow),
         SizedBox(height: 26.w),
         VideoActionBtn(
-          icon: MyImage.asset(item.isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconLike, width: 32.w),
+          icon: MyImage.asset(
+              item.isLiked ? MyImagePaths.iconLiked : MyImagePaths.iconLike,
+              width: 32.w),
           color: item.isLiked ? const Color(0xFFFF2D55) : Colors.white,
           count: item.stats.likeCount,
           onTap: onToggleLike,
@@ -312,7 +322,9 @@ class VideoActionBar extends StatelessWidget {
           child: SizedBox(
             width: 30.w,
             height: 30.w,
-            child: MyImage.asset(isMuted ? MyImagePaths.iconVolumeOff : MyImagePaths.iconMute, width: 30.w),
+            child: MyImage.asset(
+                isMuted ? MyImagePaths.iconVolumeOff : MyImagePaths.iconMute,
+                width: 30.w),
           ),
         ),
       ],
@@ -325,7 +337,11 @@ class VideoAvatarWithFollow extends StatelessWidget {
   final bool isFollowing;
   final VoidCallback onToggleFollow;
 
-  const VideoAvatarWithFollow({super.key, required this.item, required this.isFollowing, required this.onToggleFollow});
+  const VideoAvatarWithFollow(
+      {super.key,
+      required this.item,
+      required this.isFollowing,
+      required this.onToggleFollow});
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +358,9 @@ class VideoAvatarWithFollow extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 2.w),
           ),
           child: item.author.avatarUrl.isNotEmpty
-              ? ClipOval(child: Image.network(item.author.avatarUrl, fit: BoxFit.cover))
+              ? ClipOval(
+                  child:
+                      Image.network(item.author.avatarUrl, fit: BoxFit.cover))
               : Icon(Icons.person, color: Colors.white, size: 26.sp),
         ),
         if (!isFollowing)
@@ -350,7 +368,8 @@ class VideoAvatarWithFollow extends StatelessWidget {
             bottom: -8.w,
             child: GestureDetector(
               onTap: onToggleFollow,
-              child: MyImage.asset(MyImagePaths.iconShortVideoFollow, width: 16.w),
+              child:
+                  MyImage.asset(MyImagePaths.iconShortVideoFollow, width: 16.w),
             ),
           ),
       ],
@@ -394,7 +413,9 @@ class VideoActionBtn extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
-                    shadows: [Shadow(color: const Color(0x43000000), blurRadius: 4.w)])),
+                    shadows: [
+                      Shadow(color: const Color(0x43000000), blurRadius: 4.w)
+                    ])),
           ],
         ],
       ),
@@ -439,7 +460,9 @@ class VideoContentInfo extends StatelessWidget {
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 12.sp,
-                      shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
+                      shadows: [
+                        Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
+                      ])),
             ],
           ),
         ),
@@ -449,7 +472,9 @@ class VideoContentInfo extends StatelessWidget {
                 color: Colors.white,
                 fontSize: 16.sp,
                 fontWeight: FontWeight.w600,
-                shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])),
+                shadows: [
+                  Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
+                ])),
         SizedBox(height: 8.w),
         Wrap(
           spacing: 6.w,
@@ -459,19 +484,24 @@ class VideoContentInfo extends StatelessWidget {
                       color: const Color(0xFFFAB200),
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)])))
+                      shadows: [
+                        Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
+                      ])))
               .toList(),
         ),
         SizedBox(height: 2.w),
         VideoExpandableText(
           text: item.description,
-          style: TextStyle(
-              color: Colors.white, fontSize: 13.sp, shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
+          style: TextStyle(color: Colors.white, fontSize: 13.sp, shadows: [
+            Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
+          ]),
           moreStyle: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w600,
               fontSize: 14.sp,
-              shadows: [Shadow(color: const Color(0x1F000000), blurRadius: 4.w)]),
+              shadows: [
+                Shadow(color: const Color(0x1F000000), blurRadius: 4.w)
+              ]),
           onExpandTap: onExpandTap,
         ),
         SizedBox(height: 16.w),
@@ -481,9 +511,15 @@ class VideoContentInfo extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.black.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(6.w),
-              boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 4.w, offset: Offset(0, 2.w))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black45,
+                    blurRadius: 4.w,
+                    offset: Offset(0, 2.w))
+              ],
             ),
-            padding: EdgeInsets.only(left: 6.w, top: 7.w, bottom: 7.w, right: 17.w),
+            padding:
+                EdgeInsets.only(left: 6.w, top: 7.w, bottom: 7.w, right: 17.w),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -491,7 +527,10 @@ class VideoContentInfo extends StatelessWidget {
                 SizedBox(width: 4.w),
                 Flexible(
                   child: Text("都是月亮惹的祸 ｜ 章鱼",
-                      style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600),
                       overflow: TextOverflow.ellipsis),
                 ),
               ],
@@ -510,7 +549,11 @@ class VideoExpandableText extends StatefulWidget {
   final VoidCallback? onExpandTap;
 
   const VideoExpandableText(
-      {super.key, required this.text, required this.style, required this.moreStyle, this.onExpandTap});
+      {super.key,
+      required this.text,
+      required this.style,
+      required this.moreStyle,
+      this.onExpandTap});
 
   @override
   State<VideoExpandableText> createState() => _VideoExpandableTextState();
@@ -522,20 +565,29 @@ class _VideoExpandableTextState extends State<VideoExpandableText> {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final textDir = Directionality.of(ctx);
-        final tp =
-            TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)
-              ..layout(maxWidth: constraints.maxWidth);
-        if (!tp.didExceedMaxLines) return Text(widget.text, style: widget.style);
+        final tp = TextPainter(
+            text: TextSpan(text: widget.text, style: widget.style),
+            maxLines: 1,
+            textDirection: textDir)
+          ..layout(maxWidth: constraints.maxWidth);
+        if (!tp.didExceedMaxLines)
+          return Text(widget.text, style: widget.style);
         final moreText = '...  ${'shortVideoExpand'.tr()} ';
-        final moreTp =
-            TextPainter(text: TextSpan(text: moreText, style: widget.moreStyle), maxLines: 1, textDirection: textDir)
-              ..layout();
+        final moreTp = TextPainter(
+            text: TextSpan(text: moreText, style: widget.moreStyle),
+            maxLines: 1,
+            textDirection: textDir)
+          ..layout();
         const iconWidth = 16.0;
         final availableWidth = constraints.maxWidth - moreTp.width - iconWidth;
-        final mainTp =
-            TextPainter(text: TextSpan(text: widget.text, style: widget.style), maxLines: 1, textDirection: textDir)
-              ..layout(maxWidth: availableWidth);
-        final offset = mainTp.getPositionForOffset(Offset(availableWidth, mainTp.height / 2)).offset;
+        final mainTp = TextPainter(
+            text: TextSpan(text: widget.text, style: widget.style),
+            maxLines: 1,
+            textDirection: textDir)
+          ..layout(maxWidth: availableWidth);
+        final offset = mainTp
+            .getPositionForOffset(Offset(availableWidth, mainTp.height / 2))
+            .offset;
         final truncated = widget.text.substring(0, offset);
         return RichText(
           maxLines: 1,
