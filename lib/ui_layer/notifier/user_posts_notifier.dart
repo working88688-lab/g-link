@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/domain/model/feed_models.dart';
-import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
+// import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 
 /// 单个用户最新帖子列表的状态机：
 /// - 入口：[load] / 下拉刷新走 [refresh] 强刷一次；
@@ -15,15 +15,15 @@ class UserPostsNotifier extends ChangeNotifier {
     required this.uid,
     required ProfileDomain profileDomain,
     required FeedDomain feedDomain,
-    UserPostsListSeed? listSeed,
+    // UserPostsListSeed? listSeed,
   })  : _profileDomain = profileDomain,
-        _feedDomain = feedDomain,
-        _initialSeed = listSeed;
+        _feedDomain = feedDomain;
+        // _initialSeed = listSeed;
 
   final int uid;
   final ProfileDomain _profileDomain;
   final FeedDomain _feedDomain;
-  final UserPostsListSeed? _initialSeed;
+  // final UserPostsListSeed? _initialSeed;
 
   final Set<int> _likeInflight = {};
   final Set<int> _favoriteInflight = {};
@@ -51,16 +51,16 @@ class UserPostsNotifier extends ChangeNotifier {
     if (_loading) return;
     if (_loaded && !force) return;
 
-    final seed = _initialSeed;
-    if (!force && seed != null && seed.posts.isNotEmpty) {
-      _posts = List<FeedPost>.from(seed.posts);
-      _nextCursor = seed.nextCursor;
-      _hasMore = seed.hasMore;
-      _loaded = true;
-      _error = null;
-      _safeNotify();
-      return;
-    }
+    // final seed = _initialSeed;
+    // if (!force && seed != null && seed.posts.isNotEmpty) {
+    //   _posts = List<FeedPost>.from(seed.posts);
+    //   _nextCursor = seed.nextCursor;
+    //   _hasMore = seed.hasMore;
+    //   _loaded = true;
+    //   _error = null;
+    //   _safeNotify();
+    //   return;
+    // }
 
     _loading = true;
     _error = null;

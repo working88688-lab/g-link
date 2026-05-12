@@ -8,7 +8,7 @@ import 'package:g_link/domain/model/profile_models.dart';
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/notifier/profile_notifier.dart';
 import 'package:g_link/ui_layer/notifier/follow_list_notifier.dart';
-import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
+// import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:go_router/go_router.dart';
@@ -649,14 +649,14 @@ class _MinePageState extends State<MinePage> with WidgetsBindingObserver {
     if (profile == null || postId <= 0) return;
     final entries = notifier.postFeedEntries;
     if (entries.isEmpty) return;
-    final seed = UserPostsListSeed(
-      posts: List<FeedPost>.from(entries),
-      nextCursor: notifier.postsNextCursor,
-      hasMore: notifier.postsHasMore,
-    );
+    // final seed = UserPostsListSeed(
+    //   posts: List<FeedPost>.from(entries),
+    //   nextCursor: notifier.postsNextCursor,
+    //   hasMore: notifier.postsHasMore,
+    // );
     context.push(
       UserPostsRoute(uid: profile.uid, anchorPostId: postId).location,
-      extra: seed,
+      // extra: seed,
     );
   }
 

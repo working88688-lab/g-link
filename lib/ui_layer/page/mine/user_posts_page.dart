@@ -6,7 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/feed.dart';
 import 'package:g_link/domain/domains/profile.dart';
 import 'package:g_link/ui_layer/notifier/user_posts_notifier.dart';
-import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
+// import 'package:g_link/ui_layer/page/mine/user_posts_seed.dart';
 import 'package:g_link/ui_layer/widgets/feed_post_card.dart';
 import 'package:g_link/utils/my_toast.dart';
 import 'package:provider/provider.dart';
@@ -24,12 +24,12 @@ class UserPostsPage extends StatefulWidget {
     super.key,
     required this.uid,
     this.anchorPostId,
-    this.listSeed,
+    // this.listSeed,
   });
 
   final int uid;
   final int? anchorPostId;
-  final UserPostsListSeed? listSeed;
+  // final UserPostsListSeed? listSeed;
 
   @override
   State<UserPostsPage> createState() => _UserPostsPageState();
@@ -164,7 +164,7 @@ class _UserPostsPageState extends State<UserPostsPage> {
           uid: widget.uid,
           profileDomain: ctx.read<ProfileDomain>(),
           feedDomain: ctx.read<FeedDomain>(),
-          listSeed: widget.listSeed,
+          // listSeed: widget.listSeed,
         )..load();
         _notifier = n;
         return n;
