@@ -1,7 +1,7 @@
 import 'package:g_link/domain/model/profile_models.dart';
 
 class UserSearchItem {
-  const UserSearchItem({
+   UserSearchItem({
     required this.uid,
     required this.username,
     required this.nickname,
@@ -10,13 +10,13 @@ class UserSearchItem {
     this.isFollowing = false,
   });
 
-  final int uid;
-  final String username;
-  final String nickname;
-  final String avatarUrl;
-  final int followerCount;
+   int uid;
+   String username;
+   String nickname;
+   String avatarUrl;
+   int followerCount;
   /// 服务端若返回则采用；否则客户端本地维护。
-  final bool isFollowing;
+   bool isFollowing;
 
   factory UserSearchItem.fromJson(Map<String, dynamic> json) => UserSearchItem(
         uid: int.tryParse('${json['uid'] ?? 0}') ?? 0,

@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../image_paths.dart';
+import '../../widgets/my_app_bar.dart';
 import '../../widgets/my_image.dart';
 
 // ──────────────────────────────────────────
@@ -204,32 +205,10 @@ class _FeedbackSubmitPageState extends State<FeedbackSubmitPage> {
   Future<void> _submit() async {}
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20.w,
-          color: const Color(0xFF1D293D),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        'feedbackSubmitTitle'.tr(),
-        style: TextStyle(
-          color: const Color(0xFF1D293D),
-          fontSize: 17.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFEDF0F5)),
-      ),
+    return MyAppBar(
+      title: 'feedbackSubmitTitle'.tr(),
     );
+
   }
 
   Future<void> _pickImage() async {

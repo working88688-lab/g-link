@@ -39,6 +39,7 @@
   "homeJustPublished": "刚刚发布",
   "homeJustNow": "刚刚",
   "homeLoadingMore": "加载中…",
+  "jzz": "加载中",
   "homeNoMore": "没有更多了",
   "commonGotIt": "知道了",
   "homeCreatePost": "发布动态",
@@ -317,6 +318,8 @@
   "authCodeSent": "验证码已发送，请注意查收",
   "authCodeSendFailed": "验证码发送失败，请稍后重试",
   "authAgreementRequired": "请先同意用户协议",
+  "dateYesterday": "昨天",
+  "dateBeforeYesterday": "前天",
 
   "weekdayMon": "周一",
   "weekdayTue": "周二",

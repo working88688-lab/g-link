@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 /// 投诉 / 举报两步流程（设计稿 11.2 / 11.3）：
 /// 1. 原因列表：`GET /api/v1/reports/types`
 /// 2. 描述 + 证据图 + `POST /api/v1/reports`
@@ -132,9 +134,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         target: widget.reportTarget,
         targetId: id,
         reasonType: type.id,
-        reasonDetail: _descController.text.trim().isEmpty
-            ? null
-            : _descController.text.trim(),
+        reasonDetail: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
         evidenceUrls: evidenceUrls,
       );
 
@@ -157,27 +157,10 @@ class _ComplaintPageState extends State<ComplaintPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left, size: 28.sp),
-          onPressed: _onBack,
-          padding: EdgeInsets.zero,
-        ),
-        title: Text(
-          'complaintTitle'.tr(),
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+      appBar: MyAppBar(
+        title: 'complaintTitle'.tr(),
       ),
+
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: _step == 0
@@ -330,9 +313,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             maxLines: 5,
             minLines: 5,
             maxLength: _maxDescLength,
-            buildCounter: (_,
-                    {required currentLength, required isFocused, maxLength}) =>
-                null,
+            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
             style: TextStyle(fontSize: 14.sp, color: const Color(0xFF1A1F2C)),
             decoration: InputDecoration(
               hintText: 'complaintDescHint'.tr(),

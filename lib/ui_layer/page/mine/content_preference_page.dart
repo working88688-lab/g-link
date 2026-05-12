@@ -8,6 +8,8 @@ import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 // ──────────────────────────────────────────
 // 页面
 // ──────────────────────────────────────────
@@ -21,6 +23,7 @@ class ContentPreferencePage extends StatefulWidget {
 class _ContentPreferencePageState extends State<ContentPreferencePage> {
   static const int _maxInterests = 8;
 
+  bool _submitLoading = false;
   final Set<int> _selectedTagIds = {};
   final List<String> _blockedKeywords = [];
   final Set<String> _initialBlockedKeywords = {};
@@ -45,7 +48,9 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
-      appBar: _buildAppBar(context),
+      appBar: MyAppBar(
+        title: 'contentPrefTitle'.tr(),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -65,35 +70,6 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                     _buildSubmitButton(),
                   ],
                 ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20.w,
-          color: const Color(0xFF1D293D),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        'contentPrefTitle'.tr(),
-        style: TextStyle(
-          color: const Color(0xFF1D293D),
-          fontSize: 17.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFEDF0F5)),
-      ),
     );
   }
 
@@ -265,13 +241,22 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                   borderRadius: BorderRadius.circular(29.w),
                 ),
                 child: Center(
-                  child: Text(
-                    'complaintSubmit'.tr(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.sp,
-                    ),
-                  ),
+                  child: _submitLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'complaintSubmit'.tr(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                          ),
+                        ),
                 ),
               ),
             )
@@ -354,16 +339,31 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
                   ),
                 ),
                 SizedBox(width: 12.w),
-                TextButton(
-                  onPressed: () {
-                    final kw = _keywordCtrl.text.trim();
-                    if (kw.isNotEmpty && !_blockedKeywords.contains(kw)) {
-                      setState(() => _blockedKeywords.add(kw));
-                    }
-                    Navigator.of(ctx).pop();
-                  },
-                  child: Text('commonConfirm'.tr()),
-                ),
+                GestureDetector(
+                    onTap: () {
+                      final kw = _keywordCtrl.text.trim();
+                      if (kw.isNotEmpty && !_blockedKeywords.contains(kw)) {
+                        setState(() => _blockedKeywords.add(kw));
+                      }
+                      Navigator.of(ctx).pop();
+                    },
+                    child: Container(
+                      height: 34.w,
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.w),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1F2C),
+                        borderRadius: BorderRadius.circular(29.w),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'commonConfirm'.tr(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    )),
               ],
             ),
           ),
@@ -373,6 +373,9 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
   }
 
   Future<void> _submit() async {
+    setState(() {
+      _submitLoading = true;
+    });
     try {
       final profile = context.read<ProfileDomain>();
       await profile.updateMyInterestTags(tagIds: _selectedTagIds.toList());
@@ -394,6 +397,10 @@ class _ContentPreferencePageState extends State<ContentPreferencePage> {
         _error = err.toString();
       });
     }
+
+    setState(() {
+      _submitLoading = false;
+    });
   }
 }
 

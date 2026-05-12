@@ -8,6 +8,8 @@ import 'package:g_link/ui_layer/page/mine/widgets/mine_settings_widgets.dart';
 import 'package:g_link/ui_layer/widgets/app_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 // ──────────────────────────────────────────
 // 页面
 // ──────────────────────────────────────────
@@ -282,31 +284,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20.w,
-          color: const Color(0xFF1D293D),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        'mineDrawerGeneralSettings'.tr(),
-        style: TextStyle(
-          color: const Color(0xFF1D293D),
-          fontSize: 17.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFEDF0F5)),
-      ),
+    return MyAppBar(
+      title: 'mineDrawerGeneralSettings'.tr(),
     );
   }
 

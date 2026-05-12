@@ -10,6 +10,8 @@ import 'package:g_link/utils/common_utils.dart';
 import 'package:g_link/utils/my_toast.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 class RecommendFollowListPage extends StatefulWidget {
   const RecommendFollowListPage({super.key, this.limit = 10});
 
@@ -33,9 +35,7 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
 
   Future<void> _loadUsers() async {
     setState(() => _loading = true);
-    final result = await context
-        .read<ProfileDomain>()
-        .getRecommendedUsers(limit: widget.limit);
+    final result = await context.read<ProfileDomain>().getRecommendedUsers(limit: widget.limit);
     if (!mounted) return;
 
     if (result.status == 0 && result.data != null) {
@@ -55,8 +55,7 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
     setState(() => _loading = false);
   }
 
-  bool _isFollowing(RecommendedUser user) =>
-      _followOverride[user.uid] ?? user.isFollowing;
+  bool _isFollowing(RecommendedUser user) => _followOverride[user.uid] ?? user.isFollowing;
 
   Future<void> _toggleFollow(RecommendedUser user) async {
     if (_followInflight.contains(user.uid)) return;
@@ -68,9 +67,7 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
     });
 
     final domain = context.read<ProfileDomain>();
-    final result = before
-        ? await domain.unfollowUser(uid: user.uid)
-        : await domain.followUser(uid: user.uid);
+    final result = before ? await domain.unfollowUser(uid: user.uid) : await domain.followUser(uid: user.uid);
 
     if (!mounted) return;
     _followInflight.remove(user.uid);
@@ -98,24 +95,8 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          'homeRecommendFollow'.tr(),
-          style: TextStyle(
-            color: const Color(0xFF1A1F2C),
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: Icon(Icons.chevron_left_rounded,
-              size: 24.sp, color: const Color(0xFF1A1F2C)),
-        ),
+      appBar: MyAppBar(
+        title: 'homeRecommendFollow'.tr(),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -138,8 +119,7 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
                       clipBehavior: Clip.antiAlias,
                       child: user.avatarUrl.isNotEmpty
                           ? MyImage.network(user.avatarUrl, fit: BoxFit.cover)
-                          : MyImage.asset(MyImagePaths.defaultHeader,
-                              fit: BoxFit.cover),
+                          : MyImage.asset(MyImagePaths.defaultHeader, fit: BoxFit.cover),
                     ),
                     SizedBox(width: 10.w),
                     Expanded(
@@ -147,9 +127,7 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user.nickname.isNotEmpty
-                                ? user.nickname
-                                : user.username,
+                            user.nickname.isNotEmpty ? user.nickname : user.username,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -182,21 +160,14 @@ class _RecommendFollowListPageState extends State<RecommendFollowListPage> {
                         height: 30.h,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: following
-                              ? const Color(0xFFF5F6F8)
-                              : const Color(0xFF1A1F2C),
-                          border: following
-                              ? Border.all(
-                                  color: const Color(0xFFD3D7E0), width: 1)
-                              : null,
+                          color: following ? const Color(0xFFF5F6F8) : const Color(0xFF1A1F2C),
+                          border: following ? Border.all(color: const Color(0xFFD3D7E0), width: 1) : null,
                           borderRadius: BorderRadius.circular(999.r),
                         ),
                         child: Text(
                           following ? 'commonFollowed'.tr() : 'commonFollow'.tr(),
                           style: TextStyle(
-                            color: following
-                                ? const Color(0xFF5F6778)
-                                : Colors.white,
+                            color: following ? const Color(0xFF5F6778) : Colors.white,
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w600,
                           ),

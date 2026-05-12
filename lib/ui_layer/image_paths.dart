@@ -22,6 +22,7 @@ class MyImagePaths {
   static const appTabPublish = './assets/images/app_tab_publish.png';
   static const appUpdateUpBg = './assets/images/app_update_up_bg.png';
   static const appZfYtN = './assets/images/app_zf_yt_n.png';
+  static const authBackIcon = './assets/images/auth_back_icon.png';
   static const check = './assets/images/check.png';
   static const check1 = './assets/images/check1.png';
   static const cn = './assets/images/cn.png';

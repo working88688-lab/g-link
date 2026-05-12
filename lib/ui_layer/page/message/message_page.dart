@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:g_link/domain/domain.dart';
 import 'package:g_link/domain/model/chat_model.dart';
@@ -9,6 +10,7 @@ import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:g_link/ui_layer/notifier/app_chat_notifier.dart';
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/app_confirm_dialog.dart';
+import '../../widgets/loading.dart';
 import 'widgets/recommend_users_widget.dart';
 import '../../widgets/overlay_menu_button.dart';
 
@@ -16,67 +18,6 @@ import '../../widgets/overlay_menu_button.dart';
 // 数据模型
 // ──────────────────────────────────────────
 enum ReadStatus { unread, sent, delivered }
-
-class _MsgItem {
-  final int id;
-  final int chatId;
-  final String name;
-  final String avatarUrl;
-  final String lastMsg;
-  final String time;
-  final int unreadCount;
-  final bool isOnline;
-  final bool isMuted;
-  final ReadStatus readStatus;
-  final bool isPinned;
-
-  const _MsgItem({
-    required this.id,
-    required this.chatId,
-    required this.name,
-    required this.avatarUrl,
-    required this.lastMsg,
-    required this.time,
-    this.unreadCount = 0,
-    this.isOnline = false,
-    this.isMuted = false,
-    this.readStatus = ReadStatus.unread,
-    this.isPinned = false,
-  });
-
-  _MsgItem copyWith({
-    bool? isMuted,
-    bool? isPinned,
-    int? unreadCount,
-  }) =>
-      _MsgItem(
-        id: id,
-        chatId: chatId,
-        name: name,
-        avatarUrl: avatarUrl,
-        lastMsg: lastMsg,
-        time: time,
-        unreadCount: unreadCount ?? this.unreadCount,
-        isOnline: isOnline,
-        isMuted: isMuted ?? this.isMuted,
-        readStatus: readStatus,
-        isPinned: isPinned ?? this.isPinned,
-      );
-
-  factory _MsgItem.fromChatItem(ChatItem c) {
-    return _MsgItem(
-      id: c.id,
-      chatId: c.chatId,
-      name: c.name,
-      avatarUrl: c.avatarUrl,
-      lastMsg: c.lastMsgContent,
-      time: _formatMsgTime(c.lastMsgTime),
-      unreadCount: c.unreadCount,
-      isPinned: c.isPinned,
-      isMuted: c.isMuted,
-    );
-  }
-}
 
 String _formatMsgTime(String iso) {
   try {
@@ -122,12 +63,13 @@ class _MessagePageState extends State<MessagePage> {
   final _openIdNotifier = ValueNotifier<int?>(null);
   final _scrollCtrl = ScrollController();
 
-  List<_MsgItem> _items = [];
+  List<ChatItem> _items = [];
   bool _isLoading = true;
   bool _isRefreshing = false;
   bool _isLoadingMore = false;
   bool _hasMore = false;
   String? _nextCursor;
+  AppChatNotifier? _notifier;
 
   late final _menuItems = [
     OverlayMenuItem(
@@ -156,7 +98,7 @@ class _MessagePageState extends State<MessagePage> {
   Future<void> _loadChats({bool refresh = false, bool loadMore = false}) async {
     if (refresh) {
       setState(() {
-        _isLoading = true;
+        // _isLoading = true;
         _isRefreshing = true;
         _nextCursor = null;
         _hasMore = false;
@@ -175,11 +117,11 @@ class _MessagePageState extends State<MessagePage> {
       if (!mounted) return;
       setState(() {
         if (refresh) {
-          _items = result.items.map(_MsgItem.fromChatItem).toList();
+          _items = result.items.toList();
         } else if (loadMore) {
-          _items = [..._items, ...result.items.map(_MsgItem.fromChatItem)];
+          _items = [..._items, ...result.items];
         } else {
-          _items = result.items.map(_MsgItem.fromChatItem).toList();
+          _items = result.items;
         }
         _nextCursor = result.nextCursor;
         _hasMore = result.hasMore;
@@ -206,7 +148,16 @@ class _MessagePageState extends State<MessagePage> {
     setState(() {
       final updated = item.copyWith(isPinned: newPinned);
       _items.removeAt(idx);
-      _items.insert(0, updated);
+      if (newPinned) {
+        _items.insert(0, updated);
+      } else {
+        final firstUnpinnedIdx = _items.indexWhere((e) => !e.isPinned);
+        if (firstUnpinnedIdx < 0) {
+          _items.add(updated);
+        } else {
+          _items.insert(firstUnpinnedIdx, updated);
+        }
+      }
     });
     context.read<AppDomain>().togglePin(item.chatId, isPinned: item.isPinned).catchError((_) {
       // 失败回滚
@@ -241,24 +192,25 @@ class _MessagePageState extends State<MessagePage> {
     final idx = _items.indexWhere((e) => e.chatId == id);
     if (idx < 0) return;
     final item = _items[idx];
-    final ok = await showDialog<bool>(
+    await showDialog<bool>(
           context: context,
           builder: (_) => AppConfirmDialog(
             title: 'chatDeleteConfirmTitle'.tr(),
             content: 'chatDeleteConfirmContent'.tr(),
             cancelText: 'commonCancel'.tr(),
             confirmText: 'commonConfirm'.tr(),
+            onConfirm: () async {
+              try {
+                await context.read<AppDomain>().deleteChat(item.chatId);
+                setState(() => _items.removeWhere((e) => e.chatId == id));
+              } catch (_) {
+                if (!mounted) return;
+                setState(() => _items.insert(idx, item));
+              }
+            },
           ),
         ) ??
         false;
-    if (!ok) return;
-    setState(() => _items.removeWhere((e) => e.chatId == id));
-    try {
-      await context.read<AppDomain>().deleteChat(item.chatId);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _items.insert(idx, item));
-    }
   }
 
   @override
@@ -272,18 +224,24 @@ class _MessagePageState extends State<MessagePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildSearchBar(),
-            Expanded(child: _buildList()),
-          ],
+    return ChangeNotifierProvider<AppChatNotifier>(create: (ctx) {
+      final notifier = AppChatNotifier();
+      _notifier = notifier;
+      return notifier;
+    }, child: Consumer<AppChatNotifier>(builder: (context, n, _) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildSearchBar(),
+              Expanded(child: _buildList()),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }));
   }
 
   // ── 顶部标题栏 ──────────────────────────
@@ -383,12 +341,12 @@ class _MessagePageState extends State<MessagePage> {
   // ── 列表 ────────────────────────────────
   Widget _buildList() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return LoadingView();
     }
     if (_items.isEmpty) return _buildEmpty();
 
     return RefreshIndicator(
-      color: const Color(0xFF00C67E),
+      color: const Color(0xFF1A1F2C),
       onRefresh: () => _loadChats(refresh: true),
       child: ListView.builder(
         controller: _scrollCtrl,
@@ -416,7 +374,7 @@ class _MessagePageState extends State<MessagePage> {
             onTap: () => ChatConversationRoute(
               name: item.name,
               avatarUrl: item.avatarUrl,
-              uid: item.id,
+              uid: item.peerUid,
             ).push(context),
             onPin: () => _pin(item.chatId),
             onMute: () => _mute(item.chatId),
@@ -432,7 +390,7 @@ class _MessagePageState extends State<MessagePage> {
 // 可滑动的消息行
 // ──────────────────────────────────────────
 class _SwipeableTile extends StatefulWidget {
-  final _MsgItem item;
+  final ChatItem item;
   final ValueNotifier<int?> openIdNotifier;
   final VoidCallback onInteract;
   final VoidCallback onTap;
@@ -521,7 +479,7 @@ class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProvide
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _ActionBtn(
-                  label: 'chatActionPin'.tr(),
+                  label: widget.item.isPinned ? 'chatActionUnpin'.tr() : 'chatActionPin'.tr(),
                   textColor: const Color(0xFFFFFFFF),
                   color: const Color(0xFFF5A623),
                   onTap: () {
@@ -530,7 +488,7 @@ class _SwipeableTileState extends State<_SwipeableTile> with SingleTickerProvide
                   },
                 ),
                 _ActionBtn(
-                  label: 'chatActionMute'.tr(),
+                  label: widget.item.isMuted ? 'chatActionUnmute'.tr() : 'chatActionMute'.tr(),
                   textColor: const Color(0xFF1A1F2C),
                   color: const Color(0xFFD1D1D6),
                   onTap: () {
@@ -610,14 +568,14 @@ class _ActionBtn extends StatelessWidget {
 // 消息行内容
 // ──────────────────────────────────────────
 class _MsgTile extends StatelessWidget {
-  final _MsgItem item;
+  final ChatItem item;
 
   const _MsgTile({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: item.isPinned ? Color(0xFFF7F7F7) : Colors.white,
       padding: EdgeInsets.only(left: 8.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -709,7 +667,7 @@ class _MsgTile extends StatelessWidget {
         ),
         SizedBox(height: 4.w),
         Text(
-          item.lastMsg,
+          item.lastMsgContent,
           style: TextStyle(
             fontSize: 12.sp,
             color: const Color(0xFF71727A),
@@ -731,15 +689,15 @@ class _MsgTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
-              MyImage.asset(item.readStatus == ReadStatus.sent ? MyImagePaths.iconCheck : MyImagePaths.iconDoneAll,
-                  width: 14.w, height: 14.w),
+            // if (item.readStatus == ReadStatus.sent || item.readStatus == ReadStatus.delivered)
+            //   MyImage.asset(item.readStatus == ReadStatus.sent ? MyImagePaths.iconCheck : MyImagePaths.iconDoneAll,
+            //       width: 14.w, height: 14.w),
             SizedBox(width: 2.w),
             Container(
               width: 40.w,
               alignment: Alignment.center,
               child: Text(
-                item.time,
+               CommonUtils.formatRelativeDate(item.lastMsgTime) ,
                 style: TextStyle(
                   fontSize: 12.sp,
                   color: const Color(0xFF8E8E93),

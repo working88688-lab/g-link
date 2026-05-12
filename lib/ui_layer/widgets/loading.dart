@@ -25,7 +25,7 @@ class LoadingView extends StatelessWidget {
           ),
           SizedBox(height: 15.w),
           Text(
-            text ?? 'zzjzsh'.tr(context: context),
+            text ?? 'jzz'.tr(context: context),
             style: TextStyle(
               color: const Color(0xff666666),
               fontSize: 12.sp,

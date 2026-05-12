@@ -10,6 +10,7 @@ import 'package:g_link/ui_layer/widgets/custom_switch.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
 import '../../../app_global.dart';
+import '../../widgets/my_app_bar.dart';
 import 'blocklist_page.dart';
 
 // ──────────────────────────────────────────
@@ -116,7 +117,9 @@ class _SecurityPrivacyPageState extends State<SecurityPrivacyPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
-      appBar: _buildAppBar(context),
+      appBar: MyAppBar(
+        title: 'mineDrawerPrivacySecurity'.tr(),
+      ),
       body: ListView(
         padding: EdgeInsets.all(16.w),
         children: [

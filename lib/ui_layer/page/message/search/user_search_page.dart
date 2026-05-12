@@ -6,6 +6,8 @@ import 'package:g_link/ui_layer/page/message/widgets/recommend_users_widget.dart
 import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/utils/common_utils.dart';
 import 'package:provider/provider.dart';
+import '../../../../domain/model/search_models.dart';
+import '../../../widgets/my_app_bar.dart';
 import 'models/search_models.dart';
 
 // ─────────────────────────────────────────
@@ -31,7 +33,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = false;
-  List<UserItem> _users = [];
+  List<UserSearchItem> _users = [];
   String? _error;
   String? _nextCursor;
   String? _loadingKeyword;
@@ -108,15 +110,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
       setState(() {
         _isLoading = false;
         _loadingKeyword = keyword;
-        _users = result.items
-            .map((e) => UserItem(
-                  uid: e.uid,
-                  username: e.username,
-                  nickname: e.nickname,
-                  avatarUrl: e.avatarUrl,
-                  followerCount: e.followerCount,
-                ))
-            .toList();
+        _users = result.items;
         _nextCursor = result.nextCursor;
         _hasMore = result.hasMore;
       });
@@ -148,16 +142,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoadingMore = false;
-        _users = [
-          ..._users,
-          ...result.items.map((e) => UserItem(
-                uid: e.uid,
-                username: e.username,
-                nickname: e.nickname,
-                avatarUrl: e.avatarUrl,
-                followerCount: e.followerCount,
-              ))
-        ];
+        _users = [..._users, ...result.items];
         _nextCursor = result.nextCursor;
         _hasMore = result.hasMore;
       });
@@ -186,20 +171,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Icon(Icons.arrow_back_ios,
-              size: 20.sp, color: const Color(0xFF0F172B)),
-        ),
-        title: Text('userSearchTitle'.tr(),
-            style: TextStyle(
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172B))),
-        centerTitle: true,
+      appBar: MyAppBar(
+        title: 'userSearchTitle'.tr(),
       ),
       body: SafeArea(
         top: false,
@@ -243,7 +216,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
     }
 
     return RefreshIndicator(
-      color: const Color(0xFF00C67E),
+      color: const Color(0xFF1A1F2C),
       onRefresh: _refresh,
       child: ListView.builder(
         controller: _scrollController,
@@ -315,7 +288,7 @@ class _UserSearchPageState extends State<UserSearchPage> {
 }
 
 class _UserTile extends StatefulWidget {
-  final UserItem user;
+  final UserSearchItem user;
   final String keyword;
 
   const _UserTile({required this.user, required this.keyword});
@@ -345,16 +318,12 @@ class _UserTileState extends State<_UserTile> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user.displayName,
-                      style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172B)),
+                      user.nickname ?? "",
+                      style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: const Color(0xFF0F172B)),
                     ),
                     Text(
                       '@${user.username}',
-                      style: TextStyle(
-                          fontSize: 12.sp, color: const Color(0xFF62748E)),
+                      style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
                     ),
                   ],
                 ),
@@ -363,17 +332,14 @@ class _UserTileState extends State<_UserTile> {
               GestureDetector(
                 onTap: _toggleFollow,
                 child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),
                   decoration: BoxDecoration(
                     border: Border.all(color: const Color(0xFFCCCCCC)),
                     borderRadius: BorderRadius.circular(100.r),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    user.isFollowing
-                        ? 'commonFollowed'.tr()
-                        : 'commonFollow'.tr(),
+                    user.isFollowing ? 'commonFollowed'.tr() : 'commonFollow'.tr(),
                     style: TextStyle(
                       fontSize: 13.sp,
                       color: const Color(0xFF1A1F2C),
@@ -385,23 +351,19 @@ class _UserTileState extends State<_UserTile> {
               SizedBox(width: 7.w),
               GestureDetector(
                 onTap: () => ChatConversationRoute(
-                  name: user.nickname,
-                  avatarUrl: user.avatarUrl,
-                  uid: user.uid,
+                  name: user.nickname ?? "",
+                  avatarUrl: user.avatarUrl ?? "",
+                  uid: user.uid ?? 0,
                 ).push(context),
                 child: Container(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.w),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1A1F2C),
                     borderRadius: BorderRadius.circular(100.r),
                   ),
                   alignment: Alignment.center,
                   child: Text('commonSendMessage'.tr(),
-                      style: TextStyle(
-                          fontSize: 13.sp,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 13.sp, color: Colors.white, fontWeight: FontWeight.w500)),
                 ),
               ),
             ],
@@ -412,11 +374,8 @@ class _UserTileState extends State<_UserTile> {
               SizedBox(width: 40.w),
               SizedBox(width: 12.w),
               Text(
-                'commonFollowerCount'.tr(namedArgs: {
-                  'count': CommonUtils.renderEnFixedNumber(user.followerCount)
-                }),
-                style:
-                    TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
+                'commonFollowerCount'.tr(namedArgs: {'count': CommonUtils.renderEnFixedNumber(user.followerCount??0)}),
+                style: TextStyle(fontSize: 12.sp, color: const Color(0xFF62748E)),
               ),
             ],
           ),
@@ -425,7 +384,7 @@ class _UserTileState extends State<_UserTile> {
     );
   }
 
-  Widget _buildAvatar(UserItem user) {
+  Widget _buildAvatar(UserSearchItem user) {
     return Container(
       width: 40.w,
       height: 40.w,
@@ -433,14 +392,13 @@ class _UserTileState extends State<_UserTile> {
         borderRadius: BorderRadius.circular(40.r),
         color: const Color(0xFFD1D1D6),
       ),
-      child: user.avatarUrl.isNotEmpty
+      child: ("${user.avatarUrl}").isNotEmpty
           ? ClipRRect(
               borderRadius: BorderRadius.circular(40.r),
               child: Image.network(
-                user.avatarUrl,
+                user.avatarUrl??"",
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Icon(Icons.person, size: 28.sp, color: Colors.white),
+                errorBuilder: (_, __, ___) => Icon(Icons.person, size: 28.sp, color: Colors.white),
               ),
             )
           : Icon(Icons.person, size: 28.sp, color: Colors.white),

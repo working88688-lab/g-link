@@ -198,6 +198,7 @@ class _UserPostsPageState extends State<UserPostsPage> {
     }
     if (n.posts.isEmpty) {
       return RefreshIndicator(
+        color: const Color(0xFF1A1F2C),
         onRefresh: n.refresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -221,6 +222,7 @@ class _UserPostsPageState extends State<UserPostsPage> {
     final hasDivider = posts.length > 1;
 
     return RefreshIndicator(
+      color: const Color(0xFF1A1F2C),
       onRefresh: n.refresh,
       child: ScrollablePositionedList.builder(
         itemCount: itemCount,

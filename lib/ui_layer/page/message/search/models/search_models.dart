@@ -15,58 +15,6 @@ enum SearchMode {
 }
 
 // ─────────────────────────────────────────
-//  数据模型
-// ─────────────────────────────────────────
-
-class ContactItem {
-  final int uid;
-  final String name;
-  final String avatarUrl;
-
-  const ContactItem(this.name, {this.uid = 0, this.avatarUrl = ''});
-}
-
-class ChatRecordItem {
-  final int msgId;
-  final int chatId;
-  final String name;
-  final String preview;
-  final String createdAt;
-  final int? extraCount;
-  final int? senderUid;
-
-  const ChatRecordItem({
-    this.msgId = 0,
-    this.chatId = 0,
-    required this.name,
-    required this.preview,
-    this.createdAt = '',
-    this.extraCount,
-    this.senderUid
-  });
-}
-
-class UserItem {
-  final int uid;
-  final String username;
-  final String nickname;
-  final String avatarUrl;
-  final int followerCount;
-  bool isFollowing;
-
-  UserItem({
-    required this.uid,
-    required this.username,
-    required this.nickname,
-    required this.avatarUrl,
-    required this.followerCount,
-    this.isFollowing = false,
-  });
-
-  String get displayName => nickname.isNotEmpty ? nickname : username;
-}
-
-// ─────────────────────────────────────────
 //  共享工具函数 & 小组件
 // ─────────────────────────────────────────
 

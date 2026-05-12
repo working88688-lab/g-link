@@ -10,6 +10,8 @@ import 'package:g_link/ui_layer/router/routes.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 // ──────────────────────────────────────────
 // 页面
 // ──────────────────────────────────────────
@@ -36,7 +38,9 @@ class _HelpFeedbackPageState extends State<HelpFeedbackPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
-      appBar: _buildAppBar(context),
+      appBar: MyAppBar(
+        title: 'helpFeedbackTitle'.tr(),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

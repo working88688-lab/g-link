@@ -5,6 +5,13 @@ class ChatItem {
   final String name;
   final String avatarUrl;
   final int peerUid;
+
+  final bool isFollowing;
+  final bool isOnline;
+  final int lastMsgId;
+  final int lastMsgUid;
+  final int lastMsgType;
+
   final String lastMsgContent;
   final String lastMsgTime;
   final int unreadCount;
@@ -18,6 +25,11 @@ class ChatItem {
     required this.name,
     required this.avatarUrl,
     required this.peerUid,
+    required this.isFollowing,
+    required this.isOnline,
+    required this.lastMsgId,
+    required this.lastMsgUid,
+    required this.lastMsgType,
     required this.lastMsgContent,
     required this.lastMsgTime,
     required this.unreadCount,
@@ -27,11 +39,16 @@ class ChatItem {
 
   factory ChatItem.fromJson(Map<String, dynamic> json) => ChatItem(
         id: (json['id'] as int?) ?? 0,
-        chatId: json['chat_id'] as int,
+        chatId: (json['chat_id'] as int?) ?? 0,
         type: (json['type'] as int?) ?? 0,
         name: (json['name'] as String?) ?? '',
         avatarUrl: (json['avatar_url'] as String?) ?? '',
         peerUid: (json['peer_uid'] as int?) ?? 0,
+        isFollowing: (json['is_following'] as bool?) ?? false,
+        isOnline: (json['is_online'] as bool?) ?? false,
+        lastMsgId: (json['last_msg_id'] as int?) ?? 0,
+        lastMsgUid: (json['last_msg_uid'] as int?) ?? 0,
+        lastMsgType: (json['last_msg_type'] as int?) ?? 0,
         lastMsgContent: (json['last_msg_content'] as String?) ?? '',
         lastMsgTime: (json['last_msg_time'] as String?) ?? '',
         unreadCount: (json['unread_count'] as int?) ?? 0,
@@ -46,6 +63,11 @@ class ChatItem {
         name: name,
         avatarUrl: avatarUrl,
         peerUid: peerUid,
+        isFollowing: isFollowing,
+        isOnline: isOnline,
+        lastMsgId: lastMsgId,
+        lastMsgUid: lastMsgUid,
+        lastMsgType: lastMsgType,
         lastMsgContent: lastMsgContent,
         lastMsgTime: lastMsgTime,
         unreadCount: unreadCount ?? this.unreadCount,
@@ -65,14 +87,17 @@ class MessageSearchContact {
     required this.uid,
     required this.nickname,
     required this.avatarUrl,
+    required this.username,
   });
 
   final int uid;
+  final String username;
   final String nickname;
   final String avatarUrl;
 
   factory MessageSearchContact.fromJson(Map<String, dynamic> json) => MessageSearchContact(
         uid: (json['uid'] as int?) ?? 0,
+        username: (json['username'] as String?) ?? '',
         nickname: (json['nickname'] as String?) ?? '',
         avatarUrl: (json['avatar_url'] as String?) ?? '',
       );
@@ -82,23 +107,61 @@ class MessageSearchMsg {
   const MessageSearchMsg({
     required this.msgId,
     required this.chatId,
+    required this.name,
+    required this.avatarUrl,
+    required this.peerUid,
     required this.senderUid,
+    required this.sender,
+    required this.peer,
+    required this.chat,
     required this.content,
     required this.createdAt,
   });
 
   final int msgId;
   final int chatId;
+  final String name;
+  final String avatarUrl;
+  final int peerUid;
   final int senderUid;
+  final ChatUser sender;
+  final ChatUser peer;
+  final ChatItem chat;
   final String content;
   final String createdAt;
 
   factory MessageSearchMsg.fromJson(Map<String, dynamic> json) => MessageSearchMsg(
-        msgId: (json['msg_id'] as int?) ?? 0,
-        chatId: (json['chat_id'] as int?) ?? 0,
-        senderUid: (json['sender_uid'] as int?) ?? 0,
-        content: (json['content'] as String?) ?? '',
-        createdAt: (json['created_at'] as String?) ?? '',
+      msgId: (json['msg_id'] as int?) ?? 0,
+      chatId: (json['chat_id'] as int?) ?? 0,
+      name: (json['name'] as String?) ?? '',
+      avatarUrl: (json['avatar_url'] as String?) ?? '',
+      peerUid: (json['peer_uid'] as int) ?? 0,
+      senderUid: (json['sender_uid'] as int?) ?? 0,
+      sender: ChatUser.fromJson(json['sender']),
+      peer: ChatUser.fromJson(json['peer']),
+      chat: ChatItem.fromJson(json['peer']),
+      content: (json['content'] as String?) ?? '',
+      createdAt: (json['created_at'] as String?) ?? '');
+}
+
+class ChatUser {
+  const ChatUser({
+    required this.uid,
+    required this.nickname,
+    required this.avatarUrl,
+    required this.username,
+  });
+
+  final int uid;
+  final String username;
+  final String nickname;
+  final String avatarUrl;
+
+  factory ChatUser.fromJson(Map<String, dynamic> json) => ChatUser(
+        uid: (json['uid'] as int?) ?? 0,
+        username: (json['username'] as String?) ?? '',
+        nickname: (json['nickname'] as String?) ?? '',
+        avatarUrl: (json['avatar_url'] as String?) ?? '',
       );
 }
 

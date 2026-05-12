@@ -12,7 +12,7 @@ import 'widgets/chat_record_tile.dart';
 //  入口：单个聊天页顶部菜单"搜索"
 // ─────────────────────────────────────────
 
-enum _Sub { results, detail }
+enum _Sub { results }
 
 class ChatRecordsSearchPage extends StatefulWidget {
   const ChatRecordsSearchPage({super.key, required this.chatId});
@@ -33,7 +33,7 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
 
   // ── 搜索结果 ──────────────────────────
   bool _isLoading = false;
-  List<ChatRecordItem> _chatRecords = [];
+  List<MessageSearchMsg> _chatRecords = [];
 
   @override
   void initState() {
@@ -62,18 +62,7 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoading = false;
-        _chatRecords = [
-          ...result.messages.map(
-            (m) => ChatRecordItem(
-              msgId: m.msgId,
-              chatId: m.chatId,
-              name: result.contacts.isNotEmpty ? result.contacts.first.nickname : 'chat',
-              preview: m.content,
-              createdAt: m.createdAt,
-              senderUid: m.senderUid,
-            ),
-          ),
-        ];
+        _chatRecords = result.messages;
       });
     } catch (_) {
       if (!mounted || _query != keyword) return;
@@ -101,19 +90,6 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
     _focusNode.requestFocus();
   }
 
-  void _enterDetail(String contact) {
-    setState(() {
-      _sub = _Sub.detail;
-      _drillContact = contact;
-    });
-  }
-
-  void _backToResults() {
-    setState(() {
-      _sub = _Sub.results;
-      _drillContact = null;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,12 +135,6 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
             SizedBox(height: 24.w),
           ],
         );
-      case _Sub.detail:
-        return _ChatDetailSection(
-          contactName: _drillContact ?? '',
-          query: _query,
-          onBackWithMsgId: (msgId) => Navigator.of(context).pop(msgId),
-        );
     }
   }
 }
@@ -175,7 +145,7 @@ class _ChatRecordsSearchPageState extends State<ChatRecordsSearchPage> {
 
 class _ChatRecordsSection extends StatelessWidget {
   final String query;
-  final List<ChatRecordItem> items;
+  final List<MessageSearchMsg> items;
   final ValueChanged<int>? onOpenMessage;
 
   const _ChatRecordsSection({
@@ -197,134 +167,6 @@ class _ChatRecordsSection extends StatelessWidget {
             onTap: r.msgId > 0 ? () => onOpenMessage?.call(r.msgId) : null,
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _ChatRecordTile extends StatelessWidget {
-  final ChatRecordItem item;
-  final String keyword;
-  final VoidCallback? onTap;
-
-  const _ChatRecordTile(
-      {required this.item, required this.keyword, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 10.w),
-        decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFF8F9FE)))),
-        child: Row(
-          children: [
-            searchAvatar(),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  highlight(item.name, keyword,
-                      base: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF0F172B)),
-                      hl: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF00C67E))),
-                  SizedBox(height: 2.w),
-                  item.extraCount != null
-                      ? Text('${item.extraCount}条相关聊天记录',
-                          style: TextStyle(
-                              fontSize: 12.sp, color: const Color(0xFF62748E)))
-                      : highlight(item.preview, keyword,
-                          base: TextStyle(
-                              fontSize: 12.sp, color: const Color(0xFF62748E)),
-                          hl: TextStyle(
-                              fontSize: 12.sp, color: const Color(0xFF00C67E))),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-//  聊天记录钻取详情
-// ─────────────────────────────────────────
-
-class _ChatDetailSection extends StatefulWidget {
-  final String contactName;
-  final String query;
-  final ValueChanged<int>? onBackWithMsgId;
-
-  const _ChatDetailSection({
-    required this.contactName,
-    required this.query,
-    this.onBackWithMsgId,
-  });
-
-  @override
-  State<_ChatDetailSection> createState() => _ChatDetailSectionState();
-}
-
-class _ChatDetailSectionState extends State<_ChatDetailSection> {
-  bool _isLoading = true;
-  List<ChatRecordItem> _records = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  // TODO: 替换为真实 API 调用
-  Future<void> _load() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-      _records = [
-        const ChatRecordItem(msgId: 101, name: '2025-03-01', preview: '太优秀了吧'),
-        const ChatRecordItem(msgId: 102, name: '2025-02-18', preview: '优秀到无可救药'),
-        const ChatRecordItem(msgId: 103, name: '2024-12-25', preview: '真的太优秀了'),
-      ];
-    });
-  }
-
-  void _handleBack(ChatRecordItem record) {
-    final msgId = record.msgId;
-    if (msgId <= 0) return;
-    widget.onBackWithMsgId?.call(msgId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF00C67E),
-          strokeWidth: 2,
-        ),
-      );
-    }
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      children: [
-        SizedBox(height: 8.w),
-        ..._records.map(
-          (r) => GestureDetector(
-            onTap: () => _handleBack(r),
-            child: ChatRecordDetailTile(item: r, keyword: widget.query),
-          ),
-        ),
-        SizedBox(height: 24.w),
       ],
     );
   }

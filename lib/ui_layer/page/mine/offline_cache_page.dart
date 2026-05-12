@@ -5,6 +5,7 @@ import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 import '../../image_paths.dart';
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/my_app_bar.dart';
 
 // ──────────────────────────────────────────
 // 数据模型（UI 骨架）
@@ -56,7 +57,19 @@ class _OfflineCachePageState extends State<OfflineCachePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FE),
-      appBar: _buildAppBar(context),
+      appBar: MyAppBar(
+        title:  'mineDrawerOfflineCache'.tr(),
+        actionWidget: GestureDetector(
+          onTap: _clearAll,
+          child: Text(
+            'historyClear'.tr(),
+            style: TextStyle(
+              color: const Color(0xFF45556C),
+              fontSize: 14.sp,
+            ),
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(

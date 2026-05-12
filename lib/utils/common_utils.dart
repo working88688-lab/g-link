@@ -664,6 +664,32 @@ class CommonUtils {
     return formattedDate;
   }
 
+  /// 消息/时间轴日期格式化：
+  /// - 今天：HH:mm
+  /// - 昨天：本地化文案
+  /// - 前天：本地化文案
+  /// - 更早：MM:dd
+  static String formatRelativeDate(String dateStr) {
+    final date = DateTime.tryParse(dateStr)?.toLocal();
+    if (date == null) return dateStr;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final targetDay = DateTime(date.year, date.month, date.day);
+    final diffDays = today.difference(targetDay).inDays;
+
+    if (diffDays <= 0) {
+      return DateFormat('HH:mm').format(date);
+    }
+    if (diffDays == 1) {
+      return 'dateYesterday'.tr();
+    }
+    if (diffDays == 2) {
+      return 'dateBeforeYesterday'.tr();
+    }
+    return DateFormat('MM:dd').format(date);
+  }
+
   ///把String分隔成4个字符一段的
   static String subStringFour(String text) {
     String str = '';

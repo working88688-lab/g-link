@@ -81,6 +81,8 @@ class _AuthPageState extends State<AuthPage> {
         ],
       ),
       appBar: MyAppBar(
+        backgroundColor: Colors.transparent,
+        showBoxShadow:false,
         leftWidget: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
@@ -94,7 +96,7 @@ class _AuthPageState extends State<AuthPage> {
               borderRadius: BorderRadius.all(Radius.circular(30.w)),
             ),
             child: Image.asset(
-              MyImagePaths.appBackIcon,
+              MyImagePaths.authBackIcon,
               width: 14.w,
               height: 14.w,
             ),

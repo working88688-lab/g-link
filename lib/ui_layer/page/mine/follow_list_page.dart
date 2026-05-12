@@ -240,6 +240,7 @@ class _FollowListPageState extends State<FollowListPage> {
     if (list.isEmpty) {
       // 空态也包一层 ListView 让 RefreshIndicator 能下拉刷新。
       return RefreshIndicator(
+        color: const Color(0xFF1A1F2C),
         onRefresh: () => n.load(force: true),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -283,6 +284,7 @@ class _FollowListPageState extends State<FollowListPage> {
     final itemCount = list.length + (hasMore ? 1 : 0);
 
     return RefreshIndicator(
+      color: const Color(0xFF1A1F2C),
       onRefresh: () => n.load(force: true),
       child: ListView.separated(
         controller: ctrl,

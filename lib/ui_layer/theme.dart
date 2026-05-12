@@ -8,7 +8,7 @@ class MyTheme {
   static double get pagePadding => 13.w;
 
   // 栏目顶部导航高度
-  static double get navbarHegiht => 44.w;
+  static double get navbarHegiht => 62.w;
 
   static double get statusHeight =>
       kIsWeb ? 5.w : MediaQuery.of(AppGlobal.context!).padding.top;

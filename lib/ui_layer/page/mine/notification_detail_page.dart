@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 class NotificationDetailPage extends StatelessWidget {
   const NotificationDetailPage({super.key, required this.title});
 
@@ -67,32 +69,8 @@ class NotificationDetailPage extends StatelessWidget {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        padding: EdgeInsets.zero,
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20.w,
-          color: const Color(0xFF1D293D),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        '通知详情',
-        style: TextStyle(
-          color: const Color(0xFF1D293D),
-          fontSize: 17.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFE9EEF5)),
-      ),
+    return MyAppBar(
+      title: '通知详情',
     );
   }
 }

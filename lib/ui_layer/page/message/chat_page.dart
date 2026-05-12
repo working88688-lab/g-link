@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../ui_layer/widgets/app_confirm_dialog.dart';
 import '../../image_paths.dart';
+import '../../notifier/app_chat_notifier.dart';
+import '../../widgets/loading.dart';
 import '../../widgets/my_image.dart';
 import '../../widgets/overlay_menu_button.dart';
 
@@ -60,6 +62,7 @@ class _ChatPageState extends State<ChatPage> {
   ChatItem? _session;
   final List<ChatMessageItem> _messages = [];
   int? _currentUserId;
+  AppChatNotifier? _notifier;
 
   String? get displayName => widget.name.isNotEmpty ? widget.name : _session?.name;
 
@@ -487,29 +490,30 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(child: _buildBody()),
-            _buildInputBar(),
-            _buildMorePanel(),
-          ],
+    return ChangeNotifierProvider<AppChatNotifier>(create: (ctx) {
+      final notifier = AppChatNotifier();
+      _notifier = notifier;
+      return notifier;
+    }, child: Consumer<AppChatNotifier>(builder: (context, n, _) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(child: _buildBody()),
+              _buildInputBar(),
+              _buildMorePanel(),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }));
   }
 
   Widget _buildBody() {
     if (_isLoadingSession || _currentUserId == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: Color(0xFF00C67E),
-        ),
-      );
+      return LoadingView();
     }
     if (_sessionError != null) {
       return Center(

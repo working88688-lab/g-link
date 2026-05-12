@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 // ──────────────────────────────────────────
 // 数据模型（UI 骨架）
 // ──────────────────────────────────────────
@@ -32,21 +34,9 @@ class BlocklistPage extends StatefulWidget {
 
 class _BlocklistPageState extends State<BlocklistPage> {
   final _users = <_BlockedUser>[
-    const _BlockedUser(
-        id: '1',
-        name: 'Sarah Jenks',
-        avatarUrl: '',
-        followersDisplay: '5.4w粉丝'),
-    const _BlockedUser(
-        id: '2',
-        name: 'Sarah Jenks',
-        avatarUrl: '',
-        followersDisplay: '5.4w粉丝'),
-    const _BlockedUser(
-        id: '3',
-        name: 'Sarah Jenks',
-        avatarUrl: '',
-        followersDisplay: '5.4w粉丝'),
+    const _BlockedUser(id: '1', name: 'Sarah Jenks', avatarUrl: '', followersDisplay: '5.4w粉丝'),
+    const _BlockedUser(id: '2', name: 'Sarah Jenks', avatarUrl: '', followersDisplay: '5.4w粉丝'),
+    const _BlockedUser(id: '3', name: 'Sarah Jenks', avatarUrl: '', followersDisplay: '5.4w粉丝'),
   ];
 
   @override
@@ -72,31 +62,8 @@ class _BlocklistPageState extends State<BlocklistPage> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 20.w,
-          color: const Color(0xFF1D293D),
-        ),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      title: Text(
-        'blocklistTitle'.tr(),
-        style: TextStyle(
-          color: const Color(0xFF1D293D),
-          fontSize: 17.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: const Color(0xFFEDF0F5)),
-      ),
+    return MyAppBar(
+      title: 'blocklistTitle'.tr(),
     );
   }
 

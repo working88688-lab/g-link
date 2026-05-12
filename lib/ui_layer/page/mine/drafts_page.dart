@@ -7,6 +7,8 @@ import 'package:g_link/ui_layer/notifier/drafts_notifier.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
 
+import '../../widgets/my_app_bar.dart';
+
 /// 草稿箱列表管理页：`帖子` / `短视频` 两个 tab，右上角「管理」进入多选删除模式。
 ///
 /// 数据来源：`GET /api/v1/drafts?type=post|video`（首屏 50 条）；删除走
@@ -31,8 +33,7 @@ class _DraftsPageState extends State<DraftsPage> {
   /// 点击 tab → [_animateToTab]（驱动 [PageController.animateToPage]）；
   /// 左右滑 → [PageView.onPageChanged] → [DraftsNotifier.changeTab]。
   /// 这样所有 tab 切换都收敛到 [PageView.onPageChanged] 一处，不会重复触发。
-  late final PageController _pageController =
-      PageController(initialPage: widget.initialTab.clamp(0, 1));
+  late final PageController _pageController = PageController(initialPage: widget.initialTab.clamp(0, 1));
 
   @override
   void dispose() {
@@ -43,9 +44,7 @@ class _DraftsPageState extends State<DraftsPage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<DraftsNotifier>(
-      create: (ctx) =>
-          DraftsNotifier(ctx.read<FeedDomain>(), initialTab: widget.initialTab)
-            ..load(),
+      create: (ctx) => DraftsNotifier(ctx.read<FeedDomain>(), initialTab: widget.initialTab)..load(),
       child: Consumer<DraftsNotifier>(
         builder: (context, n, _) {
           // 用 PopScope 把「删除过任意一条」的事实带回上一页：上一页（个人主页）
@@ -88,45 +87,28 @@ class _DraftsPageState extends State<DraftsPage> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, DraftsNotifier n) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
-      elevation: 0,
-      centerTitle: true,
-      title: Text(
-        '${'mineDraftBoxBadge'.tr()} (${n.currentCount})',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 16.sp,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      leading: IconButton(
-        icon: const Icon(Icons.chevron_left, size: 28),
-        onPressed: () => Navigator.of(context).maybePop(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: n.deleting
-              ? null
-              : () {
-                  if (n.manageMode) {
-                    n.exitManageMode();
-                  } else {
-                    if (n.currentList.isEmpty) return;
-                    n.enterManageMode();
-                  }
-                },
-          child: Text(
-            n.manageMode ? 'mineDraftCancel'.tr() : 'mineDraftManage'.tr(),
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w500,
-            ),
+    return MyAppBar(
+      title: '${'mineDraftBoxBadge'.tr()} (${n.currentCount})',
+      actionWidget: GestureDetector(
+        onTap: n.deleting
+            ? null
+            : () {
+                if (n.manageMode) {
+                  n.exitManageMode();
+                } else {
+                  if (n.currentList.isEmpty) return;
+                  n.enterManageMode();
+                }
+              },
+        child: Text(
+          n.manageMode ? 'mineDraftCancel'.tr() : 'mineDraftManage'.tr(),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 15.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -210,8 +192,7 @@ class _DraftsPageState extends State<DraftsPage> {
           padding: EdgeInsets.symmetric(vertical: 32.w),
           child: Text(
             'mineDraftEmpty'.tr(),
-            style:
-                TextStyle(color: const Color(0xFF8C95A4), fontSize: 13.sp),
+            style: TextStyle(color: const Color(0xFF8C95A4), fontSize: 13.sp),
           ),
         ),
       );
@@ -245,8 +226,7 @@ class _DraftsPageState extends State<DraftsPage> {
         fit: StackFit.expand,
         children: [
           if (draft.coverUrl.isNotEmpty)
-            MyImage.network(draft.coverUrl,
-                fit: BoxFit.cover, placeHolder: null)
+            MyImage.network(draft.coverUrl, fit: BoxFit.cover, placeHolder: null)
           else
             Container(color: const Color(0xFFE5E7ED)),
           Positioned(
@@ -300,9 +280,7 @@ class _DraftsPageState extends State<DraftsPage> {
         ],
       ),
       alignment: Alignment.center,
-      child: selected
-          ? Icon(Icons.check, color: Colors.white, size: 14.w)
-          : null,
+      child: selected ? Icon(Icons.check, color: Colors.white, size: 14.w) : null,
     );
   }
 
@@ -317,9 +295,7 @@ class _DraftsPageState extends State<DraftsPage> {
           width: double.infinity,
           height: 48.w,
           child: FilledButton(
-            onPressed: (!hasSelection || n.deleting)
-                ? null
-                : () => _confirmAndDelete(context, n),
+            onPressed: (!hasSelection || n.deleting) ? null : () => _confirmAndDelete(context, n),
             style: FilledButton.styleFrom(
               backgroundColor: _accent,
               foregroundColor: Colors.white,
@@ -337,9 +313,7 @@ class _DraftsPageState extends State<DraftsPage> {
                     ),
                   )
                 : Text(
-                    hasSelection
-                        ? '${'mineDraftDelete'.tr()}(${n.selectedIds.length})'
-                        : 'mineDraftDelete'.tr(),
+                    hasSelection ? '${'mineDraftDelete'.tr()}(${n.selectedIds.length})' : 'mineDraftDelete'.tr(),
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
@@ -351,8 +325,7 @@ class _DraftsPageState extends State<DraftsPage> {
     );
   }
 
-  Future<void> _confirmAndDelete(
-      BuildContext context, DraftsNotifier n) async {
+  Future<void> _confirmAndDelete(BuildContext context, DraftsNotifier n) async {
     // 提前抓 messenger，避免在 await 之后再用 BuildContext 触发 lint。
     final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
@@ -360,8 +333,7 @@ class _DraftsPageState extends State<DraftsPage> {
       builder: (ctx) => AlertDialog(
         title: Text('mineDraftDeleteConfirmTitle'.tr()),
         content: Text(
-          'mineDraftDeleteConfirmContent'
-              .tr(args: ['${n.selectedIds.length}']),
+          'mineDraftDeleteConfirmContent'.tr(args: ['${n.selectedIds.length}']),
         ),
         actions: [
           TextButton(

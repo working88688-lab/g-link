@@ -185,7 +185,7 @@ class ProfileService extends BaseService {
 
   AsyncJson getInterests() => get('/interest-tags', encrypted: false);
   AsyncJson getFaqCategories() => get('/faqs', encrypted: false);
-  AsyncJson getBlockedKeywords() => get('/settings/content-blocked-keywords', encrypted: false);
+  AsyncJson getBlockedKeywords() => get('/settings/content/blocked-keywords', encrypted: false);
   AsyncJson getNotificationUnreadCount() => get('/notifications/unread-count', encrypted: false);
   AsyncJson getNotifications({String? category, String? cursor, int? limit}) => get(
         '/notifications',
@@ -203,12 +203,12 @@ class ProfileService extends BaseService {
       );
   AsyncJson markAllNotificationsRead() => post('/notifications/mark-all-read', data: const {}, encrypted: false);
   AsyncJson addBlockedKeyword({required String keyword}) => post(
-        '/settings/content-blocked-keywords',
+        '/settings/content/blocked-keywords',
         data: {'keyword': keyword},
         encrypted: false,
       );
   AsyncJson deleteBlockedKeyword({required String keyword}) => delete(
-        '/settings/content-blocked-keywords/${Uri.encodeComponent(keyword)}',
+        '/settings/content/blocked-keywords/${Uri.encodeComponent(keyword)}',
         encrypted: false,
       );
   AsyncJson updateMyInterestTags({required List<int> tagIds}) => put(

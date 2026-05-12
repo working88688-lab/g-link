@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domain.dart';
+import 'package:g_link/domain/model/chat_model.dart' show MessageSearchContact, MessageSearchMsg;
 import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 import 'package:provider/provider.dart';
@@ -14,7 +15,7 @@ import 'widgets/chat_record_tile.dart';
 //  入口：消息列表页搜索栏
 // ─────────────────────────────────────────
 
-enum _Sub { initial, results, chatDetail }
+enum _Sub { initial, results }
 
 class GlobalSearchPage extends StatefulWidget {
   const GlobalSearchPage({super.key});
@@ -33,8 +34,8 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
 
   // ── 搜索结果 ──────────────────────────
   bool _isLoading = false;
-  List<ContactItem> _contacts = [];
-  List<ChatRecordItem> _chatRecords = [];
+  List<MessageSearchContact> _contacts = [];
+  List<MessageSearchMsg> _chatRecords = [];
 
   // ── 历史记录 ──────────────────────────
   static const _maxHistory = 20;
@@ -57,7 +58,10 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
   }
 
   Future<void> _loadHistory() async {
-    final list = await context.read<AppDomain>().cache.readSearchHistory();
+    final list = await context
+        .read<AppDomain>()
+        .cache
+        .readSearchHistory();
     if (!mounted) return;
     setState(() {
       _history
@@ -74,17 +78,26 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
         ..clear()
         ..addAll(list);
     });
-    context.read<AppDomain>().cache.upsertSearchHistory(searchHistory: list);
+    context
+        .read<AppDomain>()
+        .cache
+        .upsertSearchHistory(searchHistory: list);
   }
 
   void _removeHistory(String tag) {
     setState(() => _history.remove(tag));
-    context.read<AppDomain>().cache.upsertSearchHistory(searchHistory: List.of(_history));
+    context
+        .read<AppDomain>()
+        .cache
+        .upsertSearchHistory(searchHistory: List.of(_history));
   }
 
   void _clearHistory() {
     setState(() => _history.clear());
-    context.read<AppDomain>().cache.clearSearchHistory();
+    context
+        .read<AppDomain>()
+        .cache
+        .clearSearchHistory();
   }
 
   // ── 查询 ──────────────────────────────
@@ -96,17 +109,8 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
       if (!mounted || _query != keyword) return;
       setState(() {
         _isLoading = false;
-        _contacts = result.contacts.map((c) => ContactItem(c.nickname, uid: c.uid, avatarUrl: c.avatarUrl)).toList();
-        _chatRecords = result.messages
-            .map((m) => ChatRecordItem(
-                  msgId: m.msgId,
-                  chatId: m.chatId,
-                  name: '',
-                  preview: m.content,
-                  createdAt: m.createdAt,
-                  senderUid: m.senderUid,
-                ))
-            .toList();
+        _contacts = result.contacts;
+        _chatRecords = result.messages;
       });
     } catch (_) {
       if (!mounted || _query != keyword) return;
@@ -143,11 +147,11 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     _focusNode.requestFocus();
   }
 
-  void _enterChatDetail(String contact) {
-    setState(() {
-      _sub = _Sub.chatDetail;
-      _drillContact = contact;
-    });
+  void _enterChatDetail() {
+    // setState(() {
+    //   _sub = _Sub.chatDetail;
+    //   _drillContact = contact;
+    // });
   }
 
   void _backToResults() {
@@ -207,15 +211,9 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           children: [
             _ContactsSection(query: _query, items: _contacts),
-            _ChatRecordsSection(query: _query, items: _chatRecords, onEnterContact: _enterChatDetail),
+            _ChatRecordsSection(query: _query, items: _chatRecords),
             SizedBox(height: 24.w),
           ],
-        );
-      case _Sub.chatDetail:
-        return _ChatDetailSection(
-          contactName: _drillContact ?? '',
-          query: _query,
-          onBack: _backToResults,
         );
     }
   }
@@ -264,11 +262,12 @@ class _HistoryView extends StatelessWidget {
             spacing: 8.w,
             runSpacing: 8.w,
             children: history
-                .map((tag) => _HistoryChip(
-                      label: tag,
-                      onTap: () => onTapTag(tag),
-                      onRemove: () => onRemove(tag),
-                    ))
+                .map((tag) =>
+                _HistoryChip(
+                  label: tag,
+                  onTap: () => onTapTag(tag),
+                  onRemove: () => onRemove(tag),
+                ))
                 .toList(),
           ),
         ],
@@ -322,7 +321,7 @@ class _HistoryChip extends StatelessWidget {
 
 class _ContactsSection extends StatelessWidget {
   final String query;
-  final List<ContactItem> items;
+  final List<MessageSearchContact> items;
 
   const _ContactsSection({required this.query, required this.items});
 
@@ -333,7 +332,8 @@ class _ContactsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SearchSectionHeader(title: 'searchSectionContacts'.tr()),
-        ...items.map((c) => _ContactTile(
+        ...items.map((c) =>
+            _ContactTile(
               user: c,
               keyword: query,
             )),
@@ -344,7 +344,7 @@ class _ContactsSection extends StatelessWidget {
 
 class _ContactTile extends StatelessWidget {
   final String keyword;
-  final ContactItem user;
+  final MessageSearchContact user;
 
   const _ContactTile({required this.keyword, required this.user});
 
@@ -353,7 +353,7 @@ class _ContactTile extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         ChatConversationRoute(
-          name: user.name,
+          name: user.nickname,
           avatarUrl: user.avatarUrl,
           uid: user.uid,
         ).push(context);
@@ -365,7 +365,7 @@ class _ContactTile extends StatelessWidget {
           children: [
             searchAvatar(avatarUrl: user.avatarUrl),
             SizedBox(width: 8.w),
-            highlight(user.name, keyword,
+            highlight(user.nickname, keyword,
                 base: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF1A1F2C)),
                 hl: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF00C67E))),
           ],
@@ -381,10 +381,9 @@ class _ContactTile extends StatelessWidget {
 
 class _ChatRecordsSection extends StatelessWidget {
   final String query;
-  final List<ChatRecordItem> items;
-  final ValueChanged<String>? onEnterContact;
+  final List<MessageSearchMsg> items;
 
-  const _ChatRecordsSection({required this.query, required this.items, this.onEnterContact});
+  const _ChatRecordsSection({required this.query, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -393,71 +392,11 @@ class _ChatRecordsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SearchSectionHeader(title: 'searchSectionChatRecords'.tr()),
-        ...items.map((r) => ChatRecordTile(
+        ...items.map((r) =>
+            ChatRecordTile(
               item: r,
               keyword: query,
-              onTap: r.extraCount != null ? () => onEnterContact?.call(r.name) : null,
             )),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────
-//  聊天记录钻取详情
-// ─────────────────────────────────────────
-
-class _ChatDetailSection extends StatefulWidget {
-  final String contactName;
-  final String query;
-  final VoidCallback? onBack;
-
-  const _ChatDetailSection({required this.contactName, required this.query, this.onBack});
-
-  @override
-  State<_ChatDetailSection> createState() => _ChatDetailSectionState();
-}
-
-class _ChatDetailSectionState extends State<_ChatDetailSection> {
-  bool _isLoading = true;
-  List<ChatRecordItem> _records = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  // TODO: 替换为真实 API 调用
-  Future<void> _load() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-      _records = [
-        const ChatRecordItem(name: '2025-03-01', preview: '太优秀了吧'),
-        const ChatRecordItem(name: '2025-02-18', preview: '优秀到无可救药'),
-        const ChatRecordItem(name: '2024-12-25', preview: '真的太优秀了'),
-      ];
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFF00C67E),
-          strokeWidth: 2,
-        ),
-      );
-    }
-    return ListView(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      children: [
-        SizedBox(height: 8.w),
-        ..._records.map((r) => ChatRecordDetailTile(item: r, keyword: widget.query)),
-        SizedBox(height: 24.w),
       ],
     );
   }

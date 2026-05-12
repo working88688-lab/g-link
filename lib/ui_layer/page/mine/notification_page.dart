@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:g_link/domain/domains/profile.dart';
@@ -100,13 +99,16 @@ class _NotificationPageState extends State<NotificationPage> {
                     padding: EdgeInsets.symmetric(horizontal: 10.w),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: selected ? const Color(0xFF1A1F2C) : const Color(0xFFF8F9FE),
+                      color: selected
+                          ? const Color(0xFF1A1F2C)
+                          : const Color(0xFFF8F9FE),
                       borderRadius: BorderRadius.circular(999.r),
                     ),
                     child: Text(
                       _tabs[index],
                       style: TextStyle(
-                        color: selected ? Colors.white : const Color(0xFF38475B),
+                        color:
+                            selected ? Colors.white : const Color(0xFF38475B),
                         fontSize: 14.sp,
                       ),
                     ),
@@ -121,7 +123,8 @@ class _NotificationPageState extends State<NotificationPage> {
                         decoration: const BoxDecoration(
                           color: Color(0xFFFF2056),
                           shape: BoxShape.circle,
-                          border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.5)),
+                          border: Border.fromBorderSide(
+                              BorderSide(color: Colors.white, width: 1.5)),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -148,7 +151,8 @@ class _NotificationPageState extends State<NotificationPage> {
       index: _tabIndex,
       children: const [
         _SystemNotificationList(key: PageStorageKey('notification-system')),
-        _InteractionNotificationList(key: PageStorageKey('notification-interaction')),
+        _InteractionNotificationList(
+            key: PageStorageKey('notification-interaction')),
         _FanNotificationList(key: PageStorageKey('notification-follower')),
       ],
     );
@@ -167,10 +171,12 @@ class _NotificationsPagedList extends StatefulWidget {
   });
 
   final String category;
-  final Widget Function(BuildContext context, models.NotificationItem item) itemBuilder;
+  final Widget Function(BuildContext context, models.NotificationItem item)
+      itemBuilder;
 
   @override
-  State<_NotificationsPagedList> createState() => _NotificationsPagedListState();
+  State<_NotificationsPagedList> createState() =>
+      _NotificationsPagedListState();
 }
 
 class _NotificationsPagedListState extends State<_NotificationsPagedList>
@@ -207,7 +213,8 @@ class _NotificationsPagedListState extends State<_NotificationsPagedList>
   bool get wantKeepAlive => true;
 
   void _onScroll() {
-    if (!_controller.hasClients || _loading || _loadingMore || !_hasMore) return;
+    if (!_controller.hasClients || _loading || _loadingMore || !_hasMore)
+      return;
     final position = _controller.position;
     if (position.maxScrollExtent - position.pixels <= 240) {
       _loadMore();
@@ -321,7 +328,8 @@ class _NotificationsPagedListState extends State<_NotificationsPagedList>
           if (index >= _items.length) {
             return Padding(
               padding: EdgeInsets.symmetric(vertical: 16.w),
-              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
           return widget.itemBuilder(context, _items[index]);
@@ -382,7 +390,8 @@ class _SystemNotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        SystemNotificationDetailRoute(title: item.detailContent ?? item.desc).push(context);
+        SystemNotificationDetailRoute(title: item.detailContent ?? item.desc)
+            .push(context);
       },
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 16.w),
@@ -401,7 +410,8 @@ class _SystemNotificationTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFFF2056),
                         shape: BoxShape.circle,
-                        border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.w)),
+                        border: Border.fromBorderSide(
+                            BorderSide(color: Colors.white, width: 1.w)),
                       ),
                     ),
                   )
@@ -414,7 +424,9 @@ class _SystemNotificationTile extends StatelessWidget {
                     color: const Color(0xFFBFD0FF).withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(16.r),
                   ),
-                  child: Icon(Icons.notifications_active_rounded, color: const Color(0xFFBFD0FF).withValues(alpha: 0.95), size: 28.w),
+                  child: Icon(Icons.notifications_active_rounded,
+                      color: const Color(0xFFBFD0FF).withValues(alpha: 0.95),
+                      size: 28.w),
                 ),
               ],
             ),
@@ -429,7 +441,10 @@ class _SystemNotificationTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.title,
-                          style: TextStyle(color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: const Color(0xFF1A1F2C),
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                       Text(
@@ -484,7 +499,8 @@ class _InteractionNotificationTile extends StatelessWidget {
                   color: const Color(0xFFEAB67B).withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
-                child: Icon(Icons.person, color: const Color(0xFFEAB67B), size: 24.w),
+                child: Icon(Icons.person,
+                    color: const Color(0xFFEAB67B), size: 24.w),
               ),
               Positioned(
                 right: -5.w,
@@ -514,12 +530,16 @@ class _InteractionNotificationTile extends StatelessWidget {
                                 TextSpan(
                                   text: '${item.title}  ',
                                   style: TextStyle(
-                                      color: const Color(0xFF1A1F2C), fontSize: 14.sp, fontWeight: FontWeight.w600),
+                                      color: const Color(0xFF1A1F2C),
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600),
                                 ),
                                 TextSpan(
                                   text: ' ${item.desc}',
                                   style: TextStyle(
-                                      color: const Color(0xFF314158), fontSize: 12.sp, fontWeight: FontWeight.w600),
+                                      color: const Color(0xFF314158),
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -616,7 +636,10 @@ class _FanNotificationTile extends StatelessWidget {
                   SizedBox(width: 2.w),
                   Text(
                     '关注了你',
-                    style: TextStyle(color: const Color(0xFF314158), fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: const Color(0xFF314158),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -663,7 +686,8 @@ class _ThumbPreview extends StatelessWidget {
               color: Colors.black.withValues(alpha: 0.55),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16.w),
+            child:
+                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16.w),
           ),
         ],
       ),

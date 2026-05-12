@@ -5,6 +5,7 @@ import 'package:g_link/ui_layer/image_paths.dart';
 import 'package:g_link/ui_layer/widgets/my_image.dart';
 
 import '../../widgets/app_confirm_dialog.dart';
+import '../../widgets/my_app_bar.dart';
 
 // ──────────────────────────────────────────
 // 模式：历史 or 收藏
@@ -104,60 +105,34 @@ class _HistoryFavoritesPageState extends State<HistoryFavoritesPage> with Single
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
-      body: NestedScrollView(
-        headerSliverBuilder: (context, _) => [
-          SliverAppBar(
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            pinned: true,
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 20.w,
-                color: const Color(0xFF1D293D),
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: Text(
-              _title,
+        backgroundColor: const Color(0xFFF8F9FE),
+        appBar: MyAppBar(
+          title: _title,
+          actionWidget: GestureDetector(
+            onTap: _clearAll,
+            child: Text(
+              'historyClear'.tr(),
               style: TextStyle(
-                color: const Color(0xFF1D293D),
-                fontSize: 17.sp,
-                fontWeight: FontWeight.w600,
+                color: const Color(0xFF45556C),
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
               ),
-            ),
-            centerTitle: true,
-            actions: [
-              if (_isHistory)
-                TextButton(
-                  onPressed: _clearAll,
-                  child: Text(
-                    'historyClear'.tr(),
-                    style: TextStyle(
-                      color: const Color(0xFF45556C),
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: Size.fromHeight(43.w),
-              child: _buildTabBar(),
             ),
           ),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildPostsGrid(),
-            _buildVideosGrid(),
-          ],
         ),
-      ),
-    );
+        body: Column(
+          children: [
+            _buildTabBar(),
+            Expanded(
+                child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildPostsGrid(),
+                _buildVideosGrid(),
+              ],
+            ))
+          ],
+        ));
   }
 
   Widget _buildTabBar() {
